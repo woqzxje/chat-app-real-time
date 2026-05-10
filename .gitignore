@@ -1,1 +1,18 @@
-node_modules
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+*.env
+
+# Build artifacts
+dist/
+build/
