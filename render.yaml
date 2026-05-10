@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: chat-app-python-server
+    runtime: python
+    rootDir: server-python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:socket_app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGODB_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
