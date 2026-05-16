@@ -7,10 +7,10 @@ const RightSidebar = () => {
 
   // Lấy dữ liệu người dùng đang chat và danh sách tin nhắn từ ChatContext
   const { selectedUser, messages } = useContext(ChatContext)
-  
+
   // Lấy hàm đăng xuất và danh sách người dùng online từ AuthContext
   const { logout, onlineUser } = useContext(AuthContext)
-  
+
   // Trạng thái lưu trữ danh sách các URL ảnh trích xuất từ tin nhắn
   const [msgImages, setMsgImages] = useState([])
 
@@ -52,7 +52,7 @@ const RightSidebar = () => {
 
       {/* Nút đăng xuất cố định ở dưới cùng */}
       <button onClick={() => logout()} className='absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-linear-to-r from-purple-400 to-violet-600 text-white border-none text-sm font-light py-2 px-20 rounded-full cursor-pointer'>
-        Đăng xuất
+        Logout
       </button>
 
     </div>
