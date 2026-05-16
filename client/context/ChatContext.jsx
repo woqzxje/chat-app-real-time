@@ -10,6 +10,7 @@ export const ChatProvider = ({ children }) => {
     const [users, setUsers] = useState([]); // Danh sách người dùng trong sidebar
     const [messages, setMessages] = useState([]); // Danh sách tin nhắn trong khung chat
     const [selectedUser, setSelectedUser] = useState(null); // Người dùng đang được chọn để chat
+    const [unseenMessages, setUnseenMessages] = useState({}); // Số tin nhắn chưa đọc
     const [isUserLoading, setIsUserLoading] = useState(false);
     const [isMessagesLoading, setIsMessagesLoading] = useState(false);
 
@@ -22,6 +23,7 @@ export const ChatProvider = ({ children }) => {
             const { data } = await axios.get("/api/messages/users")
             if (data.success) {
                 setUsers(data.users)
+                setUnseenMessages(data.unseenMessages || {})
             }
         } catch (error) {
             toast.error(error.message)
@@ -67,6 +69,12 @@ export const ChatProvider = ({ children }) => {
             // Chỉ thêm tin nhắn vào màn hình nếu tin nhắn đó là từ người đang chat cùng
             if (newMessage.senderId === selectedUser?._id) {
                 setMessages((prev) => [...prev, newMessage]);
+            } else {
+                // Tăng số tin nhắn chưa đọc từ người gửi khác
+                setUnseenMessages(prev => ({
+                    ...prev,
+                    [newMessage.senderId]: (prev[newMessage.senderId] || 0) + 1
+                }))
             }
         });
     }
@@ -96,6 +104,8 @@ export const ChatProvider = ({ children }) => {
         messages,
         selectedUser,
         setSelectedUser,
+        unseenMessages,
+        setUnseenMessages,
         isUserLoading,
         isMessagesLoading,
         getUsers,
