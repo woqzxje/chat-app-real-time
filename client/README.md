@@ -1,16 +1,113 @@
-# React + Vite
+# Chat App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ứng dụng chat realtime fullstack với:
+- Frontend React + Vite + Tailwind CSS
+- Backend FastAPI + Socket.IO
+- MongoDB làm datastore
+- JWT cho xác thực
+- Cloudinary để lưu ảnh
 
-Currently, two official plugins are available:
+## Tính năng chính
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Đăng ký / đăng nhập người dùng
+- Xác thực JWT cho API bảo mật
+- Cập nhật hồ sơ cá nhân (avatar, bio, tên)
+- Danh sách người dùng hiện có và trạng thái online
+- Gửi, nhận tin nhắn 1-1 realtime
+- Gửi tin nhắn kèm ảnh
+- Đánh dấu tin nhắn đã xem
 
-## React Compiler
+## Cấu trúc dự án
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `client/` - frontend React
+- `server-python/` - backend FastAPI + Socket.IO
+  - `app/routes/` - API routes cho auth và messages
+  - `app/models.py` - mô hình dữ liệu User và Message
+  - `app/database.py` - kết nối MongoDB
+  - `app/socket_manager.py` - quản lý Socket.IO realtime
 
-## Expanding the ESLint configuration
+## Yêu cầu
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Node.js 20+ (cho frontend)
+- Python 3.11+ (cho backend)
+- MongoDB đang chạy và có kết nối qua `MONGODB_URL`
+- Tài khoản Cloudinary để upload ảnh
+
+## Cài đặt
+
+### Frontend
+
+```bash
+cd client
+npm install
+```
+
+### Backend
+
+```bash
+cd server-python
+pip install -r requirements.txt
+```
+
+## Biến môi trường
+
+Tạo file `.env` trong `server-python/` với các biến sau:
+
+```env
+MONGODB_URL=mongodb://localhost:27017
+JWT_SECRET=your_jwt_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+PORT=5000
+```
+
+## Chạy dự án
+
+### Backend
+
+```bash
+cd server-python
+python run.py
+```
+
+Hoặc:
+
+```bash
+cd server-python
+uvicorn main:socket_app --host 0.0.0.0 --port 5000 --reload
+```
+
+### Frontend
+
+```bash
+cd client
+npm run dev
+```
+
+## API chính
+
+- `GET /api/status` - kiểm tra server đang chạy
+- `POST /api/auth/signup` - đăng ký tài khoản
+- `POST /api/auth/login` - đăng nhập
+- `GET /api/auth/check` - kiểm tra token và lấy thông tin user
+- `PUT /api/auth/update-profile` - cập nhật profile
+- `GET /api/messages/users` - lấy danh sách người dùng và số tin nhắn chưa đọc
+- `GET /api/messages/{id}` - lấy lịch sử chat với một user
+- `PUT /api/messages/mark/{id}` - đánh dấu tin nhắn đã xem
+- `POST /api/messages/send/{id}` - gửi tin nhắn cho user khác
+
+## Ghi chú
+
+- Backend cho phép mọi nguồn (`CORS *`) để phát triển nhanh.
+- Token JWT được đọc từ header `token` trong các request auth.
+- Socket.IO dùng để đồng bộ trạng thái online và nhận tin nhắn realtime.
+- Ảnh gửi kèm và avatar được upload lên Cloudinary.
+
+---
+
+Nếu mở rộng, bạn có thể thêm:
+- chat nhóm
+- typing indicator
+- quản lý state bằng Redux / Zustand
+- refresh token và bảo mật CORS chặt hơn
