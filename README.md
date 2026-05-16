@@ -1,108 +1,107 @@
-# Chat App Fullstack
+# 🚀 QuickChat - Real-time Chat Application
 
-Đây là dự án ứng dụng chat realtime fullstack, gồm:
-- `client/`: frontend React + Vite + Tailwind CSS
-- `server-python/`: backend FastAPI + Socket.IO
+Ứng dụng trò chuyện trực tuyến thời gian thực được xây dựng với bộ công nghệ hiện đại (**FastAPI**, **React**, **MongoDB**). Hỗ trợ gửi tin nhắn văn bản, hình ảnh và trạng thái hoạt động của người dùng.
 
-## Tính năng
+---
 
-- Đăng ký / đăng nhập người dùng
-- Xác thực JWT cho các API bảo mật
-- Cập nhật hồ sơ cá nhân (avatar, bio, tên)
-- Danh sách người dùng và trạng thái online
-- Gửi, nhận tin nhắn 1-1 realtime
-- Gửi tin nhắn kèm ảnh
-- Đánh dấu tin nhắn đã xem
+## ✨ Tính năng nổi bật
 
-## Yêu cầu
+- 🔐 **Xác thực người dùng**: Đăng ký, Đăng nhập bảo mật với JWT (JSON Web Token).
+- 💬 **Trò chuyện Real-time**: Nhận và gửi tin nhắn tức thì nhờ công nghệ Socket.IO.
+- 📸 **Gửi hình ảnh**: Hỗ trợ chia sẻ hình ảnh trong cuộc trò chuyện thông qua Cloudinary.
+- 👤 **Quản lý hồ sơ**: Cập nhật ảnh đại diện, tên hiển thị và lời giới thiệu cá nhân (Bio).
+- 🟢 **Trạng thái Online**: Theo dõi ai đang trực tuyến trong danh sách bạn bè.
+- 📱 **Giao diện hiện đại**: Thiết kế Responsive (tương thích mọi thiết bị) với Tailwind CSS và hiệu ứng Glassmorphism.
+- 🌐 **Hỗ trợ Tiếng Việt**: Font chữ tùy chỉnh hỗ trợ đầy đủ tiếng Việt, không lỗi hiển thị.
 
-- Node.js 20+ cho frontend
-- Python 3.11+ cho backend
-- MongoDB đang chạy và kết nối được với biến môi trường `MONGODB_URL`
-- Cloudinary để upload ảnh
+---
 
-## Thiết lập
+## 🛠️ Công nghệ sử dụng
 
-### 1. Frontend
+### Backend
+- **FastAPI**: Framework Python hiệu năng cao để xây dựng API.
+- **Socket.IO (python-socketio)**: Xử lý kết nối thời gian thực.
+- **Beanie (ODM)**: Làm việc với MongoDB một cách dễ dàng và hiệu quả.
+- **PyJWT**: Quản lý mã xác thực người dùng.
+- **Cloudinary**: Lưu trữ và quản lý hình ảnh đám mây.
 
+### Frontend
+- **React**: Thư viện UI mạnh mẽ.
+- **Vite**: Công cụ build siêu nhanh cho dự án web.
+- **Tailwind CSS**: Framework CSS tiện lợi để thiết kế giao diện.
+- **Context API**: Quản lý trạng thái (State Management) ứng dụng.
+- **Axios**: Xử lý các yêu cầu HTTP đến Backend.
+
+---
+
+## ⚙️ Hướng dẫn cài đặt (Local)
+
+### 1. Chuẩn bị Backend
+```bash
+cd server
+pip install -r requirements.txt
+```
+Tạo file `.env` trong thư mục `server/` và cấu hình các biến sau:
+```env
+MONGODB_URL=đường_dẫn_kết_nối_mongodb
+JWT_SECRET=khóa_bí_mật_tùy_chọn
+CLOUDINARY_CLOUD_NAME=tên_cloud_của_bạn
+CLOUDINARY_API_KEY=api_key_cloudinary
+CLOUDINARY_API_SECRET=api_secret_cloudinary
+```
+
+### 2. Chuẩn bị Frontend
 ```bash
 cd client
 npm install
 ```
-
-### 2. Backend
-
-```bash
-cd server-python
-pip install -r requirements.txt
-```
-
-## Biến môi trường backend
-
-Tạo file `.env` trong `server-python/` hoặc sao chép từ mẫu `.env.example`:
-
-```bash
-cd server-python
-copy .env.example .env
-```
-
-`server-python/.env.example` chứa mẫu:
-
+Tạo file `.env` trong thư mục `client/` và cấu hình:
 ```env
-MONGODB_URL=mongodb://localhost:27017
-JWT_SECRET=your_jwt_secret
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-PORT=5000
+VITE_BACKEND_URL=http://localhost:5000
 ```
 
-## Chạy ứng dụng
+---
 
-### Backend
+## 🚀 Hướng dẫn Triển khai (Deployment)
 
-```bash
-cd server-python
-python run.py
+### Backend (Khuyên dùng Render.com)
+1. Kết nối kho lưu trữ GitHub với **Render**.
+2. Chọn loại dịch vụ: **Web Service**.
+3. **Language**: `Python`.
+4. **Root Directory**: `server`.
+5. **Build Command**: `pip install -r requirements.txt`.
+6. **Start Command**: `uvicorn main:socket_app --host 0.0.0.0 --port $PORT`.
+7. Cấu hình đầy đủ các biến môi trường trong mục **Advanced**.
+
+### Frontend (Khuyên dùng Vercel)
+1. Kết nối kho lưu trữ GitHub với **Vercel**.
+2. Chọn thư mục root là `client`.
+3. Framework Preset: **Vite**.
+4. Cấu hình biến môi trường `VITE_BACKEND_URL` trỏ về link API của Render vừa tạo.
+5. Nhấn **Deploy**.
+
+---
+
+## 📂 Cấu trúc thư mục
+
+```text
+├── client/                # Mã nguồn Frontend (React)
+│   ├── src/
+│   │   ├── components/    # Các thành phần giao diện (Sidebar, Chat,...)
+│   │   ├── context/       # Quản lý trạng thái (Auth, Chat)
+│   │   └── pages/         # Các trang chính (Login, Profile, Home)
+│   └── index.css          # Cấu hình Style và Font chữ
+├── server/                # Mã nguồn Backend (FastAPI)
+│   ├── app/
+│   │   ├── routes/        # Định nghĩa các đầu cuối API
+│   │   ├── models.py      # Schema dữ liệu MongoDB
+│   │   └── socket_manager.py # Xử lý Socket.IO
+│   ├── main.py            # Khởi tạo ứng dụng chính
+│   └── requirements.txt   # Danh sách thư viện Python
+└── README.md
 ```
 
-Hoặc:
+---
 
-```bash
-cd server-python
-uvicorn main:socket_app --host 0.0.0.0 --port 5000 --reload
-```
-
-### Frontend
-
-```bash
-cd client
-npm run dev
-```
-
-## API chính
-
-- `GET /api/status` - kiểm tra server đang hoạt động
-- `POST /api/auth/signup` - đăng ký người dùng
-- `POST /api/auth/login` - đăng nhập
-- `GET /api/auth/check` - kiểm tra token và lấy thông tin user
-- `PUT /api/auth/update-profile` - cập nhật profile
-- `GET /api/messages/users` - lấy danh sách người dùng và số tin nhắn chưa đọc
-- `GET /api/messages/{id}` - lấy lịch sử chat với một người dùng
-- `PUT /api/messages/mark/{id}` - đánh dấu tin nhắn đã xem
-- `POST /api/messages/send/{id}` - gửi tin nhắn đến một người dùng khác
-
-## Ghi chú
-
-- Server cho phép mọi nguồn (`CORS *`) để phát triển nhanh.
-- Token JWT được truyền qua header `token` trong request bảo mật.
-- Socket.IO dùng để phát hiện người dùng online và nhận tin nhắn realtime.
-- Ảnh gửi kèm và avatar được upload lên Cloudinary.
-
-## Mở rộng
-
-Bạn có thể mở rộng dự án bằng cách:
-- Thêm chat nhóm
-- Thêm typing indicator
-- Quản lý state frontend với Redux hoặc Zustand
-- Thêm refresh token và bảo mật CORS chặt hơn
+## 👨‍💻 Tác giả
+Dự án được phát triển và tối ưu hóa cho cộng đồng lập trình viên Việt Nam. Chúc bạn có những trải nghiệm tuyệt vời với **QuickChat**!
