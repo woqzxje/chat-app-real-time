@@ -5,21 +5,29 @@ import { AuthContext } from '../../context/AuthContext'
 
 const ProfilePage = () => {
 
+  // Lấy dữ liệu người dùng và hàm cập nhật từ AuthContext
   const { authUser, updateProfile } = useContext(AuthContext)
 
+  // Lưu trữ ảnh đã chọn từ máy tính
   const [selectedImage, setSelectedImage] = useState(null)
   const navigate = useNavigate()
+  
+  // Khởi tạo các biến với dữ liệu hiện tại của người dùng
   const [name, setName] = useState(authUser.fullName)
   const [bio, setBio] = useState(authUser.bio)
 
+  // Xử lý khi nhấn nút Lưu (Gửi form)
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Nếu không có ảnh mới được chọn, chỉ cập nhật tên và bio
     if(!selectedImage){
       await updateProfile({fullName: name, bio});
       navigate('/');
       return;
     }
 
+    // Nếu có ảnh mới, chuyển đổi ảnh sang dạng base64 rồi mới gửi lên server
     const reader = new FileReader();
     reader.readAsDataURL(selectedImage);
     reader.onload = async () =>{
@@ -32,21 +40,32 @@ const ProfilePage = () => {
 
   return (
     <div className='min-h-screen bg-cover bg-no-repeat flex items-center justify-center'>
+      {/* Khung nội dung hồ sơ với hiệu ứng làm mờ kính */}
       <div className='w-5/6 max-w-2xl backdrop-blur-2xl text-gray-300 border-2 border-gray-600 flex items-center justify-between max-sm:flex-col-reverse rounded-lg'>
+        
         <form onSubmit={handleSubmit} className='flex flex-col gap-5 p-10 flex-1'>
-          <h3 className="text-lg">Profile details</h3>
+          <h3 className="text-lg">Chi tiết hồ sơ</h3>
+          
+          {/* Khu vực chọn ảnh đại diện */}
           <label htmlFor="avatar" className='flex items-center gap-3 cursor-pointer'>
             <input onChange={(e)=>setSelectedImage(e.target.files[0])} type="file" id='avatar' accept='.png, .jpg, .jpeg' hidden />
-            <img src={selectedImage ? URL.createObjectURL(selectedImage) : assets.avatar_icon} alt="" className={`w-12 h-12 ${selectedImage && 'rounded-full'}`}/>
-        upload profile image
+            <img src={selectedImage ? URL.createObjectURL(selectedImage) : assets.avatar_icon} alt="Avatar" className={`w-12 h-12 ${selectedImage && 'rounded-full'}`}/>
+            <span className='text-sm opacity-70'>Tải ảnh đại diện lên</span>
           </label>
-          <input onChange={(e)=>setName(e.target.value)} value={name}
-          type="text" required placeholder='Your name' className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500' />
-          <textarea onChange={(e)=>setBio(e.target.value)} value={bio} placeholder="Write profile bio" required className="p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500" rows={4}></textarea>
 
-          <button type="submit" className="bg-linear-to-r from-purple-400 to-violet-600 text-white p-2 rounded-full text-lg cursor-pointer">Save</button>
+          {/* Nhập Họ và tên */}
+          <input onChange={(e)=>setName(e.target.value)} value={name}
+          type="text" required placeholder='Tên của bạn' className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500' />
+          
+          {/* Nhập Lời giới thiệu */}
+          <textarea onChange={(e)=>setBio(e.target.value)} value={bio} placeholder="Viết giới thiệu về bạn" required className="p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500" rows={4}></textarea>
+
+          {/* Nút lưu thay đổi */}
+          <button type="submit" className="bg-linear-to-r from-purple-400 to-violet-600 text-white p-2 rounded-full text-lg cursor-pointer">Lưu hồ sơ</button>
         </form>
-        <img className={`max-w-44 aspect-square rounded-full mx-10 max-sm:mt-10 ${selectedImage && 'rounded-full'}`} src={authUser?.profilePic || assets.logo_icon} alt="" />
+
+        {/* Hiển thị ảnh đại diện hiện tại bên cạnh form */}
+        <img className={`max-w-44 aspect-square rounded-full mx-10 max-sm:mt-10 ${selectedImage && 'rounded-full'}`} src={authUser?.profilePic || assets.logo_icon} alt="Preview" />
       </div>
 
     </div>
