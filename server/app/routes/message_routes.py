@@ -8,12 +8,14 @@ from app.dependencies import get_current_user
 from app.cloudinary_client import upload_image
 from app.socket_manager import sio, user_socket_map
 
+# Khởi tạo router cho các tính năng liên quan đến tin nhắn
 message_router = APIRouter()
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# ── Các hàm hỗ trợ (Helpers) ──────────────────────────────────────────────────
 
 def _msg_dict(msg: Message) -> dict:
+    """Chuyển đổi đối tượng Message (Beanie) sang dictionary."""
     return {
         "_id": str(msg.id),
         "senderId": msg.senderId,
@@ -27,6 +29,7 @@ def _msg_dict(msg: Message) -> dict:
 
 
 def _user_dict(user: User) -> dict:
+    """Chuyển đổi đối tượng User (Beanie) sang dictionary."""
     return {
         "_id": str(user.id),
         "fullName": user.fullName,
@@ -42,11 +45,13 @@ def _user_dict(user: User) -> dict:
 
 @message_router.get("/users")
 async def get_users_for_sidebar(current_user: User = Depends(get_current_user)):
+    """Lấy danh sách tất cả người dùng để hiển thị ở thanh bên (Sidebar)"""
     my_id = str(current_user.id)
 
-    # All users except the logged-in user
+    # Tìm tất cả người dùng ngoại trừ chính mình
     all_users = await User.find(User.id != current_user.id).to_list()
 
+    # (Tùy chọn) Kiểm tra số tin nhắn chưa đọc từ mỗi người dùng
     unseen_messages: dict[str, int] = {}
     for user in all_users:
         uid = str(user.id)
@@ -69,8 +74,10 @@ async def get_users_for_sidebar(current_user: User = Depends(get_current_user)):
 
 @message_router.get("/{id}")
 async def get_messages(id: str, current_user: User = Depends(get_current_user)):
+    """Lấy lịch sử tin nhắn giữa người dùng hiện tại và một người dùng khác (theo id)"""
     my_id = str(current_user.id)
 
+    # Tìm các tin nhắn mà mình là người gửi và họ là người nhận HOẶC ngược lại
     messages = await Message.find(
         {
             "$or": [
@@ -80,7 +87,7 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
         }
     ).to_list()
 
-    # Mark received messages as seen
+    # Đánh dấu các tin nhắn họ gửi cho mình là 'đã xem' (seen)
     await Message.find(
         Message.senderId == id,
         Message.receiverId == my_id,
@@ -94,6 +101,7 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
 
 @message_router.put("/mark/{id}")
 async def mark_message_as_seen(id: str, current_user: User = Depends(get_current_user)):
+    """Đánh dấu một tin nhắn cụ thể là đã xem"""
     msg = await Message.get(id)
     if msg:
         await msg.set({"seen": True})
@@ -103,6 +111,7 @@ async def mark_message_as_seen(id: str, current_user: User = Depends(get_current
 # ── POST /api/messages/send/{id} ─────────────────────────────────────────────
 
 class SendMessageBody(BaseModel):
+    """Cấu trúc dữ liệu gửi tin nhắn (có thể là chữ hoặc ảnh)"""
     text: Optional[str] = None
     image: Optional[str] = None
 
@@ -113,12 +122,15 @@ async def send_message(
     body: SendMessageBody,
     current_user: User = Depends(get_current_user),
 ):
+    """Gửi tin nhắn mới cho một người dùng"""
     sender_id = str(current_user.id)
     image_url: Optional[str] = None
 
+    # Nếu có gửi kèm ảnh, tải ảnh lên Cloudinary
     if body.image:
         image_url = await upload_image(body.image)
 
+    # Lưu tin nhắn vào Database
     new_msg = Message(
         senderId=sender_id,
         receiverId=id,
@@ -127,9 +139,11 @@ async def send_message(
     )
     await new_msg.insert()
 
-    # Emit to receiver via Socket.IO (mirrors JS behaviour)
+    # GỬI TIN NHẮN REAL-TIME QUA SOCKET.IO
+    # Tìm xem người nhận có đang online không
     receiver_socket_id = user_socket_map.get(id)
     if receiver_socket_id:
+        # Nếu online, gửi tin nhắn trực tiếp đến socket của họ
         await sio.emit("receiveMessage", _msg_dict(new_msg), to=receiver_socket_id)
 
     return {"success": True, "newMessage": _msg_dict(new_msg)}

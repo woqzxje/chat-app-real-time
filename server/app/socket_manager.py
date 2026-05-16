@@ -1,38 +1,44 @@
 import socketio
 
-# Async Socket.IO server — compatible with the socket.io JS client
+# Khởi tạo server Async Socket.IO — tương thích với thư viện socket.io của Javascript
 sio = socketio.AsyncServer(
     async_mode="asgi",
-    cors_allowed_origins="*",
+    cors_allowed_origins="*", # Cho phép kết nối từ mọi nguồn
     logger=False,
     engineio_logger=False,
 )
 
-# In-memory map: { userId: socketId }  (same as JS userSocketMap)
+# Bản đồ lưu trữ trong bộ nhớ: { userId: socketId } 
+# Giúp server biết được user nào đang dùng socket ID nào để gửi tin nhắn chính xác
 user_socket_map: dict[str, str] = {}
 
 
 @sio.event
 async def connect(sid, environ, auth):
-    """Called when a client connects. Reads userId from query string."""
-    # socket.io JS client sends query params in environ["QUERY_STRING"]
+    """Được gọi khi một client kết nối. Đọc userId từ query string."""
+    # Client JS gửi userId qua query params: io(url, { query: { userId: ... } })
     from urllib.parse import parse_qs
     qs = parse_qs(environ.get("QUERY_STRING", ""))
     user_id = qs.get("userId", [None])[0]
 
     if user_id:
+        # Lưu socket ID vào map ứng với userId
         user_socket_map[user_id] = sid
         print(f"User Connected: {user_id} ({sid})")
 
+    # Phát sự kiện (emit) cho tất cả client để cập nhật danh sách người dùng đang online
     await sio.emit("getOnlineUsers", list(user_socket_map.keys()))
 
 
 @sio.event
 async def disconnect(sid):
-    """Called when a client disconnects."""
+    """Được gọi khi một client ngắt kết nối."""
+    # Tìm userId tương ứng với socket ID đang ngắt kết nối
     user_id = next((uid for uid, s in user_socket_map.items() if s == sid), None)
     if user_id:
+        # Xóa khỏi danh sách online
         del user_socket_map[user_id]
         print(f"User Disconnected: {user_id}")
 
+    # Thông báo cho các client khác cập nhật lại danh sách online
     await sio.emit("getOnlineUsers", list(user_socket_map.keys()))

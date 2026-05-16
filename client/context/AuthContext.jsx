@@ -3,8 +3,9 @@ import axios from 'axios'
 import toast from "react-hot-toast";
 import { io } from "socket.io-client"
 
-
+// Lấy URL của backend từ biến môi trường (VITE_BACKEND_URL)
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
+// Cấu hình axios để luôn gửi yêu cầu đến backend này
 axios.defaults.baseURL = backendUrl;
 
 export const AuthContext = createContext();
@@ -16,29 +17,30 @@ export const AuthProvider = ({ children }) => {
     const [onlineUser, setOnlineUser] = useState([]);
     const [socket, setSocket] = useState(null);
 
-    //Check if user is authenticented and if so, set the user data and connect the socket
+    // Kiểm tra xem người dùng đã đăng nhập chưa khi load trang
     const checkAuth = async () => {
         try {
             const {data} = await axios.get("/api/auth/check")
             if(data.success){
                 setAuthUser(data.user)
-                connectSocket(data.user)
+                connectSocket(data.user) // Kết nối socket nếu đã đăng nhập
             }
         } catch (error) {
-            toast.error(error.message)
+            // Nếu không đăng nhập hoặc token hết hạn, xóa dữ liệu
+            setAuthUser(null);
         }
     }
 
-    //Login function to handle user authentication and socket connection
-
+    // Hàm xử lý đăng nhập hoặc đăng ký
     const login = async (state, credentials)=>{
         try {
             const { data } = await axios.post(`/api/auth/${state}`, credentials);
             if(data.success){
-                if(state === 'login'){
-                    // Only auto-login when the user explicitly logs in
+                if(state === 'login' || state === 'signup'){
                     setAuthUser(data.userData);
-                    connectSocket(data.userData);
+                    connectSocket(data.userData); // Kết nối socket ngay lập tức
+                    
+                    // Lưu token vào axios header và localStorage
                     axios.defaults.headers.common["token"] = data.token;
                     setToken(data.token);
                     localStorage.setItem("token", data.token)
@@ -50,40 +52,40 @@ export const AuthProvider = ({ children }) => {
                 return false;
             }
         } catch (error) {
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || error.message)
             return false;
         }
     }
 
-    //logout function to handle user logout and socket disconnection
-
+    // Hàm đăng xuất
     const logout = async () => {
         localStorage.removeItem("token");
         setToken(null);
         setAuthUser(null);
         setOnlineUser([]);
         axios.defaults.headers.common["token"] = null;
-        toast.success("Logged out successfully")
-        socket.disconnect();
+        toast.success("Đã đăng xuất")
+        if (socket) socket.disconnect(); // Ngắt kết nối socket
     }
 
-    //update profile function to handle user profile updates
-
+    // Cập nhật thông tin cá nhân
     const updateProfile = async (body) => {
         try {
             const { data } = await axios.put("/api/auth/update-profile", body);
             if(data.success){
                 setAuthUser(data.user);
-                toast.success("Profile updated successfully")
+                toast.success("Cập nhật hồ sơ thành công")
             }
         } catch (error) {
             toast.error(error.message)
         }
     }
 
-    //Connect socket function to handle socket connection and online users updates
+    // Khởi tạo kết nối Socket.IO
     const connectSocket = (userData)=>{
         if(!userData || socket?.connected) return;
+        
+        // Kết nối đến backend với tham số userId trong query
         const newSocket = io(backendUrl, {
             query: {
                 userId: userData._id,
@@ -92,12 +94,14 @@ export const AuthProvider = ({ children }) => {
         newSocket.connect();
         setSocket(newSocket);
 
+        // Lắng nghe sự kiện cập nhật danh sách người dùng đang online từ server
         newSocket.on("getOnlineUsers", (userIds)=>{
             setOnlineUser(userIds);
         })
     }
 
     useEffect(()=>{
+        // Nếu có token sẵn trong localStorage, gán vào axios header
         if(token){
             axios.defaults.headers.common["token"] = token;
         }
@@ -119,4 +123,4 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     )
-}
+}

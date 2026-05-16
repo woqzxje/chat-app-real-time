@@ -1,85 +1,106 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { AuthContext } from "./AuthContext";
+import { createContext, useState, useEffect, useContext } from "react";
+import axios from 'axios'
 import toast from "react-hot-toast";
-
+import { AuthContext } from "./AuthContext";
 
 export const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
 
-    const [messages, setMessages] = useState([]);
-    const [users, setUsers] = useState([]);
-    const [selectedUser, setSelectedUser] = useState(null)
-    const [unseenMessages, setUnseenMessages] = useState({})
+    const [users, setUsers] = useState([]); // Danh sách người dùng trong sidebar
+    const [messages, setMessages] = useState([]); // Danh sách tin nhắn trong khung chat
+    const [selectedUser, setSelectedUser] = useState(null); // Người dùng đang được chọn để chat
+    const [isUserLoading, setIsUserLoading] = useState(false);
+    const [isMessagesLoading, setIsMessagesLoading] = useState(false);
 
-    const { socket, axios } = useContext(AuthContext);
+    const { socket, authUser } = useContext(AuthContext)
 
-    //function to get all users for sidebar
+    // Lấy danh sách người dùng từ backend
     const getUsers = async () => {
+        setIsUserLoading(true)
         try {
-            const { data } = await axios.get("/api/messages/users");
+            const { data } = await axios.get("/api/messages/users")
             if (data.success) {
-                setUsers(data.users);
-                setUnseenMessages(data.unseenMessages);
+                setUsers(data.users)
             }
         } catch (error) {
             toast.error(error.message)
+        } finally {
+            setIsUserLoading(false)
         }
     }
 
-    //function to get messages for selected user
+    // Lấy lịch sử tin nhắn với một người dùng cụ thể
     const getMessages = async (userId) => {
+        setIsMessagesLoading(true)
         try {
-            const { data } = await axios.get(`/api/messages/${userId}`);
-            setMessages(data.messages)
+            const { data } = await axios.get(`/api/messages/${userId}`)
+            if (data.success) {
+                setMessages(data.messages)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        } finally {
+            setIsMessagesLoading(false)
+        }
+    }
+
+    // Hàm gửi tin nhắn
+    const sendMessage = async (messageData) => {
+        try {
+            const { data } = await axios.post(`/api/messages/send/${selectedUser._id}`, messageData)
+            if (data.success) {
+                // Cập nhật tin nhắn mới vào danh sách hiện tại
+                setMessages((prev) => [...prev, data.newMessage])
+            }
         } catch (error) {
             toast.error(error.message)
         }
     }
 
-    //function to send message to selected user
-    const sendMessage = async (messagesData) => {
-        try {
-            const { data } = await axios.post(`/api/messages/send/${selectedUser._id}`, messagesData);
-            if (data.success) {
-                setMessages((prevMessages) => [...prevMessages, data.newMessage])
-            } else {
-                toast.error(data.message);
+    // Lắng nghe tin nhắn mới từ Socket.IO
+    const subscribeToMessages = () => {
+        if (!socket) return;
+        
+        // Khi nhận được sự kiện "receiveMessage" từ server
+        socket.on("receiveMessage", (newMessage) => {
+            // Chỉ thêm tin nhắn vào màn hình nếu tin nhắn đó là từ người đang chat cùng
+            if (newMessage.senderId === selectedUser?._id) {
+                setMessages((prev) => [...prev, newMessage]);
             }
-        } catch (error) {
-            toast.error(error.message);
+        });
+    }
+
+    // Ngừng lắng nghe tin nhắn (dọn dẹp bộ nhớ)
+    const unSubscribeToMessages = () => {
+        if (socket) {
+            socket.off("receiveMessage");
         }
     }
 
-    //function to subscribe to messages for selected user
-    const subcribeToMessages = async () => {
-        if (!socket) return;
-
-        socket.on("receiveMessage", (newMessage) => {
-            if (selectedUser && newMessage.senderId === selectedUser._id) {
-                newMessage.seen = true;
-                setMessages((prevMessages) => [...prevMessages, newMessage]);
-                axios.put(`/api/messages/mark/${newMessage._id}`);
-            } else {
-                setUnseenMessages((prevUnseenMessages) => ({
-                    ...prevUnseenMessages, [newMessage.senderId]: prevUnseenMessages[newMessage.senderId] ? prevUnseenMessages[newMessage.senderId] + 1 : 1
-                }))
-            }
-        })
-    }
-
-    //function to unsubscribe from messages
-    const unsubscribeFromMessages = () => {
-        if (socket) socket.off("receiveMessage");
-    }
-
+    // Mỗi khi người dùng đang chat cùng (selectedUser) thay đổi, thiết lập lại lắng nghe socket
     useEffect(() => {
-        subcribeToMessages();
-        return () => unsubscribeFromMessages();
-    }, [socket, selectedUser])
+        subscribeToMessages();
+        return () => unSubscribeToMessages();
+    }, [socket, selectedUser]);
+
+    // Khi ứng dụng khởi chạy hoặc authUser thay đổi, tải danh sách người dùng
+    useEffect(() => {
+        if (authUser) {
+            getUsers()
+        }
+    }, [authUser])
 
     const value = {
-        messages, users, selectedUser, getUsers, getMessages, sendMessage, setSelectedUser, unseenMessages, setUnseenMessages
+        users,
+        messages,
+        selectedUser,
+        setSelectedUser,
+        isUserLoading,
+        isMessagesLoading,
+        getUsers,
+        getMessages,
+        sendMessage,
     }
 
     return (
