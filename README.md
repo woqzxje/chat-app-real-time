@@ -104,4 +104,6 @@ VITE_BACKEND_URL=http://localhost:5000
 ---
 
 ## 👨‍💻 Tác giả
-Dự án được phát triển và tối ưu hóa cho cộng đồng lập trình viên Việt Nam. Chúc bạn có những trải nghiệm tuyệt vời với **QuickChat**!
+Dự án được phát triển bởi Thượng Mạnh Quỳnh và tối ưu hóa cho cộng đồng lập trình viên Việt Nam. Chúc bạn có những trải nghiệm tuyệt vời với **QuickChat**!
+
+idea by GreatStack
