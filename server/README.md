@@ -17,7 +17,7 @@ Backend của dự án chat realtime sử dụng:
 ## Cài đặt
 
 ```bash
-cd server-python
+cd server
 pip install -r requirements.txt
 ```
 
@@ -26,7 +26,7 @@ pip install -r requirements.txt
 Tạo file `.env` hoặc sao chép từ `.env.example`:
 
 ```bash
-cd server-python
+cd server
 copy .env.example .env
 ```
 
@@ -44,14 +44,14 @@ PORT=5000
 ## Chạy server
 
 ```bash
-cd server-python
+cd server
 python run.py
 ```
 
 Hoặc dùng Uvicorn:
 
 ```bash
-cd server-python
+cd server
 uvicorn main:socket_app --host 0.0.0.0 --port 5000 --reload
 ```
 

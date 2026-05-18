@@ -4,7 +4,8 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client"
 
 // Lấy URL của backend từ biến môi trường (VITE_BACKEND_URL)
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+// Nếu không có biến môi trường, mặc định sử dụng localhost:5000 cho phát triển cục bộ.
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 // Cấu hình axios để luôn gửi yêu cầu đến backend này
 axios.defaults.baseURL = backendUrl;
 
@@ -123,4 +124,4 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     )
-}
+}
