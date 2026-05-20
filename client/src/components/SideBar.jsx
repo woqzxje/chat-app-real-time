@@ -17,10 +17,6 @@ const SideBar = () => {
 
   const filteredUsers = input ? users.filter((u) => u.fullName.toLowerCase().includes(input.toLowerCase())) : users;
 
-  useEffect(() => {
-    getUsers();
-  }, [onlineUser])
-
   return (
     <div className={`bg-[#8185B2]/10 h-full p-5 rounded-r-xl overflow-y-scroll text-white ${selectedUser ? "max-md:hidden" : ''}`}>
       <div className='pb-5'>
@@ -47,9 +43,9 @@ const SideBar = () => {
 
       {/* Thanh trạng thái offline/online */}
       <div className='flex flex-col'>
-        {filteredUsers.map((user, index) => (
+        {filteredUsers.map((user) => (
           <div onClick={() => { setSelectedUser(user); setUnseenMessages(prev => ({ ...prev, [user._id]: 0 })) }}
-            key={index} className={`relative flex items-center gap-2 p-2 pl-4 rounded cursor-pointer max-sm:text-sm ${selectedUser?._id === user._id && 'bg-[#282142]/50'}`}>
+            key={user._id} className={`relative flex items-center gap-2 p-2 pl-4 rounded cursor-pointer max-sm:text-sm ${selectedUser?._id === user._id && 'bg-[#282142]/50'}`}>
             <img src={user?.profilePic || assets.avatar_icon} alt="" className='w-8.75 aspect-square rounded-full' />
             <div className='flex flex-col leading-5'>
               <p>{user.fullName}</p>
