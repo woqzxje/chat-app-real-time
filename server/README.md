@@ -80,8 +80,10 @@ PORT=5000
 ## ▶️ Chạy server
 
 ```bash
-python run.py
+py run.py
 ```
+
+Nếu `python run.py` không khởi động do Windows launcher, dùng `py run.py`.
 
 hoặc dev mode:
 

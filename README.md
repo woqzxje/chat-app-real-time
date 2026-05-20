@@ -80,8 +80,10 @@ PORT=5000
 Khởi động backend:
 
 ```bash
-python run.py
+py run.py
 ```
+
+Nếu hệ thống Windows của bạn không chạy được `python run.py`, hãy dùng `py run.py`.
 
 hoặc dùng Uvicorn:
 

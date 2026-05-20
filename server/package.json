@@ -2,7 +2,7 @@
   "name": "chat-app-server",
   "private": true,
   "scripts": {
-    "dev": "python run.py",
-    "start": "python run.py"
+    "dev": "py run.py",
+    "start": "py run.py"
   }
 }
