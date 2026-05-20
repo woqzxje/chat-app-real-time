@@ -1,74 +1,167 @@
-# Backend Chat App
+# ⚙️ QuickChat Server
 
-Backend của dự án chat realtime sử dụng:
+Backend của QuickChat sử dụng **FastAPI** và **python-socketio** để cung cấp REST API và kết nối realtime. Server xử lý xác thực JWT, lưu trữ dữ liệu MongoDB, đồng bộ trạng thái online và upload ảnh qua Cloudinary.
+
+---
+
+## 🎯 Mục tiêu
+
+- Cung cấp API cho frontend chat realtime.
+- Bảo mật bằng JWT cho mọi endpoint cần authentication.
+- Quản lý tin nhắn, người dùng và trạng thái online.
+- Hỗ trợ upload ảnh chat qua Cloudinary.
+
+---
+
+## 🛠 Công nghệ chính
+
 - FastAPI
-- Socket.IO
-- MongoDB
-- Beanie (ODM cho MongoDB)
-- JWT để xác thực
-- Cloudinary để upload ảnh
+- Uvicorn
+- python-socketio
+- Beanie
+- Motor
+- PyJWT
+- bcrypt
+- Cloudinary
+- python-dotenv
+- python-multipart
 
-## Yêu cầu
+---
 
-- Python 3.11+
-- MongoDB đang chạy và truy cập được qua biến môi trường `MONGODB_URL`
-- Tài khoản Cloudinary
+## 📁 Cấu trúc thư mục
 
-## Cài đặt
+```
+server/
+├── app/
+│   ├── routes/
+│   │   ├── user_routes.py
+│   │   └── message_routes.py
+│   ├── models.py
+│   ├── database.py
+│   ├── socket_manager.py
+│   ├── dependencies.py
+│   ├── cloudinary_client.py
+│   └── utils.py
+├── main.py
+├── run.py
+├── requirements.txt
+├── .env.example
+└── README.md
+```
+
+---
+
+## ⚙️ Cài đặt
 
 ```bash
 cd server
 pip install -r requirements.txt
 ```
 
-## Biến môi trường
-
-Tạo file `.env` hoặc sao chép từ `.env.example`:
+Tạo file `.env` từ mẫu:
 
 ```bash
-cd server
 copy .env.example .env
 ```
 
-Nội dung mẫu:
+Nội dung `.env` cần có:
 
 ```env
 MONGODB_URL=mongodb://localhost:27017
-JWT_SECRET=your_jwt_secret
+JWT_SECRET=your_secret_key_here
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 PORT=5000
 ```
 
-## Chạy server
+---
+
+## ▶️ Chạy server
 
 ```bash
-cd server
 python run.py
 ```
 
-Hoặc dùng Uvicorn:
+hoặc dev mode:
 
 ```bash
-cd server
 uvicorn main:socket_app --host 0.0.0.0 --port 5000 --reload
 ```
 
-## API chính
+Server mặc định chạy tại `http://localhost:5000`.
 
-- `GET /api/status` - kiểm tra server đang chạy
-- `POST /api/auth/signup` - đăng ký tài khoản
-- `POST /api/auth/login` - đăng nhập
-- `GET /api/auth/check` - kiểm tra token và lấy thông tin user
-- `PUT /api/auth/update-profile` - cập nhật profile
-- `GET /api/messages/users` - lấy danh sách người dùng và tin nhắn chưa đọc
-- `GET /api/messages/{id}` - lấy lịch sử chat với một người dùng
-- `PUT /api/messages/mark/{id}` - đánh dấu tin nhắn đã xem
-- `POST /api/messages/send/{id}` - gửi tin nhắn đến người dùng khác
+---
 
-## Ghi chú
+## 📡 API chính
 
-- Header `token` được dùng để truyền JWT cho các endpoint bảo mật.
-- Socket.IO dùng để cập nhật trạng thái online và nhận tin nhắn realtime.
-- Dữ liệu ảnh upload được lưu trên Cloudinary.
+### Auth
+
+| Method | Endpoint | Mô tả |
+|---|---|---|
+| `POST` | `/api/auth/signup` | Đăng ký tài khoản |
+| `POST` | `/api/auth/login` | Đăng nhập và nhận token |
+| `GET` | `/api/auth/check` | Kiểm tra token |
+| `PUT` | `/api/auth/update-profile` | Cập nhật avatar, tên, bio |
+
+### Messages
+
+| Method | Endpoint | Mô tả |
+|---|---|---|
+| `GET` | `/api/messages/users` | Lấy danh sách user + tin chưa đọc |
+| `GET` | `/api/messages/{userId}` | Lấy lịch sử chat với user |
+| `POST` | `/api/messages/send/{userId}` | Gửi tin nhắn text/ảnh |
+| `PUT` | `/api/messages/mark/{userId}` | Đánh dấu tin nhắn đã đọc |
+
+> 🔐 Các endpoint `/api/auth/check`, `/api/auth/update-profile`, `/api/messages/*` yêu cầu JWT header `token: <jwt_token>`.
+
+---
+
+## 🔌 Socket.IO events
+
+| Event | Mô tả |
+|---|---|
+| `connect` | Client kết nối và đăng ký userId |
+| `disconnect` | Cập nhật trạng thái offline |
+| `getOnlineUsers` | Server gửi danh sách user online |
+| `newMessage` | Server gửi tin nhắn mới cho user nhận |
+
+---
+
+## 🗃️ Mô hình dữ liệu
+
+### User
+
+- `email`: string
+- `fullName`: string
+- `password`: string (hash bcrypt)
+- `profilePic`: string
+- `bio`: string
+- `createdAt`, `updatedAt`
+
+### Message
+
+- `senderId`: string
+- `receiverId`: string
+- `text`: string
+- `image`: string
+- `seen`: bool
+- `createdAt`, `updatedAt`
+
+---
+
+## 🌐 Triển khai trên Render
+
+1. Chọn repo, tạo Web Service mới.
+2. Root directory: `server`.
+3. Build command: `pip install -r requirements.txt`.
+4. Start command: `uvicorn main:socket_app --host 0.0.0.0 --port $PORT`.
+5. Cấu hình biến môi trường từ `.env`.
+
+---
+
+## 💡 Lưu ý
+
+- Không commit file `.env`.
+- Backend phải hoạt động trước khi frontend kết nối.
+- Nếu đổi cổng hoặc domain, cập nhật `VITE_BACKEND_URL` ở client.
