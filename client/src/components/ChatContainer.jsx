@@ -60,37 +60,37 @@ const ChatContainer = () => {
 
   // Nếu đã chọn người dùng để chat, hiển thị khung chat
   return selectedUser ? (
-    <div className='h-full overflow-scroll relative backdrop-blur-lg'>
+    <div className='flex flex-col h-full overflow-hidden relative backdrop-blur-lg'>
       
       {/* ------------ Phần tiêu đề Chat (Header) ------------- */}
-      <div className='flex items-center gap-3 py-3 mx-4 border-b border-stone-500'>
-        <img src={selectedUser.profilePic || assets.avatar_icon} alt="Avatar" className='w-8 rounded-full' />
-        <p className='flex-1 text-lg text-white flex items-center gap-2'>
+      <div className='flex items-center gap-4 py-4 mx-5 border-b border-stone-500'>
+        <img src={selectedUser.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 rounded-full' />
+        <p className='flex-1 text-xl md:text-2xl text-white flex items-center gap-3'>
           {selectedUser.fullName}
           {/* Hiển thị chấm xanh nếu người dùng này đang online */}
-          {onlineUser.includes(selectedUser._id) && <span className='w-2 h-2 rounded-full bg-green-500'></span>}
+          {onlineUser.includes(selectedUser._id) && <span className='w-3 h-3 rounded-full bg-green-500'></span>}
         </p>
         {/* Nút đóng khung chat trên thiết bị di động */}
-        <img onClick={() => setSelectedUser(null)} src={assets.arrow_icon} alt="Đóng" className='md:hidden max-w-7' />
-        <img src={assets.help_icon} alt="Trợ giúp" className='max-md:hidden max-w-5' />
+        <img onClick={() => setSelectedUser(null)} src={assets.arrow_icon} alt="Đóng" className='md:hidden w-8 cursor-pointer' />
+        <img src={assets.help_icon} alt="Trợ giúp" className='hidden md:block w-6' />
       </div>
 
       {/* ------------ Khu vực hiển thị tin nhắn (Chat Area) ------------- */}
-      <div className='flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 pb-6'>
+      <div className='flex flex-col flex-1 overflow-y-auto p-4 pb-28 gap-4 min-h-0'>
         {messages.map((msg, index) => (
-          <div key={index} className={`flex items-end gap-2 justify-end ${msg.senderId !== authUser._id && 'flex-row-reverse'}`}>
+          <div key={index} className={`flex items-end gap-3 justify-end ${msg.senderId !== authUser._id && 'flex-row-reverse'}`}>
             {/* Hiển thị ảnh nếu tin nhắn có ảnh */}
             {msg.image ? (
-              <img src={msg.image} alt="Sent content" className='max-w[230px] border border-gray-700 rounded-lg overflow-hidden mb-8' />
+              <img src={msg.image} alt="Sent content" className='max-w-[320px] border border-gray-700 rounded-2xl overflow-hidden mb-4' />
             ) : (
               /* Hiển thị văn bản tin nhắn */
-              <p className={`p-2 max-w-50 md:text-sm font-light rounded-lg mb-8 break-all bg-violet-500/30 text-white ${msg.senderId === authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>{msg.text}</p>
+              <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-4 break-all bg-violet-500/30 text-white ${msg.senderId === authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>{msg.text}</p>
             )}
             
             {/* Hiển thị ảnh đại diện nhỏ và thời gian gửi */}
-            <div className="text-center text-xs">
-              <img src={msg.senderId === authUser._id ? authUser?.profilePic || assets.avatar_icon : selectedUser?.profilePic || assets.avatar_icon} alt="User" className='rounded-full w-7' />
-              <p className='text-gray-500'>{formatMessageTime(msg.createdAt)}</p>
+            <div className="text-center text-xs md:text-sm">
+              <img src={msg.senderId === authUser._id ? authUser?.profilePic || assets.avatar_icon : selectedUser?.profilePic || assets.avatar_icon} alt="User" className='rounded-full w-9' />
+              <p className='text-gray-400'>{formatMessageTime(msg.createdAt)}</p>
             </div>
           </div>
         ))}
@@ -99,18 +99,18 @@ const ChatContainer = () => {
       </div>
 
       {/* ----------- Khu vực nhập tin nhắn ở dưới cùng (Bottom Area) ------------ */}
-      <div className='absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3'>
-        <div className='flex-1 flex items-center bg-gray-100/12 px-3 rounded-full'>
-          <input onChange={(e) => setInput(e.target.value)} value={input} onKeyDown={(e) => e.key === "Enter" ? handleSendMessage(e) : null} type="text" placeholder="Nhập tin nhắn..." className='flex-1 text-sm p-3 border-none rounded-lg outline-none text-white placeholder-gray-400' />
+      <div className='absolute bottom-0 left-0 right-0 flex items-center gap-4 p-4 bg-[#0b0b17]/70'>
+        <div className='flex-1 flex items-center bg-gray-100/12 px-4 rounded-full'>
+          <input onChange={(e) => setInput(e.target.value)} value={input} onKeyDown={(e) => e.key === "Enter" ? handleSendMessage(e) : null} type="text" placeholder="Nhập tin nhắn..." className='flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400' />
           
           {/* Nút chọn và gửi ảnh */}
           <input onChange={handleSendImage} type="file" id='image' accept='image/png, image/jpeg' hidden />
           <label htmlFor="image">
-            <img src={assets.gallery_icon} alt="Gửi ảnh" className='w-5 mr-2 cursor-pointer' />
+            <img src={assets.gallery_icon} alt="Gửi ảnh" className='w-6 mr-3 cursor-pointer' />
           </label>
         </div>
         {/* Nút gửi tin nhắn */}
-        <img onClick={handleSendMessage} src={assets.send_button} alt="Gửi" className='w-7 cursor-pointer' />
+        <img onClick={handleSendMessage} src={assets.send_button} alt="Gửi" className='w-9 cursor-pointer' />
       </div>
 
     </div>
