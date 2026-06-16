@@ -76,6 +76,10 @@ async def signup(body: SignupBody):
     )
     await new_user.insert()
 
+    # Thông báo real-time cho tất cả client đang online biết có user mới
+    from app.socket_manager import sio as _sio
+    await _sio.emit("newUserRegistered", _user_dict(new_user))
+
     # Tạo JWT Token cho phiên làm việc mới
     token = generate_token(str(new_user.id))
     return {
@@ -141,5 +145,9 @@ async def update_profile(
         update_data["updatedAt"] = datetime.utcnow()
         # Cập nhật thông tin vào MongoDB
         await current_user.set(update_data)
+
+        # Thông báo real-time cho tất cả client: avatar/tên/bio vừa thay đổi
+        from app.socket_manager import sio as _sio
+        await _sio.emit("userUpdated", _user_dict(current_user))
 
     return {"success": True, "user": _user_dict(current_user)}

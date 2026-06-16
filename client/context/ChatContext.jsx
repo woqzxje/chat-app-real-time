@@ -63,7 +63,7 @@ export const ChatProvider = ({ children }) => {
     // Lắng nghe tin nhắn mới từ Socket.IO
     const subscribeToMessages = () => {
         if (!socket) return;
-        
+
         // Khi nhận được sự kiện "receiveMessage" từ server
         socket.on("receiveMessage", (newMessage) => {
             // Chỉ thêm tin nhắn vào màn hình nếu tin nhắn đó là từ người đang chat cùng
@@ -91,6 +91,37 @@ export const ChatProvider = ({ children }) => {
         subscribeToMessages();
         return () => unSubscribeToMessages();
     }, [socket, selectedUser]);
+
+    // Lắng nghe real-time: user mới đăng ký hoặc user cập nhật avatar/tên
+    useEffect(() => {
+        if (!socket) return;
+
+        // Server emit khi có tài khoản mới -> thêm ngay vào sidebar
+        socket.on("newUserRegistered", (newUser) => {
+            if (!authUser || newUser._id === authUser._id) return;
+            setUsers((prev) => {
+                const exists = prev.some((u) => u._id === newUser._id);
+                return exists ? prev : [...prev, newUser];
+            });
+        });
+
+        // Server emit khi user đổi avatar/tên/bio -> cập nhật ngay, không cần reload
+        socket.on("userUpdated", (updatedUser) => {
+            // Cập nhật trong danh sách sidebar
+            setUsers((prev) =>
+                prev.map((u) => (u._id === updatedUser._id ? { ...u, ...updatedUser } : u))
+            );
+            // Nếu người đang chat cũng vừa thay đổi -> cập nhật luôn header/right panel
+            setSelectedUser((prev) =>
+                prev && prev._id === updatedUser._id ? { ...prev, ...updatedUser } : prev
+            );
+        });
+
+        return () => {
+            socket.off("newUserRegistered");
+            socket.off("userUpdated");
+        };
+    }, [socket, authUser]);
 
     // Khi ứng dụng khởi chạy hoặc authUser thay đổi, tải danh sách người dùng
     useEffect(() => {
