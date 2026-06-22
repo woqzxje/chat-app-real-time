@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
-const ChatContainer = () => {
+const ChatContainer = ({ startCall }) => {
 
   // Lấy dữ liệu tin nhắn, người dùng đang chọn và các hàm xử lý từ ChatContext
   const { messages, selectedUser, setSelectedUser, sendMessage, getMessages } = useContext(ChatContext)
@@ -34,7 +34,7 @@ const ChatContainer = () => {
       toast.error("Vui lòng chọn một file hình ảnh hợp lệ")
       return;
     }
-    
+
     // Đọc file ảnh dưới dạng base64 để gửi lên server
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -61,7 +61,7 @@ const ChatContainer = () => {
   // Nếu đã chọn người dùng để chat, hiển thị khung chat
   return selectedUser ? (
     <div className='flex flex-col h-full overflow-hidden relative backdrop-blur-lg'>
-      
+
       {/* ------------ Phần tiêu đề Chat (Header) ------------- */}
       <div className='flex items-center gap-4 py-4 mx-5 border-b border-stone-500'>
         <img src={selectedUser.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 rounded-full' />
@@ -72,6 +72,13 @@ const ChatContainer = () => {
         </p>
         {/* Nút đóng khung chat trên thiết bị di động */}
         <img onClick={() => setSelectedUser(null)} src={assets.arrow_icon} alt="Đóng" className='md:hidden w-8 cursor-pointer' />
+
+        {/* Nút gọi Video */}
+        <button onClick={() => startCall(selectedUser)} className='hidden md:flex items-center gap-1 text-white text-sm bg-violet-600 hover:bg-violet-700 px-3 py-1.5 rounded-full cursor-pointer'>
+          Video
+        </button>
+
+        {/* Nút Trợ giúp */}
         <img src={assets.help_icon} alt="Trợ giúp" className='hidden md:block w-6' />
       </div>
 
@@ -86,7 +93,7 @@ const ChatContainer = () => {
               /* Hiển thị văn bản tin nhắn */
               <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-4 break-all bg-violet-500/30 text-white ${msg.senderId === authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>{msg.text}</p>
             )}
-            
+
             {/* Hiển thị ảnh đại diện nhỏ và thời gian gửi */}
             <div className="text-center text-xs md:text-sm">
               <img src={msg.senderId === authUser._id ? authUser?.profilePic || assets.avatar_icon : selectedUser?.profilePic || assets.avatar_icon} alt="User" className='rounded-full w-9' />
@@ -102,7 +109,7 @@ const ChatContainer = () => {
       <div className='absolute bottom-0 left-0 right-0 flex items-center gap-4 p-4 bg-[#0b0b17]/70'>
         <div className='flex-1 flex items-center bg-gray-100/12 px-4 rounded-full'>
           <input onChange={(e) => setInput(e.target.value)} value={input} onKeyDown={(e) => e.key === "Enter" ? handleSendMessage(e) : null} type="text" placeholder="Nhập tin nhắn..." className='flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400' />
-          
+
           {/* Nút chọn và gửi ảnh */}
           <input onChange={handleSendImage} type="file" id='image' accept='image/png, image/jpeg' hidden />
           <label htmlFor="image">
