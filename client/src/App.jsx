@@ -12,7 +12,7 @@ const App = () => {
 
   return (
     // Đặt background cho toàn bộ ứng dụng
-    <div className="h-screen overflow-hidden bg-black">
+    <div className="h-screen overflow-hidden bg-[url('/bgImage.svg')] bg-contain">
       {/* Component hiển thị các thông báo (toast) */}
       <Toaster />
       

@@ -5,8 +5,3 @@ export function formatMessageTime(date) {
         hour12: false,
     })
 }
-
-// Simple cn utility — merges class names (falsy values are filtered out)
-export function cn(...classes) {
-    return classes.filter(Boolean).join(' ')
-}
