@@ -1,3 +1,7 @@
+/**
+ * VideoCallModal — Giao diện cuộc gọi Video
+ * Signaling được xử lý bởi server Python (socket_manager.py)
+ */
 export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVideoRef, onAnswer, onEnd, onReject }) {
     if (callState === "idle") return null;
 
