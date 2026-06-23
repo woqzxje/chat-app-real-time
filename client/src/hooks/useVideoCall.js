@@ -1,6 +1,6 @@
 /**
  * useVideoCall — Hook quản lý cuộc gọi Video (WebRTC)
- * 
+ *
  * Signaling được xử lý bởi server Python (socket_manager.py)
  * Sử dụng các sự kiện "video:*" để giao tiếp với server
  */
@@ -16,16 +16,32 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
     const [remoteUser, setRemoteUser] = useState(null);
 
     const localStreamRef = useRef(null);
-    const remoteStreamRef = useRef(null);
     const peerRef = useRef(null);
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
     const remoteUserRef = useRef(null);
 
+    // ✅ Hàng đợi lưu tạm ICE candidates nhận được trước khi peer sẵn sàng
+    const pendingCandidatesRef = useRef([]);
+    // ✅ Lưu tạm offer nhận được trước khi người nhận bấm "Trả lời"
+    const pendingOfferRef = useRef(null);
+
     // Đồng bộ remoteUser vào ref (tránh stale closure)
     useEffect(() => {
         remoteUserRef.current = remoteUser;
     }, [remoteUser]);
+
+    // ✅ Hàm áp dụng tất cả ICE candidates đang chờ vào peer
+    const flushPendingCandidates = async (peer) => {
+        for (const candidate of pendingCandidatesRef.current) {
+            try {
+                await peer.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) {
+                console.error("ICE candidate error:", e);
+            }
+        }
+        pendingCandidatesRef.current = [];
+    };
 
     // Tạo RTCPeerConnection và gắn các event handler
     const createPeer = useCallback((targetUserId) => {
@@ -43,7 +59,6 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
 
         // Khi nhận được track video/audio từ đối phương → hiển thị
         peer.ontrack = (e) => {
-            remoteStreamRef.current = e.streams[0];
             if (remoteVideoRef.current) {
                 remoteVideoRef.current.srcObject = e.streams[0];
             }
@@ -57,6 +72,7 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         setRemoteUser(targetUser);
         remoteUserRef.current = targetUser;
         setCallState("calling");
+        pendingCandidatesRef.current = [];
 
         // Lấy camera + microphone
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -91,18 +107,24 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         localStreamRef.current = stream;
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
-        const peer = createPeer(remoteUserRef.current?.id);
+        const targetId = remoteUserRef.current?.id;
+        const peer = createPeer(targetId);
         peerRef.current = peer;
         stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
-        // Set SDP Offer đã nhận từ server Python → tạo Answer → gửi lại
-        const pendingOffer = peerRef._pendingOffer;
+        // ✅ Set SDP Offer đã nhận → tạo Answer → gửi lại qua server Python
+        const pendingOffer = pendingOfferRef.current;
         if (pendingOffer) {
             await peer.setRemoteDescription(new RTCSessionDescription(pendingOffer));
+            pendingOfferRef.current = null;
+
+            // ✅ Áp dụng tất cả ICE candidates đã nhận trong lúc chờ
+            await flushPendingCandidates(peer);
+
             const answer = await peer.createAnswer();
             await peer.setLocalDescription(answer);
             socket.emit("video:answer", {
-                to_user_id: remoteUserRef.current?.id,
+                to_user_id: targetId,
                 answer,
             });
         }
@@ -114,8 +136,12 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         peerRef.current = null;
         localStreamRef.current?.getTracks().forEach((t) => t.stop());
         localStreamRef.current = null;
+        pendingCandidatesRef.current = [];
+        pendingOfferRef.current = null;
         if (socket && remoteUserRef.current) {
-            socket.emit("video:end", { to_user_id: remoteUserRef.current._id || remoteUserRef.current.id });
+            socket.emit("video:end", {
+                to_user_id: remoteUserRef.current._id || remoteUserRef.current.id,
+            });
         }
         setCallState("idle");
         setRemoteUser(null);
@@ -126,6 +152,8 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         if (remoteUserRef.current) {
             socket.emit("video:reject", { to_user_id: remoteUserRef.current.id });
         }
+        pendingCandidatesRef.current = [];
+        pendingOfferRef.current = null;
         setCallState("idle");
         setRemoteUser(null);
     }, [socket]);
@@ -138,29 +166,36 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         socket.on("video:incoming", ({ from_user_id, caller_name }) => {
             setRemoteUser({ id: from_user_id, name: caller_name });
             setCallState("incoming");
+            pendingCandidatesRef.current = [];
+            pendingOfferRef.current = null;
         });
 
-        // Nhận SDP Offer từ người gọi (qua server Python)
+        // ✅ Nhận SDP Offer → lưu tạm (chờ người nhận bấm "Trả lời")
         socket.on("video:offer", ({ offer }) => {
-            peerRef._pendingOffer = offer;
+            pendingOfferRef.current = offer;
         });
 
-        // Nhận SDP Answer từ người nhận (qua server Python) → kết nối hoàn tất
+        // Nhận SDP Answer → kết nối hoàn tất
         socket.on("video:answer", async ({ answer }) => {
             if (peerRef.current) {
                 await peerRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+                // ✅ Áp dụng ICE candidates mà caller nhận từ receiver trước đó
+                await flushPendingCandidates(peerRef.current);
                 setCallState("active");
             }
         });
 
-        // Nhận ICE Candidate (qua server Python)
+        // ✅ Nhận ICE Candidate → thêm vào peer hoặc lưu tạm nếu peer chưa sẵn sàng
         socket.on("video:ice-candidate", async ({ candidate }) => {
-            if (peerRef.current) {
+            if (peerRef.current && peerRef.current.remoteDescription) {
                 try {
                     await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
                 } catch (e) {
                     console.error("ICE candidate error:", e);
                 }
+            } else {
+                // ✅ Peer chưa sẵn sàng → lưu vào hàng đợi
+                pendingCandidatesRef.current.push(candidate);
             }
         });
 
@@ -170,12 +205,16 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
             peerRef.current = null;
             localStreamRef.current?.getTracks().forEach((t) => t.stop());
             localStreamRef.current = null;
+            pendingCandidatesRef.current = [];
+            pendingOfferRef.current = null;
             setCallState("idle");
             setRemoteUser(null);
         });
 
         // Cuộc gọi bị từ chối
         socket.on("video:reject", () => {
+            pendingCandidatesRef.current = [];
+            pendingOfferRef.current = null;
             setCallState("idle");
             setRemoteUser(null);
         });
