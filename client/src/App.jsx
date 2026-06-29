@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
 import { Toaster } from "react-hot-toast"
 import { AuthContext } from '../context/AuthContext'
+import { DarkGradientBg } from './components/ui/elegant-dark-pattern'
 
 const App = () => {
   // Lấy thông tin người dùng đã đăng nhập từ AuthContext
@@ -12,21 +13,21 @@ const App = () => {
 
   return (
     // Đặt background cho toàn bộ ứng dụng
-    <div className="h-screen overflow-hidden bg-[url('/bgImage.svg')] bg-contain">
+    <DarkGradientBg className="h-screen overflow-hidden">
       {/* Component hiển thị các thông báo (toast) */}
       <Toaster />
-      
+
       <Routes>
         {/* Nếu đã đăng nhập thì vào Trang chủ, nếu chưa thì chuyển hướng sang Đăng nhập */}
         <Route path="/" element={authUser ? <HomePage /> : <Navigate to="/login" />} />
-        
+
         {/* Nếu chưa đăng nhập thì hiện Trang đăng nhập, nếu rồi thì chuyển về Trang chủ */}
         <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
-        
+
         {/* Trang cá nhân chỉ dành cho người đã đăng nhập */}
         <Route path="/profile" element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
       </Routes>
-    </div>
+    </DarkGradientBg>
   )
 }
 
