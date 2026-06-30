@@ -66,10 +66,19 @@ export const ChatProvider = ({ children }) => {
 
         // Khi nhận được sự kiện "receiveMessage" từ server
         socket.on("receiveMessage", (newMessage) => {
-            // Chỉ thêm tin nhắn vào màn hình nếu tin nhắn đó là từ người đang chat cùng
-            if (newMessage.senderId === selectedUser?._id) {
-                setMessages((prev) => [...prev, newMessage]);
-            } else {
+            // Kiểm tra xem tin nhắn có thuộc cuộc trò chuyện hiện tại không
+            // (từ người đang chat HOẶC từ mình gửi cho người đang chat — ví dụ: lịch sử cuộc gọi)
+            const isFromSelected = newMessage.senderId === selectedUser?._id;
+            const isMineToSelected = newMessage.senderId === authUser?._id
+                                   && newMessage.receiverId === selectedUser?._id;
+
+            if (isFromSelected || isMineToSelected) {
+                setMessages((prev) => {
+                    // Tránh trùng lặp (khi server emit cho cả 2 bên)
+                    if (prev.some((m) => m._id === newMessage._id)) return prev;
+                    return [...prev, newMessage];
+                });
+            } else if (newMessage.senderId !== authUser?._id) {
                 // Tăng số tin nhắn chưa đọc từ người gửi khác
                 setUnseenMessages(prev => ({
                     ...prev,

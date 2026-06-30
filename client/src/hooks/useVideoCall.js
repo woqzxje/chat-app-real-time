@@ -76,10 +76,27 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         };
 
         peer.oniceconnectionstatechange = () => {
-            console.log("[WebRTC] ICE state:", peer.iceConnectionState);
-            // Tự động kết thúc cuộc gọi khi kết nối bị mất
-            if (peer.iceConnectionState === "failed" || peer.iceConnectionState === "disconnected") {
-                console.warn("[WebRTC] Connection lost, state:", peer.iceConnectionState);
+            const state = peer.iceConnectionState;
+            console.log("[WebRTC] ICE state:", state);
+            // Tự động kết thúc cuộc gọi khi kết nối bị mất (bên kia đã kết thúc)
+            if (state === "disconnected" || state === "failed" || state === "closed") {
+                console.warn("[WebRTC] Connection lost → auto-ending call, state:", state);
+                // Dọn dẹp tài nguyên (chỉ khi peer chưa bị dọn)
+                if (peerRef.current) {
+                    peerRef.current.oniceconnectionstatechange = null; // Tránh gọi lại
+                    peerRef.current.close();
+                    peerRef.current = null;
+                }
+                localStreamRef.current?.getTracks().forEach((t) => t.stop());
+                localStreamRef.current = null;
+                remoteStreamRef.current = null;
+                pendingCandidatesRef.current = [];
+                pendingOfferRef.current = null;
+                callStartTimeRef.current = null;
+                callerIdRef.current = null;
+                receiverIdRef.current = null;
+                setCallState("idle");
+                setRemoteUser(null);
             }
         };
 
