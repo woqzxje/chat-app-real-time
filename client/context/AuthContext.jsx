@@ -5,7 +5,8 @@ import { io } from "socket.io-client"
 
 // Lấy URL của backend từ biến môi trường (VITE_BACKEND_URL)
 // Nếu không có biến môi trường, mặc định sử dụng localhost:5000 cho phát triển cục bộ.
-const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+// Xoá dấu / ở cuối URL (nếu có) để tránh lỗi double-slash khi ghép đường dẫn API.
+const backendUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5000").replace(/\/+$/, '');
 // Cấu hình axios để luôn gửi yêu cầu đến backend này
 axios.defaults.baseURL = backendUrl;
 
