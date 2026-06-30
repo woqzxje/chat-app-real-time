@@ -1,28 +1,17 @@
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 from beanie import Document
 from pydantic import BaseModel, Field
 
-
-# ── Model thông tin từng file trong folder ────────────────────
-class FolderFile(BaseModel):
-    """Thông tin 1 file cụ thể bên trong folder."""
-    path: str           # Đường dẫn tương đối trong folder (vd: "src/main.py")
-    url: str            # URL Cloudinary của file này
-    file_size: int      # Kích thước file (bytes)
-    file_type: str      # image | video | document | archive | other
-
-
 # ── Attachment model ──────────────────────────────────────────
 class FileAttachment(BaseModel):
     """Thông tin file/folder đính kèm trong tin nhắn."""
-    url: str = ""                     # URL Cloudinary (để trống nếu là folder)
-    file_name: str                    # Tên file gốc hoặc tên folder
+    url: str                          # URL Cloudinary
+    file_name: str                    # Tên file gốc
     file_type: str                    # image | video | document | archive | folder | other
-    file_size: int                    # Kích thước tổng (bytes)
+    file_size: int                    # Kích thước bytes
     resource_type: str                # raw | image | video (Cloudinary resource type)
-    file_count: Optional[int] = None  # Số file bên trong folder
-    files: Optional[List[FolderFile]] = None  # Danh sách file trong folder (chỉ dùng cho folder)
+    file_count: Optional[int] = None  # Chỉ dùng khi gửi folder (số file bên trong)
 
 
 # Định nghĩa cấu trúc dữ liệu người dùng trong MongoDB (sử dụng Beanie ODM)
