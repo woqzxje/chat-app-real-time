@@ -23,6 +23,7 @@ def _msg_dict(msg: Message) -> dict:
         "text": msg.text,
         "image": msg.image,
         "attachment": msg.attachment.dict() if msg.attachment else None,
+        "callInfo": msg.callInfo.dict() if msg.callInfo else None,
         "seen": msg.seen,
         "createdAt": msg.createdAt.isoformat(),
         "updatedAt": msg.updatedAt.isoformat(),

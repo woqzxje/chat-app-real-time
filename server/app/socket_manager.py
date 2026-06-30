@@ -1,4 +1,5 @@
 import socketio
+from datetime import datetime
 
 # Khởi tạo server Async Socket.IO — tương thích với thư viện socket.io của Javascript
 sio = socketio.AsyncServer(
@@ -11,6 +12,22 @@ sio = socketio.AsyncServer(
 # Bản đồ lưu trữ trong bộ nhớ: { userId: socketId } 
 # Giúp server biết được user nào đang dùng socket ID nào để gửi tin nhắn chính xác
 user_socket_map: dict[str, str] = {}
+
+
+def _msg_dict(msg) -> dict:
+    """Chuyển đổi Message sang dictionary để gửi qua socket."""
+    return {
+        "_id": str(msg.id),
+        "senderId": msg.senderId,
+        "receiverId": msg.receiverId,
+        "text": msg.text,
+        "image": msg.image,
+        "attachment": msg.attachment.dict() if msg.attachment else None,
+        "callInfo": msg.callInfo.dict() if msg.callInfo else None,
+        "seen": msg.seen,
+        "createdAt": msg.createdAt.isoformat(),
+        "updatedAt": msg.updatedAt.isoformat(),
+    }
 
 
 @sio.event
@@ -109,20 +126,83 @@ async def on_video_ice_candidate(sid, data):
 @sio.on("video:end")
 async def on_video_end(sid, data):
     """
-    Kết thúc cuộc gọi video — thông báo cho bên còn lại.
-    data = { "to_user_id": "..." }
+    Kết thúc cuộc gọi video — thông báo cho bên còn lại và lưu lịch sử.
+    data = { "to_user_id": "...", "caller_id": "...", "receiver_id": "...",
+             "call_type": "completed"|"missed", "duration": <int giây> }
     """
     to_sid = user_socket_map.get(data["to_user_id"])
     if to_sid:
         await sio.emit("video:end", {}, to=to_sid)
 
+    # Lưu lịch sử cuộc gọi vào database
+    caller_id = data.get("caller_id", "")
+    receiver_id = data.get("receiver_id", "")
+    call_type = data.get("call_type", "completed")
+    duration = data.get("duration", 0)
+
+    if caller_id and receiver_id:
+        try:
+            from app.models import Message, CallInfo
+            call_msg = Message(
+                senderId=caller_id,
+                receiverId=receiver_id,
+                callInfo=CallInfo(
+                    call_type=call_type,
+                    duration=duration,
+                    caller_id=caller_id,
+                    receiver_id=receiver_id,
+                ),
+            )
+            await call_msg.insert()
+            msg_data = _msg_dict(call_msg)
+
+            # Gửi tin nhắn lịch sử cuộc gọi cho cả hai bên
+            caller_sid = user_socket_map.get(caller_id)
+            receiver_sid = user_socket_map.get(receiver_id)
+            if caller_sid:
+                await sio.emit("receiveMessage", msg_data, to=caller_sid)
+            if receiver_sid:
+                await sio.emit("receiveMessage", msg_data, to=receiver_sid)
+        except Exception as e:
+            print(f"[video:end] Lỗi lưu lịch sử cuộc gọi: {e}")
+
 
 @sio.on("video:reject")
 async def on_video_reject(sid, data):
     """
-    Từ chối cuộc gọi video — thông báo cho người gọi.
-    data = { "to_user_id": "..." }
+    Từ chối cuộc gọi video — thông báo cho người gọi và lưu lịch sử.
+    data = { "to_user_id": "...", "caller_id": "...", "receiver_id": "..." }
     """
     to_sid = user_socket_map.get(data["to_user_id"])
     if to_sid:
         await sio.emit("video:reject", {}, to=to_sid)
+
+    # Lưu lịch sử cuộc gọi bị từ chối
+    caller_id = data.get("caller_id", "")
+    receiver_id = data.get("receiver_id", "")
+
+    if caller_id and receiver_id:
+        try:
+            from app.models import Message, CallInfo
+            call_msg = Message(
+                senderId=caller_id,
+                receiverId=receiver_id,
+                callInfo=CallInfo(
+                    call_type="rejected",
+                    duration=0,
+                    caller_id=caller_id,
+                    receiver_id=receiver_id,
+                ),
+            )
+            await call_msg.insert()
+            msg_data = _msg_dict(call_msg)
+
+            # Gửi tin nhắn lịch sử cuộc gọi cho cả hai bên
+            caller_sid = user_socket_map.get(caller_id)
+            receiver_sid = user_socket_map.get(receiver_id)
+            if caller_sid:
+                await sio.emit("receiveMessage", msg_data, to=caller_sid)
+            if receiver_sid:
+                await sio.emit("receiveMessage", msg_data, to=receiver_sid)
+        except Exception as e:
+            print(f"[video:reject] Lỗi lưu lịch sử cuộc gọi: {e}")

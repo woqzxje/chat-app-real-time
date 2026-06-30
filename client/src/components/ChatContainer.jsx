@@ -235,6 +235,57 @@ const AttachmentPreview = ({ attachment, onClear }) => (
   </div>
 );
 
+// ── Hiển thị lịch sử cuộc gọi trong chat ────────────────────────────────────
+const formatCallDuration = (seconds) => {
+  if (!seconds || seconds <= 0) return '';
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+};
+
+const CallBubble = ({ callInfo, isSender, createdAt }) => {
+  if (!callInfo) return null;
+  const { call_type, duration } = callInfo;
+
+  const configs = {
+    completed: {
+      icon: '📞',
+      bg: 'bg-emerald-500/15 border-emerald-500/30',
+      label: 'Cuộc gọi video',
+      detail: formatCallDuration(duration),
+      textColor: 'text-emerald-400',
+    },
+    missed: {
+      icon: '📵',
+      bg: 'bg-red-500/15 border-red-500/30',
+      label: 'Cuộc gọi nhỡ',
+      detail: '',
+      textColor: 'text-red-400',
+    },
+    rejected: {
+      icon: '🚫',
+      bg: 'bg-orange-500/15 border-orange-500/30',
+      label: 'Cuộc gọi bị từ chối',
+      detail: '',
+      textColor: 'text-orange-400',
+    },
+  };
+  const cfg = configs[call_type] || configs.missed;
+
+  return (
+    <div className={`flex items-center gap-3 ${cfg.bg} border rounded-2xl px-4 py-3 mx-auto min-w-[220px] max-w-[300px]`}>
+      <span className="text-2xl">{cfg.icon}</span>
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-semibold ${cfg.textColor}`}>{cfg.label}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">
+          {cfg.detail && <span className="mr-2">{cfg.detail}</span>}
+          {createdAt && formatMessageTime(createdAt)}
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // ── Component chính ───────────────────────────────────────────────────────────
 const ChatContainer = ({ startCall }) => {
 
@@ -396,6 +447,17 @@ const ChatContainer = ({ startCall }) => {
       {/* ------------ Khu vực hiển thị tin nhắn (Chat Area) ------------- */}
       <div className="flex flex-col flex-1 overflow-y-auto p-4 pb-28 gap-4 min-h-0">
         {messages.map((msg, index) => (
+          // ── Tin nhắn lịch sử cuộc gọi → hiển thị giữa, không có avatar ──
+          msg.callInfo ? (
+            <div key={index} className="flex justify-center my-2">
+              <CallBubble
+                callInfo={msg.callInfo}
+                isSender={msg.senderId === authUser._id}
+                createdAt={msg.createdAt}
+              />
+            </div>
+          ) : (
+          // ── Tin nhắn bình thường ──────────────────────────────────────
           <div
             key={index}
             className={`flex items-end gap-3 justify-end ${msg.senderId !== authUser._id ? 'flex-row-reverse' : ''}`}
@@ -435,6 +497,7 @@ const ChatContainer = ({ startCall }) => {
               <p className="text-gray-400">{formatMessageTime(msg.createdAt)}</p>
             </div>
           </div>
+          )
         ))}
         {/* Điểm neo để tự động cuộn xuống */}
         <div ref={scrollEnd} />

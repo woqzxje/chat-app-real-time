@@ -26,6 +26,15 @@ class FileAttachment(BaseModel):
     files: Optional[List[FileItem]] = None  # Danh sách file (chỉ dùng cho folder)
 
 
+# ── Thông tin cuộc gọi video ─────────────────────────────────
+class CallInfo(BaseModel):
+    """Lưu lịch sử cuộc gọi video trong tin nhắn."""
+    call_type: str                    # "completed" | "missed" | "rejected"
+    duration: int = 0                 # Thời lượng cuộc gọi (giây), 0 nếu missed/rejected
+    caller_id: str                    # ID người gọi
+    receiver_id: str                  # ID người nhận
+
+
 # Định nghĩa cấu trúc dữ liệu người dùng trong MongoDB (sử dụng Beanie ODM)
 class User(Document):
     """
@@ -53,6 +62,7 @@ class Message(Document):
     text: Optional[str] = None  # Nội dung tin nhắn dạng văn bản
     image: Optional[str] = None # Đường dẫn ảnh (nếu tin nhắn là hình ảnh)
     attachment: Optional[FileAttachment] = None
+    callInfo: Optional[CallInfo] = None  # Thông tin cuộc gọi video (nếu là tin nhắn lịch sử cuộc gọi)
     seen: bool = False  # Trạng thái đã đọc hay chưa
     createdAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm gửi tin nhắn
     updatedAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm cập nhật (nếu có)

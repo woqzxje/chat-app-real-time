@@ -29,6 +29,11 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
     const pendingCandidatesRef = useRef([]);
     const pendingOfferRef = useRef(null);
 
+    // ── Theo dõi thời gian cuộc gọi ─────────────────────────────
+    const callStartTimeRef = useRef(null);   // Thời điểm cuộc gọi bắt đầu (active)
+    const callerIdRef = useRef(null);        // ID người gọi
+    const receiverIdRef = useRef(null);      // ID người nhận
+
     useEffect(() => { remoteUserRef.current = remoteUser; }, [remoteUser]);
 
     // Gắn remote stream vào video element khi ref sẵn sàng
@@ -87,6 +92,23 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         return u?._id || u?.id || null;
     }, []);
 
+    // ── Hàm dọn dẹp tài nguyên WebRTC (dùng chung) ─────────────
+    const cleanupCall = useCallback(() => {
+        peerRef.current?.close();
+        peerRef.current = null;
+        localStreamRef.current?.getTracks().forEach((t) => t.stop());
+        localStreamRef.current = null;
+        remoteStreamRef.current = null;
+        pendingCandidatesRef.current = [];
+        pendingOfferRef.current = null;
+    }, []);
+
+    // ── Tính thời lượng cuộc gọi (giây) ─────────────────────────
+    const getCallDuration = useCallback(() => {
+        if (!callStartTimeRef.current) return 0;
+        return Math.round((Date.now() - callStartTimeRef.current) / 1000);
+    }, []);
+
     const startCall = async (targetUser) => {
         setRemoteUser(targetUser);
         remoteUserRef.current = targetUser;
@@ -94,6 +116,11 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         pendingCandidatesRef.current = [];
         pendingOfferRef.current = null;
         remoteStreamRef.current = null;
+        callStartTimeRef.current = null;
+
+        // Lưu caller/receiver cho lịch sử cuộc gọi
+        callerIdRef.current = currentUserId;
+        receiverIdRef.current = targetUser._id || targetUser.id;
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -131,6 +158,9 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         setCallState("active");
         remoteStreamRef.current = null;
 
+        // Ghi nhận thời điểm cuộc gọi bắt đầu
+        callStartTimeRef.current = Date.now();
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localStreamRef.current = stream;
@@ -167,31 +197,45 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
     };
 
     const endCall = useCallback(() => {
-        peerRef.current?.close();
-        peerRef.current = null;
-        localStreamRef.current?.getTracks().forEach((t) => t.stop());
-        localStreamRef.current = null;
-        remoteStreamRef.current = null;
-        pendingCandidatesRef.current = [];
-        pendingOfferRef.current = null;
+        const duration = getCallDuration();
+        const callType = callStartTimeRef.current ? "completed" : "missed";
+
+        cleanupCall();
+
         if (socket && remoteUserRef.current) {
             const targetId = remoteUserRef.current._id || remoteUserRef.current.id;
-            socket.emit("video:end", { to_user_id: targetId });
+            socket.emit("video:end", {
+                to_user_id: targetId,
+                caller_id: callerIdRef.current || currentUserId,
+                receiver_id: receiverIdRef.current || targetId,
+                call_type: callType,
+                duration,
+            });
         }
+
+        callStartTimeRef.current = null;
+        callerIdRef.current = null;
+        receiverIdRef.current = null;
         setCallState("idle");
         setRemoteUser(null);
-    }, [socket]);
+    }, [socket, currentUserId, cleanupCall, getCallDuration]);
 
     const rejectCall = useCallback(() => {
         if (socket && remoteUserRef.current) {
             const targetId = remoteUserRef.current._id || remoteUserRef.current.id;
-            socket.emit("video:reject", { to_user_id: targetId });
+            socket.emit("video:reject", {
+                to_user_id: targetId,
+                caller_id: targetId,                   // Người gọi = remote user
+                receiver_id: currentUserId,             // Người nhận = mình (đang từ chối)
+            });
         }
-        pendingCandidatesRef.current = [];
-        pendingOfferRef.current = null;
+
+        cleanupCall();
+        callerIdRef.current = null;
+        receiverIdRef.current = null;
         setCallState("idle");
         setRemoteUser(null);
-    }, [socket]);
+    }, [socket, currentUserId, cleanupCall]);
 
     useEffect(() => {
         if (!socket) return;
@@ -203,6 +247,10 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
             setCallState("incoming");
             pendingCandidatesRef.current = [];
             pendingOfferRef.current = null;
+
+            // Lưu caller/receiver cho lịch sử
+            callerIdRef.current = from_user_id;
+            receiverIdRef.current = currentUserId;
         };
 
         const onOffer = ({ offer, from_user_id }) => {
@@ -235,6 +283,8 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
                 await peerRef.current.setRemoteDescription(new RTCSessionDescription(answer));
                 await flushPendingCandidates(peerRef.current);
                 setCallState("active");
+                // Ghi nhận thời điểm cuộc gọi bắt đầu cho phía người gọi
+                callStartTimeRef.current = Date.now();
             }
         };
 
@@ -249,19 +299,19 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
 
         const onEnd = () => {
             console.log("[VideoCall] Remote ended call");
-            peerRef.current?.close(); peerRef.current = null;
-            localStreamRef.current?.getTracks().forEach((t) => t.stop());
-            localStreamRef.current = null; remoteStreamRef.current = null;
-            pendingCandidatesRef.current = []; pendingOfferRef.current = null;
+            cleanupCall();
+            callStartTimeRef.current = null;
+            callerIdRef.current = null;
+            receiverIdRef.current = null;
             setCallState("idle"); setRemoteUser(null);
         };
 
         const onReject = () => {
             console.log("[VideoCall] Call rejected");
-            peerRef.current?.close(); peerRef.current = null;
-            localStreamRef.current?.getTracks().forEach((t) => t.stop());
-            localStreamRef.current = null; remoteStreamRef.current = null;
-            pendingCandidatesRef.current = []; pendingOfferRef.current = null;
+            cleanupCall();
+            callStartTimeRef.current = null;
+            callerIdRef.current = null;
+            receiverIdRef.current = null;
             setCallState("idle"); setRemoteUser(null);
         };
 
@@ -280,7 +330,7 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
             socket.off("video:end", onEnd);
             socket.off("video:reject", onReject);
         };
-    }, [socket]);
+    }, [socket, currentUserId]);
 
     return { callState, remoteUser, localVideoRef, remoteVideoRef, startCall, answerCall, endCall, rejectCall };
 }
