@@ -66,22 +66,24 @@ const downloadFolder = async (folderName, files) => {
         files: files.map((f) => ({ url: f.url, file_name: f.file_name })),
       }),
     });
-    if (!res.ok) throw new Error('Download folder failed');
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      throw new Error(errText || `HTTP ${res.status}`);
+    }
+    // Ép kiểu blob là application/zip để browser không hiểu nhầm sang text
+    const rawBlob = await res.blob();
+    const zipBlob = new Blob([rawBlob], { type: 'application/zip' });
+    const blobUrl = URL.createObjectURL(zipBlob);
     const a = document.createElement('a');
     a.href = blobUrl;
     a.download = `${folderName}.zip`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(blobUrl);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
   } catch (err) {
     console.error('Download folder error:', err);
-    // Fallback: tải từng file riêng lẻ
-    for (const f of files) {
-      await proxyDownload(f.url, basename(f.file_name));
-    }
+    toast.error('Tải folder thất bại, vui lòng thử lại!');
   }
 };
 
