@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from app.database import connect_db
 from app.routes import user_router, message_router
 from app.socket_manager import sio
+from app.routes.file_routes import router as file_router
 
 # ── Lifespan: Xử lý các sự kiện khi ứng dụng khởi chạy và kết thúc ──────────────────
 @asynccontextmanager
@@ -37,6 +38,8 @@ app.add_middleware(
 app.include_router(user_router,    prefix="/api/auth")
 # Route liên quan đến tin nhắn và danh sách người dùng
 app.include_router(message_router, prefix="/api/messages")
+# Route liên quan đến file và folder
+app.include_router(file_router,    prefix="/api/files")
 
 # Route kiểm tra trạng thái hoạt động của server
 @app.get("/api/status")

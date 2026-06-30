@@ -1,7 +1,18 @@
 from typing import Optional
 from datetime import datetime
 from beanie import Document
-from pydantic import Field
+from pydantic import BaseModel, Field
+
+# ── Attachment model ──────────────────────────────────────────
+class FileAttachment(BaseModel):
+    """Thông tin file/folder đính kèm trong tin nhắn."""
+    url: str                          # URL Cloudinary
+    file_name: str                    # Tên file gốc
+    file_type: str                    # image | video | document | archive | folder | other
+    file_size: int                    # Kích thước bytes
+    resource_type: str                # raw | image | video (Cloudinary resource type)
+    file_count: Optional[int] = None  # Chỉ dùng khi gửi folder (số file bên trong)
+
 
 # Định nghĩa cấu trúc dữ liệu người dùng trong MongoDB (sử dụng Beanie ODM)
 class User(Document):
@@ -29,6 +40,7 @@ class Message(Document):
     receiverId: str     # ID của người nhận (dạng chuỗi ObjectId)
     text: Optional[str] = None  # Nội dung tin nhắn dạng văn bản
     image: Optional[str] = None # Đường dẫn ảnh (nếu tin nhắn là hình ảnh)
+    attachment: Optional[FileAttachment] = None
     seen: bool = False  # Trạng thái đã đọc hay chưa
     createdAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm gửi tin nhắn
     updatedAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm cập nhật (nếu có)

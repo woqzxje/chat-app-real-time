@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-from app.models import User, Message
+from app.models import User, Message, FileAttachment
 from app.dependencies import get_current_user
 from app.cloudinary_client import upload_image
 from app.socket_manager import sio, user_socket_map
@@ -22,6 +22,7 @@ def _msg_dict(msg: Message) -> dict:
         "receiverId": msg.receiverId,
         "text": msg.text,
         "image": msg.image,
+        "attachment": msg.attachment.dict() if msg.attachment else None,
         "seen": msg.seen,
         "createdAt": msg.createdAt.isoformat(),
         "updatedAt": msg.updatedAt.isoformat(),
@@ -114,6 +115,7 @@ class SendMessageBody(BaseModel):
     """Cấu trúc dữ liệu gửi tin nhắn (có thể là chữ hoặc ảnh)"""
     text: Optional[str] = None
     image: Optional[str] = None
+    attachment: Optional[FileAttachment] = None
 
 
 @message_router.post("/send/{id}")
@@ -136,6 +138,7 @@ async def send_message(
         receiverId=id,
         text=body.text,
         image=image_url,
+        attachment=body.attachment,
     )
     await new_msg.insert()
 
