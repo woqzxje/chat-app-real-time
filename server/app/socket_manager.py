@@ -68,13 +68,13 @@ async def on_video_offer(sid, data):
     """
     Bước 2: Người gọi gửi SDP Offer (mô tả khả năng media).
     Server chuyển tiếp Offer đến người nhận.
-    data = { "to_user_id": "...", "offer": <SDP Offer object> }
+    data = { "to_user_id": "...", "from_user_id": "...", "offer": <SDP Offer object> }
     """
     to_sid = user_socket_map.get(data["to_user_id"])
     if to_sid:
         await sio.emit("video:offer", {
             "offer": data["offer"],
-            "from_sid": sid,
+            "from_user_id": data.get("from_user_id", ""),
         }, to=to_sid)
 
 

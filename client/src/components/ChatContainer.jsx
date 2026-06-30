@@ -33,6 +33,31 @@ const AttachmentBubble = ({ attachment }) => {
   if (!attachment) return null;
   const { url, file_name, file_type, file_size, file_count } = attachment;
 
+  // Hàm tải file qua proxy backend (khắc phục cross-origin download)
+  const handleDownload = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({ url, name: file_name });
+      const res = await fetch(`${BACKEND_URL}/api/files/download?${params}`, {
+        headers: { token },
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = file_name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      // Fallback: mở link trực tiếp trên tab mới
+      window.open(url, '_blank');
+    }
+  };
+
   // Nếu là ảnh thì hiển thị preview trực tiếp, click để xem full
   if (file_type === 'image') {
     return (
@@ -48,12 +73,9 @@ const AttachmentBubble = ({ attachment }) => {
 
   // Các loại file khác (document, archive, folder, video...) → hiển thị card tải xuống
   return (
-    <a
-      href={url}
-      download={file_name}
-      target="_blank"
-      rel="noreferrer"
-      className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition-colors rounded-2xl px-4 py-3 mb-1 min-w-[200px] max-w-[280px]"
+    <button
+      onClick={handleDownload}
+      className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition-colors rounded-2xl px-4 py-3 mb-1 min-w-[200px] max-w-[280px] cursor-pointer text-left"
     >
       <FileIcon type={file_type} />
       <div className="flex-1 min-w-0">
@@ -68,7 +90,7 @@ const AttachmentBubble = ({ attachment }) => {
       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
       </svg>
-    </a>
+    </button>
   );
 };
 

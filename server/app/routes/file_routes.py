@@ -1,7 +1,8 @@
 # server/app/routes/file_routes.py
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from typing import List
-import uuid, zipfile, io
+import uuid, zipfile, io, httpx
 
 import cloudinary.uploader
 
@@ -102,3 +103,34 @@ async def upload_folder(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload folder thất bại: {str(e)}")
+
+
+@router.get("/download")
+async def download_file(
+    url: str = Query(..., description="URL file trên Cloudinary cần tải"),
+    name: str = Query("file", description="Tên file khi tải về"),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Proxy download: Tải file từ Cloudinary rồi stream về cho client.
+    Lý do cần proxy: Thuộc tính HTML `download` không hoạt động với cross-origin URL.
+    """
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=60.0) as client:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                raise HTTPException(status_code=502, detail="Không thể tải file từ nguồn")
+
+            # Xác định content-type từ response gốc
+            content_type = resp.headers.get("content-type", "application/octet-stream")
+
+            return StreamingResponse(
+                iter([resp.content]),
+                media_type=content_type,
+                headers={
+                    "Content-Disposition": f'attachment; filename="{name}"',
+                    "Content-Length": str(len(resp.content)),
+                },
+            )
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=502, detail=f"Lỗi kết nối tải file: {str(e)}")

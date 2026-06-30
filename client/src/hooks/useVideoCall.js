@@ -5,15 +5,13 @@ const ICE_SERVERS = {
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun3.l.google.com:19302" },
+        { urls: "stun:stun4.l.google.com:19302" },
+        // TURN servers miễn phí (backup khi P2P qua NAT thất bại)
         {
-            urls: "turn:openrelay.metered.ca:80",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-        },
-        {
-            urls: "turn:openrelay.metered.ca:443",
-            username: "openrelayproject",
-            credential: "openrelayproject",
+            urls: "turn:relay1.expressturn.com:443",
+            username: "efFKTGOVKNYNJVYHLI",
+            credential: "KmkiISaT8K89Jgrp",
         },
     ],
 };
@@ -45,7 +43,7 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         pendingCandidatesRef.current = [];
         for (const c of candidates) {
             try { await peer.addIceCandidate(new RTCIceCandidate(c)); }
-            catch (e) { console.error("ICE error:", e); }
+            catch (e) { console.error("ICE flush error:", e); }
         }
     };
 
@@ -74,59 +72,97 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
 
         peer.oniceconnectionstatechange = () => {
             console.log("[WebRTC] ICE state:", peer.iceConnectionState);
+            // Tự động kết thúc cuộc gọi khi kết nối bị mất
+            if (peer.iceConnectionState === "failed" || peer.iceConnectionState === "disconnected") {
+                console.warn("[WebRTC] Connection lost, state:", peer.iceConnectionState);
+            }
         };
 
         return peer;
     }, [socket]);
+
+    // Hàm lấy userId từ remoteUser (hỗ trợ cả _id và id)
+    const getRemoteUserId = useCallback(() => {
+        const u = remoteUserRef.current;
+        return u?._id || u?.id || null;
+    }, []);
 
     const startCall = async (targetUser) => {
         setRemoteUser(targetUser);
         remoteUserRef.current = targetUser;
         setCallState("calling");
         pendingCandidatesRef.current = [];
+        pendingOfferRef.current = null;
         remoteStreamRef.current = null;
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localStreamRef.current = stream;
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localStreamRef.current = stream;
+            if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
-        const peer = createPeer(targetUser._id);
-        peerRef.current = peer;
-        stream.getTracks().forEach((t) => peer.addTrack(t, stream));
+            const targetId = targetUser._id || targetUser.id;
+            const peer = createPeer(targetId);
+            peerRef.current = peer;
+            stream.getTracks().forEach((t) => peer.addTrack(t, stream));
 
-        socket.emit("video:initiate", {
-            to_user_id: targetUser._id,
-            from_user_id: currentUserId,
-            caller_name: currentUserName || "Người dùng",
-        });
+            // Bước 1: Thông báo cho người nhận rằng có cuộc gọi đến
+            socket.emit("video:initiate", {
+                to_user_id: targetId,
+                from_user_id: currentUserId,
+                caller_name: currentUserName || "Người dùng",
+            });
 
-        const offer = await peer.createOffer();
-        await peer.setLocalDescription(offer);
-        socket.emit("video:offer", { to_user_id: targetUser._id, offer });
+            // Bước 2: Tạo và gửi SDP Offer
+            const offer = await peer.createOffer();
+            await peer.setLocalDescription(offer);
+            socket.emit("video:offer", {
+                to_user_id: targetId,
+                from_user_id: currentUserId,
+                offer,
+            });
+        } catch (err) {
+            console.error("[VideoCall] startCall error:", err);
+            setCallState("idle");
+            setRemoteUser(null);
+        }
     };
 
     const answerCall = async () => {
         setCallState("active");
         remoteStreamRef.current = null;
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        localStreamRef.current = stream;
-        if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localStreamRef.current = stream;
+            if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
-        const targetId = remoteUserRef.current?.id;
-        const peer = createPeer(targetId);
-        peerRef.current = peer;
-        stream.getTracks().forEach((t) => peer.addTrack(t, stream));
+            // Sử dụng helper để lấy userId đúng (hỗ trợ cả _id và id)
+            const targetId = getRemoteUserId();
+            if (!targetId) {
+                console.error("[VideoCall] answerCall: no remote user ID found");
+                return;
+            }
 
-        const offer = pendingOfferRef.current;
-        if (offer) {
-            await peer.setRemoteDescription(new RTCSessionDescription(offer));
-            pendingOfferRef.current = null;
-            await flushPendingCandidates(peer);
+            const peer = createPeer(targetId);
+            peerRef.current = peer;
+            stream.getTracks().forEach((t) => peer.addTrack(t, stream));
 
-            const answer = await peer.createAnswer();
-            await peer.setLocalDescription(answer);
-            socket.emit("video:answer", { to_user_id: targetId, answer });
+            const offer = pendingOfferRef.current;
+            if (offer) {
+                await peer.setRemoteDescription(new RTCSessionDescription(offer));
+                pendingOfferRef.current = null;
+                await flushPendingCandidates(peer);
+
+                const answer = await peer.createAnswer();
+                await peer.setLocalDescription(answer);
+                socket.emit("video:answer", { to_user_id: targetId, answer });
+            } else {
+                console.warn("[VideoCall] answerCall: no pending offer found, waiting...");
+            }
+        } catch (err) {
+            console.error("[VideoCall] answerCall error:", err);
+            setCallState("idle");
+            setRemoteUser(null);
         }
     };
 
@@ -139,7 +175,8 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         pendingCandidatesRef.current = [];
         pendingOfferRef.current = null;
         if (socket && remoteUserRef.current) {
-            socket.emit("video:end", { to_user_id: remoteUserRef.current._id || remoteUserRef.current.id });
+            const targetId = remoteUserRef.current._id || remoteUserRef.current.id;
+            socket.emit("video:end", { to_user_id: targetId });
         }
         setCallState("idle");
         setRemoteUser(null);
@@ -147,7 +184,8 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
 
     const rejectCall = useCallback(() => {
         if (socket && remoteUserRef.current) {
-            socket.emit("video:reject", { to_user_id: remoteUserRef.current.id });
+            const targetId = remoteUserRef.current._id || remoteUserRef.current.id;
+            socket.emit("video:reject", { to_user_id: targetId });
         }
         pendingCandidatesRef.current = [];
         pendingOfferRef.current = null;
@@ -158,50 +196,89 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on("video:incoming", ({ from_user_id, caller_name }) => {
-            setRemoteUser({ id: from_user_id, name: caller_name });
+        const onIncoming = ({ from_user_id, caller_name }) => {
+            console.log("[VideoCall] Incoming call from:", from_user_id, caller_name);
+            // Lưu cả _id và id để đảm bảo tương thích
+            setRemoteUser({ _id: from_user_id, id: from_user_id, name: caller_name });
             setCallState("incoming");
             pendingCandidatesRef.current = [];
             pendingOfferRef.current = null;
-        });
+        };
 
-        socket.on("video:offer", ({ offer }) => {
+        const onOffer = ({ offer, from_user_id }) => {
+            console.log("[VideoCall] Received offer from:", from_user_id);
             pendingOfferRef.current = offer;
-        });
 
-        socket.on("video:answer", async ({ answer }) => {
+            // Nếu đã có peer (đã answer trước khi offer đến - race condition)
+            // thì xử lý offer ngay lập tức
+            if (peerRef.current && !peerRef.current.remoteDescription) {
+                (async () => {
+                    try {
+                        await peerRef.current.setRemoteDescription(new RTCSessionDescription(offer));
+                        pendingOfferRef.current = null;
+                        await flushPendingCandidates(peerRef.current);
+
+                        const answer = await peerRef.current.createAnswer();
+                        await peerRef.current.setLocalDescription(answer);
+                        const targetId = from_user_id || remoteUserRef.current?._id || remoteUserRef.current?.id;
+                        socket.emit("video:answer", { to_user_id: targetId, answer });
+                    } catch (err) {
+                        console.error("[VideoCall] Late offer processing error:", err);
+                    }
+                })();
+            }
+        };
+
+        const onAnswer = async ({ answer }) => {
+            console.log("[VideoCall] Received answer");
             if (peerRef.current) {
                 await peerRef.current.setRemoteDescription(new RTCSessionDescription(answer));
                 await flushPendingCandidates(peerRef.current);
                 setCallState("active");
             }
-        });
+        };
 
-        socket.on("video:ice-candidate", async ({ candidate }) => {
+        const onIceCandidate = async ({ candidate }) => {
             if (peerRef.current && peerRef.current.remoteDescription) {
                 try { await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate)); }
                 catch (e) { console.error("ICE error:", e); }
             } else {
                 pendingCandidatesRef.current.push(candidate);
             }
-        });
+        };
 
-        socket.on("video:end", () => {
+        const onEnd = () => {
+            console.log("[VideoCall] Remote ended call");
             peerRef.current?.close(); peerRef.current = null;
             localStreamRef.current?.getTracks().forEach((t) => t.stop());
             localStreamRef.current = null; remoteStreamRef.current = null;
             pendingCandidatesRef.current = []; pendingOfferRef.current = null;
             setCallState("idle"); setRemoteUser(null);
-        });
+        };
 
-        socket.on("video:reject", () => {
+        const onReject = () => {
+            console.log("[VideoCall] Call rejected");
+            peerRef.current?.close(); peerRef.current = null;
+            localStreamRef.current?.getTracks().forEach((t) => t.stop());
+            localStreamRef.current = null; remoteStreamRef.current = null;
             pendingCandidatesRef.current = []; pendingOfferRef.current = null;
             setCallState("idle"); setRemoteUser(null);
-        });
+        };
+
+        socket.on("video:incoming", onIncoming);
+        socket.on("video:offer", onOffer);
+        socket.on("video:answer", onAnswer);
+        socket.on("video:ice-candidate", onIceCandidate);
+        socket.on("video:end", onEnd);
+        socket.on("video:reject", onReject);
 
         return () => {
-            ["video:incoming","video:offer","video:answer","video:ice-candidate","video:end","video:reject"]
-                .forEach((e) => socket.off(e));
+            socket.off("video:incoming", onIncoming);
+            socket.off("video:offer", onOffer);
+            socket.off("video:answer", onAnswer);
+            socket.off("video:ice-candidate", onIceCandidate);
+            socket.off("video:end", onEnd);
+            socket.off("video:reject", onReject);
         };
     }, [socket]);
 
