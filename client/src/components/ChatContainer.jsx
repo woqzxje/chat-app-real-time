@@ -28,37 +28,84 @@ const formatFileSize = (bytes) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+// ── Hàm tải file qua proxy backend (dùng chung) ─────────────────────────────
+const proxyDownload = async (fileUrl, fileName) => {
+  try {
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams({ url: fileUrl, name: fileName });
+    const res = await fetch(`${BACKEND_URL}/api/files/download?${params}`, {
+      headers: { token },
+    });
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    window.open(fileUrl, '_blank');
+  }
+};
+
+// ── Hàm tải toàn bộ folder (backend nén zip rồi trả về) ─────────────────────
+const downloadFolder = async (folderName, files) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${BACKEND_URL}/api/files/download-folder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        token,
+      },
+      body: JSON.stringify({
+        folder_name: folderName,
+        files: files.map((f) => ({ url: f.url, file_name: f.file_name })),
+      }),
+    });
+    if (!res.ok) throw new Error('Download folder failed');
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `${folderName}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error('Download folder error:', err);
+    // Fallback: tải từng file riêng lẻ
+    for (const f of files) {
+      await proxyDownload(f.url, basename(f.file_name));
+    }
+  }
+};
+
+// ── Lấy tên file ngắn từ đường dẫn ──────────────────────────────────────────
+const basename = (path) => path?.replace(/\\/g, '/').split('/').pop() || path;
+
 // ── Hiển thị file đính kèm bên trong bubble tin nhắn ─────────────────────────
 const AttachmentBubble = ({ attachment }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   if (!attachment) return null;
-  const { url, file_name, file_type, file_size, file_count } = attachment;
+  const { url, file_name, file_type, file_size, file_count, files } = attachment;
 
-  // Hàm tải file qua proxy backend (khắc phục cross-origin download)
-  const handleDownload = async (e) => {
-    e.preventDefault();
+  const handleDownloadAll = async (e) => {
+    e.stopPropagation();
+    setDownloading(true);
     try {
-      const token = localStorage.getItem('token');
-      const params = new URLSearchParams({ url, name: file_name });
-      const res = await fetch(`${BACKEND_URL}/api/files/download?${params}`, {
-        headers: { token },
-      });
-      if (!res.ok) throw new Error('Download failed');
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = file_name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      // Fallback: mở link trực tiếp trên tab mới
-      window.open(url, '_blank');
+      await downloadFolder(file_name, files);
+    } finally {
+      setDownloading(false);
     }
   };
 
-  // Nếu là ảnh thì hiển thị preview trực tiếp, click để xem full
+  // Nếu là ảnh đơn → hiển thị preview
   if (file_type === 'image') {
     return (
       <a href={url} target="_blank" rel="noreferrer">
@@ -71,10 +118,84 @@ const AttachmentBubble = ({ attachment }) => {
     );
   }
 
-  // Các loại file khác (document, archive, folder, video...) → hiển thị card tải xuống
+  // ── Nếu là FOLDER → hiển thị danh sách file mở rộng ────────────────────────
+  if (file_type === 'folder' && files && files.length > 0) {
+
+    return (
+      <div className="bg-white/10 rounded-2xl mb-1 min-w-[220px] max-w-[320px] overflow-hidden">
+        {/* Header folder — click để mở rộng */}
+        <div className="flex items-center gap-3 w-full px-4 py-3">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-3 flex-1 min-w-0 hover:bg-white/5 transition-colors cursor-pointer text-left"
+          >
+            <span className="text-xl">📁</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{file_name}</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {formatFileSize(file_size)} · {file_count || files.length} file
+              </p>
+            </div>
+            {/* Mũi tên expand/collapse */}
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {/* Nút tải toàn bộ folder */}
+          <button
+            onClick={handleDownloadAll}
+            disabled={downloading}
+            title="Tải toàn bộ folder"
+            className="flex-shrink-0 p-1.5 rounded-lg bg-violet-500/30 hover:bg-violet-500/50 text-white transition-colors disabled:opacity-40 cursor-pointer"
+          >
+            {downloading ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {/* Danh sách file bên trong */}
+        {expanded && (
+          <div className="border-t border-white/10 max-h-[200px] overflow-y-auto">
+            {files.map((f, i) => (
+              <button
+                key={i}
+                onClick={() => proxyDownload(f.url, basename(f.file_name))}
+                className="flex items-center gap-2 w-full px-4 py-2 hover:bg-white/10 transition-colors cursor-pointer text-left"
+              >
+                <FileIcon type={f.file_type} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-white truncate" title={f.file_name}>
+                    {basename(f.file_name)}
+                  </p>
+                  <p className="text-[10px] text-gray-500">{formatFileSize(f.file_size)}</p>
+                </div>
+                <svg className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── File đơn (document, archive, video...) → card tải xuống ─────────────────
   return (
     <button
-      onClick={handleDownload}
+      onClick={() => proxyDownload(url, file_name)}
       className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition-colors rounded-2xl px-4 py-3 mb-1 min-w-[200px] max-w-[280px] cursor-pointer text-left"
     >
       <FileIcon type={file_type} />
@@ -82,11 +203,9 @@ const AttachmentBubble = ({ attachment }) => {
         <p className="text-sm font-medium text-white truncate">{file_name}</p>
         <p className="text-xs text-gray-400 mt-0.5">
           {formatFileSize(file_size)}
-          {/* Nếu là folder thì hiện thêm số file bên trong */}
           {file_count && ` · ${file_count} file`}
         </p>
       </div>
-      {/* Nút tải xuống */}
       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
       </svg>
@@ -215,7 +334,7 @@ const ChatContainer = ({ startCall }) => {
   };
 
   // Hàm xử lý khi người dùng chọn một folder
-  // Toàn bộ file trong folder được zip lại phía server và upload lên Cloudinary
+  // Từng file trong folder sẽ được upload riêng lẻ lên Cloudinary
   const handleFolderChange = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
