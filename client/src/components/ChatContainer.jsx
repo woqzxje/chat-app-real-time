@@ -38,7 +38,10 @@ const proxyDownload = async (fileUrl, fileName) => {
     });
     if (!res.ok) throw new Error('Download failed');
     const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
+    // Ép kiểu blob thành octet-stream để browser luôn trigger download
+    // (tránh trường hợp browser hiển thị inline thay vì tải về)
+    const forceBlob = new Blob([blob], { type: 'application/octet-stream' });
+    const blobUrl = URL.createObjectURL(forceBlob);
     const a = document.createElement('a');
     a.href = blobUrl;
     a.download = fileName;
@@ -47,43 +50,47 @@ const proxyDownload = async (fileUrl, fileName) => {
     a.remove();
     URL.revokeObjectURL(blobUrl);
   } catch (err) {
-    window.open(fileUrl, '_blank');
+    // Fallback: mở trực tiếp URL gốc với fl_attachment để Cloudinary force download
+    const dlUrl = fileUrl.includes('/upload/')
+      ? fileUrl.replace('/upload/', '/upload/fl_attachment/')
+      : fileUrl;
+    window.open(dlUrl, '_blank');
   }
 };
 
-// ── Hàm tải toàn bộ folder (backend nén zip rồi trả về) ─────────────────────
+// ── Hàm tải toàn bộ folder (tải từng file riêng lẻ, giữ nguyên file gốc) ───
 const downloadFolder = async (folderName, files) => {
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${BACKEND_URL}/api/files/download-folder`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        token,
-      },
-      body: JSON.stringify({
-        folder_name: folderName,
-        files: files.map((f) => ({ url: f.url, file_name: f.file_name })),
-      }),
-    });
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      throw new Error(errText || `HTTP ${res.status}`);
+  if (!files || files.length === 0) {
+    toast.error('Không có file nào trong folder!');
+    return;
+  }
+
+  toast.success(`Đang tải ${files.length} file từ "${folderName}"...`);
+
+  let successCount = 0;
+  let failCount = 0;
+
+  // Tải từng file một, có delay nhỏ giữa các lần để tránh browser chặn
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    const fileName = basename(f.file_name);
+    try {
+      await proxyDownload(f.url, fileName);
+      successCount++;
+      // Delay 500ms giữa các file để browser xử lý kịp
+      if (i < files.length - 1) {
+        await new Promise(r => setTimeout(r, 500));
+      }
+    } catch (err) {
+      console.error(`Tải file thất bại: ${fileName}`, err);
+      failCount++;
     }
-    // Ép kiểu blob là application/zip để browser không hiểu nhầm sang text
-    const rawBlob = await res.blob();
-    const zipBlob = new Blob([rawBlob], { type: 'application/zip' });
-    const blobUrl = URL.createObjectURL(zipBlob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = `${folderName}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-  } catch (err) {
-    console.error('Download folder error:', err);
-    toast.error('Tải folder thất bại, vui lòng thử lại!');
+  }
+
+  if (failCount > 0) {
+    toast.error(`Tải xong ${successCount}/${files.length} file. ${failCount} file bị lỗi.`);
+  } else {
+    toast.success(`Đã tải xong ${successCount} file!`);
   }
 };
 

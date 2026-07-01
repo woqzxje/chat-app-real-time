@@ -145,13 +145,15 @@ async def download_file(
     Lý do cần proxy: Thuộc tính HTML `download` không hoạt động với cross-origin URL.
     """
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=60.0) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=120.0) as client:
             resp = await client.get(url)
             if resp.status_code != 200:
                 raise HTTPException(status_code=502, detail="Không thể tải file từ nguồn")
 
-            # Xác định content-type từ response gốc
-            content_type = resp.headers.get("content-type", "application/octet-stream")
+            # Luôn dùng application/octet-stream để browser trigger download
+            # (đặc biệt quan trọng cho .zip, .rar, .7z... mà browser có thể
+            # cố hiển thị inline hoặc chặn)
+            content_type = "application/octet-stream"
 
             return StreamingResponse(
                 iter([resp.content]),
@@ -159,6 +161,7 @@ async def download_file(
                 headers={
                     "Content-Disposition": f'attachment; filename="{name}"',
                     "Content-Length": str(len(resp.content)),
+                    "Access-Control-Expose-Headers": "Content-Disposition",
                 },
             )
     except httpx.RequestError as e:
