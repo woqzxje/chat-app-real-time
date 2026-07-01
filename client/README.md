@@ -1,127 +1,72 @@
 # 🖥️ QuickChat Client
 
-Frontend của QuickChat, xây dựng bằng **React 19 + Vite + Tailwind CSS**. Client xử lý giao diện chat, xác thực người dùng, kết nối Socket.IO và gọi API backend để gửi nhận dữ liệu.
+Phần Frontend của **QuickChat**, xây dựng bằng **React 19 + Vite + Tailwind CSS v4**. Client xử lý giao diện chat thời gian thực, cuộc gọi Video Call WebRTC, đính kèm và tải thư mục tập tin, cùng thiết kế Glassmorphism hiện đại cho trang đăng nhập/đăng ký.
 
 ---
 
-## 🎯 Mục tiêu
+## 🎯 Tính năng nổi bật ở Client
 
-- Cung cấp giao diện chat 1-1 rõ ràng và nhanh.
-- Đồng bộ trạng thái người dùng và tin nhắn thời gian thực.
-- Kết nối an toàn với backend bằng JWT.
-
----
-
-## 🛠 Công nghệ chính
-
-- React 19
-- Vite
-- Tailwind CSS v4
-- React Router DOM
-- Axios
-- socket.io-client
-- react-hot-toast
+- **Login/Register Glassmorphism**: Sử dụng React & CSS state để tạo hiệu ứng xoay 3D (3D Tilt) và viền sáng phát quang chạy xung quanh mượt mà, hạn chế lỗi hook của `framer-motion` trên một số phiên bản React cũ.
+- **Tải tệp & Thư mục an toàn**: Tích hợp trình tải proxy tự động xử lý CORS giúp người dùng tải trực tiếp các tệp `.zip`, `.rar` và các cấu trúc thư mục mà không gặp sự cố chặn của trình duyệt.
+- **Cuộc gọi Video Call trực tuyến**: Giao diện modal đàm thoại trực tiếp với các tín hiệu điều phối thời gian thực, thông báo lịch sử cuộc gọi trực quan.
+- **Sidebar thông minh**: Cập nhật trạng thái hoạt động (online/offline) và bộ đếm tin nhắn chưa đọc của từng người dùng tức thì.
 
 ---
 
-## 📁 Cấu trúc thư mục
+## 🛠 Công nghệ sử dụng
 
-```
-client/
-├── public/                # Tài nguyên tĩnh
-├── src/
-│   ├── components/        # UI components chính
-│   │   ├── ChatContainer.jsx
-│   │   ├── SideBar.jsx
-│   │   └── RightSidebar.jsx
-│   ├── context/           # Quản lý trạng thái auth và chat
-│   │   ├── AuthContext.jsx
-│   │   └── ChatContext.jsx
-│   ├── pages/             # Các trang chính
-│   │   ├── HomePage.jsx
-│   │   ├── LoginPage.jsx
-│   │   └── ProfilePage.jsx
-│   ├── lib/               # Axios instance, helper
-│   ├── App.jsx            # Router chính
-│   └── main.jsx           # Entry point
-├── .env                   # Biến môi trường
-├── package.json
-├── vite.config.js
-└── vercel.json            # Cấu hình triển khai Vercel
-```
+- **React 19** & **Vite**
+- **Tailwind CSS v4** (thiết kế tối giản và hiện đại)
+- **Framer Motion** & **Lucide React** (cho giao diện Glassmorphic)
+- **Socket.IO Client** (kết nối thời gian thực)
+- **Axios** (gửi yêu cầu API)
+- **React Hot Toast** (thông báo popup trực quan)
 
 ---
 
-## ⚙️ Cài đặt
+## ⚙️ Cấu hình & Chạy cục bộ
 
+Cài đặt các thư viện liên quan:
 ```bash
-cd client
 npm install
 ```
 
-Tạo file `.env`:
-
+Tạo tệp cấu hình môi trường `.env` trong thư mục `client/`:
 ```env
 VITE_BACKEND_URL=http://localhost:5000
 ```
 
----
-
-## ▶️ Chạy dự án
-
+Khởi động dự án ở chế độ phát triển:
 ```bash
 npm run dev
 ```
 
 Build production:
-
 ```bash
 npm run build
 ```
 
-Preview build:
-
-```bash
-npm run preview
-```
-
 ---
 
-## 🔄 Luồng hoạt động
+## 📡 Các API Backend sử dụng
 
-1. Người dùng vào app và đăng nhập/đăng ký.
-2. `AuthContext` lưu token JWT và thông tin user.
-3. `ChatContext` kết nối Socket.IO để nhận tin nhắn và trạng thái online.
-4. UI cập nhật tức thì khi có tin nhắn mới hoặc thay đổi trạng thái người dùng.
-
----
-
-## 📡 API backend sử dụng
-
-| Method | Endpoint | Mục đích |
+| Phương thức | Endpoint | Mục đích |
 |---|---|---|
-| `POST` | `/api/auth/signup` | Đăng ký |
-| `POST` | `/api/auth/login` | Đăng nhập |
-| `GET` | `/api/auth/check` | Kiểm tra token |
-| `PUT` | `/api/auth/update-profile` | Cập nhật profile |
-| `GET` | `/api/messages/users` | Lấy danh sách user |
-| `GET` | `/api/messages/{id}` | Lấy lịch sử chat |
-| `POST` | `/api/messages/send/{id}` | Gửi tin nhắn |
-| `PUT` | `/api/messages/mark/{id}` | Đánh dấu tin nhắn đã đọc |
+| `POST` | `/api/auth/signup` | Đăng ký tài khoản |
+| `POST` | `/api/auth/login` | Đăng nhập hệ thống |
+| `GET` | `/api/auth/check` | Xác thực token hiện tại |
+| `PUT` | `/api/auth/update-profile` | Cập nhật hồ sơ |
+| `GET` | `/api/messages/users` | Lấy danh sách người dùng & tin chưa đọc |
+| `GET` | `/api/messages/{userId}` | Lấy lịch sử nhắn tin |
+| `POST` | `/api/messages/send/{userId}` | Gửi tin nhắn / hình ảnh / tệp tin |
+| `GET` | `/api/files/download` | Tải tập tin qua proxy (tránh CORS) |
+| `POST` | `/api/files/download-folder` | Tải thư mục dạng nén ZIP |
 
 ---
 
 ## 🌐 Triển khai lên Vercel
 
-1. Chọn root directory là `client`.
-2. Build command: `npm run build`.
-3. Output directory: `dist`.
-4. Thêm biến môi trường `VITE_BACKEND_URL` trỏ tới backend deploy.
-
----
-
-## 💡 Lưu ý
-
-- Không commit file `.env`.
-- Nếu backend nằm ở URL khác, cập nhật `VITE_BACKEND_URL` tương ứng.
-- Frontend sẽ không hoạt động nếu backend chưa chạy.
+1. Thư mục gốc (Root directory): `client`
+2. Lệnh build (Build command): `npm run build`
+3. Thư mục đầu ra (Output directory): `dist`
+4. Biến môi trường: `VITE_BACKEND_URL` (trỏ đến API backend đã triển khai)

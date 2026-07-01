@@ -1,169 +1,104 @@
 # ⚙️ QuickChat Server
 
-Backend của QuickChat sử dụng **FastAPI** và **python-socketio** để cung cấp REST API và kết nối realtime. Server xử lý xác thực JWT, lưu trữ dữ liệu MongoDB, đồng bộ trạng thái online và upload ảnh qua Cloudinary.
+Phần Backend của **QuickChat**, sử dụng **FastAPI** và **python-socketio** để cung cấp REST API và kết nối WebSocket thời gian thực. Server chịu trách nhiệm quản lý xác thực JWT, cơ sở dữ liệu MongoDB (thông qua Beanie ODM), upload tài nguyên lên Cloudinary và điều phối signaling cuộc gọi Video WebRTC.
 
 ---
 
-## 🎯 Mục tiêu
+## 🎯 Tính năng nổi bật ở Server
 
-- Cung cấp API cho frontend chat realtime.
-- Bảo mật bằng JWT cho mọi endpoint cần authentication.
-- Quản lý tin nhắn, người dùng và trạng thái online.
-- Hỗ trợ upload ảnh chat qua Cloudinary.
-
----
-
-## 🛠 Công nghệ chính
-
-- FastAPI
-- Uvicorn
-- python-socketio
-- Beanie
-- Motor
-- PyJWT
-- bcrypt
-- Cloudinary
-- python-dotenv
-- python-multipart
+- **Xác thực an toàn với JWT**: Bảo vệ các API nhạy cảm bằng token xác thực truyền qua header.
+- **WebSocket Realtime**: Xử lý trạng thái online/offline, đồng bộ tin nhắn tức thì và điều phối WebRTC SDP/ICE candidates để thực hiện cuộc gọi video.
+- **Hệ thống Quản lý Tệp tin đính kèm**:
+  - Gửi ảnh đơn lẻ (lưu trữ Cloudinary).
+  - Tải lên thư mục (giữ nguyên cấu trúc thư mục con và tải lên Cloudinary dưới dạng tài nguyên thô).
+  - **Proxy Download Endpoint**: Endpoint `/api/files/download` tải tệp từ Cloudinary và stream trực tiếp về client với tiêu đề `application/octet-stream` giúp ngăn chặn lỗi CORS và buộc trình duyệt tải tệp xuống thay vì mở inline (áp dụng tốt cho cả tệp .zip, .rar).
+  - **Download Folder Endpoint**: Endpoint `/api/files/download-folder` đóng gói các tệp tin trong thư mục thành định dạng `.zip` và stream trực tiếp về.
 
 ---
 
-## 📁 Cấu trúc thư mục
+## 🛠 Công nghệ sử dụng
 
-```
-server/
-├── app/
-│   ├── routes/
-│   │   ├── user_routes.py
-│   │   └── message_routes.py
-│   ├── models.py
-│   ├── database.py
-│   ├── socket_manager.py
-│   ├── dependencies.py
-│   ├── cloudinary_client.py
-│   └── utils.py
-├── main.py
-├── run.py
-├── requirements.txt
-├── .env.example
-└── README.md
-```
+- **FastAPI** & **Uvicorn**
+- **python-socketio** (quản lý WebSocket chất lượng cao)
+- **Beanie ODM** & **Motor** (giao tiếp MongoDB)
+- **PyJWT** (mã hóa & xác thực JWT)
+- **Bcrypt** (băm mật khẩu)
+- **Cloudinary** (lưu trữ đám mây cho tệp tin)
+- **HTTPX** (giao tiếp bất đồng bộ cho proxy download)
 
 ---
 
-## ⚙️ Cài đặt
+## ⚙️ Cài đặt & Khởi chạy
 
+Cài đặt các gói Python cần thiết:
 ```bash
-cd server
 pip install -r requirements.txt
 ```
 
-Tạo file `.env` từ mẫu:
-
-```bash
-copy .env.example .env
-```
-
-Nội dung `.env` cần có:
-
+Tạo tệp cấu hình môi trường `.env` trong thư mục `server/`:
 ```env
 MONGODB_URL=mongodb://localhost:27017
-JWT_SECRET=your_secret_key_here
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+JWT_SECRET=your_jwt_secret_key
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 PORT=5000
 ```
 
----
-
-## ▶️ Chạy server
-
+Khởi động Server:
 ```bash
 py run.py
-```
-
-Nếu `python run.py` không khởi động do Windows launcher, dùng `py run.py`.
-
-hoặc dev mode:
-
-```bash
+# Hoặc sử dụng Uvicorn trực tiếp:
 uvicorn main:socket_app --host 0.0.0.0 --port 5000 --reload
 ```
 
-Server mặc định chạy tại `http://localhost:5000`.
-
 ---
 
-## 📡 API chính
+## 📡 Chi tiết REST API
 
-### Auth
+### Xác thực & Người dùng (`/api/auth`)
 
-| Method | Endpoint | Mô tả |
+| Phương thức | Endpoint | Mô tả |
 |---|---|---|
-| `POST` | `/api/auth/signup` | Đăng ký tài khoản |
-| `POST` | `/api/auth/login` | Đăng nhập và nhận token |
-| `GET` | `/api/auth/check` | Kiểm tra token |
-| `PUT` | `/api/auth/update-profile` | Cập nhật avatar, tên, bio |
+| `POST` | `/signup` | Đăng ký tài khoản mới |
+| `POST` | `/login` | Đăng nhập và nhận JWT token |
+| `GET` | `/check` | Xác thực token và lấy thông tin cá nhân |
+| `PUT` | `/update-profile` | Cập nhật ảnh đại diện, tên hiển thị, bio |
 
-### Messages
+### Tin nhắn (`/api/messages`)
 
-| Method | Endpoint | Mô tả |
+| Phương thức | Endpoint | Mô tả |
 |---|---|---|
-| `GET` | `/api/messages/users` | Lấy danh sách user + tin chưa đọc |
-| `GET` | `/api/messages/{userId}` | Lấy lịch sử chat với user |
-| `POST` | `/api/messages/send/{userId}` | Gửi tin nhắn text/ảnh |
-| `PUT` | `/api/messages/mark/{userId}` | Đánh dấu tin nhắn đã đọc |
+| `GET` | `/users` | Lấy danh sách người dùng và số tin chưa xem |
+| `GET` | `/{userId}` | Lấy lịch sử trò chuyện với người dùng cụ thể |
+| `POST` | `/send/{userId}` | Gửi tin nhắn mới (chữ, hình ảnh, hoặc file) |
+| `PUT` | `/mark/{userId}` | Đánh dấu các tin nhắn của cuộc trò chuyện đã xem |
 
-> 🔐 Các endpoint `/api/auth/check`, `/api/auth/update-profile`, `/api/messages/*` yêu cầu JWT header `token: <jwt_token>`.
+### Quản lý Tệp tin (`/api/files`)
 
----
-
-## 🔌 Socket.IO events
-
-| Event | Mô tả |
-|---|---|
-| `connect` | Client kết nối và đăng ký userId |
-| `disconnect` | Cập nhật trạng thái offline |
-| `getOnlineUsers` | Server gửi danh sách user online |
-| `newMessage` | Server gửi tin nhắn mới cho user nhận |
+| Phương thức | Endpoint | Mô tả |
+|---|---|---|
+| `POST` | `/upload` | Tải lên một tệp tin đơn lẻ |
+| `POST` | `/upload-folder` | Tải lên cấu trúc thư mục con |
+| `GET` | `/download` | Proxy tải xuống tệp qua Backend (ép octet-stream) |
+| `POST` | `/download-folder` | Đóng gói thư mục thành tập tin ZIP và tải xuống |
 
 ---
 
-## 🗃️ Mô hình dữ liệu
+## 🔌 Socket.IO Events chính
 
-### User
-
-- `email`: string
-- `fullName`: string
-- `password`: string (hash bcrypt)
-- `profilePic`: string
-- `bio`: string
-- `createdAt`, `updatedAt`
-
-### Message
-
-- `senderId`: string
-- `receiverId`: string
-- `text`: string
-- `image`: string
-- `seen`: bool
-- `createdAt`, `updatedAt`
+- `connect`: Kết nối WebSocket, đăng ký ánh xạ `userId` -> `socketId`.
+- `disconnect`: Hủy đăng ký, cập nhật trạng thái offline và phát thông báo danh sách online mới.
+- `getOnlineUsers`: Phát danh sách ID người dùng đang online.
+- `newMessage`: Điều phối tin nhắn mới đến socket người nhận.
+- `callUser`, `answerCall`, `iceCandidate`, `endCall`: Các sự kiện phục vụ điều phối cuộc gọi video WebRTC.
 
 ---
 
-## 🌐 Triển khai trên Render
+## 🌐 Triển khai lên Render
 
-1. Chọn repo, tạo Web Service mới.
-2. Root directory: `server`.
-3. Build command: `pip install -r requirements.txt`.
-4. Start command: `uvicorn main:socket_app --host 0.0.0.0 --port $PORT`.
-5. Cấu hình biến môi trường từ `.env`.
-
----
-
-## 💡 Lưu ý
-
-- Không commit file `.env`.
-- Backend phải hoạt động trước khi frontend kết nối.
-- Nếu đổi cổng hoặc domain, cập nhật `VITE_BACKEND_URL` ở client.
+1. Loại dịch vụ: **Web Service**
+2. Thư mục gốc: `server`
+3. Lệnh build (Build command): `pip install -r requirements.txt`
+4. Lệnh start (Start command): `uvicorn main:socket_app --host 0.0.0.0 --port $PORT`
+5. Khai báo đầy đủ các biến môi trường cấu hình từ `.env` vào phần cấu hình của Render.

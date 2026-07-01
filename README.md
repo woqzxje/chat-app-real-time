@@ -1,143 +1,104 @@
-# 💬 QuickChat — Ứng dụng nhắn tin thời gian thực
+# 💬 QuickChat — Ứng dụng nhắn tin thời gian thực cao cấp
 
-**QuickChat** là dự án chat 1-1 theo thời gian thực với kiến trúc **Client – Server tách biệt**. Frontend là SPA React + Vite, backend cung cấp REST API và Socket.IO chạy bằng FastAPI. Dự án hướng tới giao tiếp nhanh, quản lý hồ sơ người dùng, trạng thái online và gửi ảnh trong cuộc hội thoại.
-
----
-
-## 🎯 Mục tiêu dự án
-
-- Xây dựng ứng dụng chat hiện đại với trải nghiệm realtime.
-- Tách riêng frontend và backend để dễ triển khai, mở rộng.
-- Sử dụng JWT cho xác thực và Socket.IO để đồng bộ tin nhắn, trạng thái online.
-- Hỗ trợ gửi văn bản và ảnh, đồng thời cập nhật thông tin hồ sơ.
+**QuickChat** là một ứng dụng chat 1-1 thời gian thực được xây dựng dựa trên kiến trúc tách biệt giữa **Client (React + Vite)** và **Server (FastAPI + Socket.IO)**. Dự án được thiết kế với giao diện người dùng hiện đại, nhiều hiệu ứng động mượt mà và các tính năng truyền tải tập tin cao cấp.
 
 ---
 
-## 🧩 Kiến trúc tổng quan
+## 🎯 Điểm nổi bật & Tính năng chính
+
+- **Giao diện Modern Glassmorphism**: Trang đăng nhập và đăng ký được thiết kế với hiệu ứng kính mờ cao cấp, hiệu ứng nghiêng 3D (3D Tilt Effect) động theo con trỏ chuột, và viền sáng phát quang chuyển động (Animated Border Light Beams).
+- **Trải nghiệm Realtime mượt mà**: Đồng bộ hóa tin nhắn, thông báo cuộc gọi và danh sách người dùng online tức thì thông qua Socket.IO.
+- **Cuộc gọi Video Call (WebRTC)**: Tích hợp cuộc gọi video trực tuyến giữa hai người dùng với giao diện modal chuyên nghiệp, xử lý ngắt kết nối an toàn và hiển thị lịch sử cuộc gọi trực quan.
+- **Truyền tải File & Thư mục**:
+  - Hỗ trợ gửi ảnh trực tiếp (preview nhanh).
+  - Đính kèm tập tin riêng lẻ (PDF, Word, Excel, ZIP, RAR, v.v.).
+  - **Gửi và tải cả thư mục (Folder)**: Giữ nguyên cấu trúc thư mục con bên trong. Khi tải xuống, hệ thống tự động đóng gói zip an toàn qua proxy từ Cloudinary giúp giải quyết lỗi tải file archive (.zip, .rar).
+- **Trình tải an toàn (Proxy Download)**: Toàn bộ quá trình tải tập tin được xử lý qua proxy backend giúp bỏ qua chính sách chặn CORS của trình duyệt đối với các liên kết từ bên ngoài (Cloudinary).
+
+---
+
+## 🧩 Kiến trúc hệ thống
 
 ```
-CLIENT (React + Vite)  <=>  SERVER (FastAPI + Socket.IO)
-     │                            │
-     │ HTTP / REST API            │
-     │ WebSocket / Socket.IO      │
-     │                            │
-     ▼                            ▼
-  Browser                     MongoDB + Cloudinary
+CLIENT (React 19 + Vite)  <======>  SERVER (FastAPI + Socket.IO)
+      │                                     │
+      │ - HTTP / REST API (JWT Auth)         │
+      │ - WebSockets (Socket.IO realtime)   │
+      │                                     │
+      ▼                                     ▼
+   Browser                              MongoDB + Cloudinary
 ```
 
-### Thành phần chính
+### Phân bổ thư mục
 
-- `client/`: giao diện người dùng, quản lý auth, kết nối Socket.IO
-- `server/`: backend xử lý API, auth JWT, socket realtime, upload ảnh
-- `render.yaml`: cấu hình deployment cho Render
+- `client/`: Mã nguồn giao diện người dùng React, quản lý Auth Context, Chat Context và Socket.IO Client.
+- `server/`: REST API FastAPI, quản lý Socket.IO Server, điều phối WebRTC signaling và lưu trữ tệp Cloudinary.
+- `render.yaml`: Tệp cấu hình tự động triển khai hệ thống lên dịch vụ Render.
 
 ---
 
-## ✨ Tính năng chính
+## ⚙️ Hướng dẫn cài đặt & Chạy cục bộ
 
-- Đăng ký và đăng nhập bằng email/password
-- Xác thực JWT cho mọi API cần bảo mật
-- Danh sách người dùng và trạng thái online realtime
-- Gửi tin nhắn 1-1 ngay lập tức qua Socket.IO
-- Hỗ trợ gửi ảnh trong cuộc trò chuyện
-- Cập nhật avatar, tên hiển thị và bio
-- Đánh dấu tin nhắn đã đọc
+### 1. Cấu hình & Chạy Backend (Server)
 
----
-
-## 📁 Cấu trúc thư mục
-
-```
-chat-app-re/
-├── client/          # Frontend React + Vite
-├── server/          # Backend FastAPI + Socket.IO
-├── render.yaml      # Cấu hình deploy Render
-└── README.md        # Hướng dẫn tổng quát
-```
-
----
-
-## ⚙️ Chạy cục bộ
-
-### 1. Backend
-
+Di chuyển vào thư mục server và cài đặt các thư viện Python cần thiết:
 ```bash
 cd server
 pip install -r requirements.txt
 ```
 
-Tạo file `.env` dựa trên `.env.example`:
-
+Tạo tệp cấu hình môi trường `.env` từ tệp `.env.example`:
 ```env
 MONGODB_URL=mongodb://localhost:27017
-JWT_SECRET=your_secret_key
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+JWT_SECRET=your_jwt_secret_key
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 PORT=5000
 ```
 
-Khởi động backend:
-
+Khởi động Backend Server:
 ```bash
 py run.py
-```
-
-Nếu hệ thống Windows của bạn không chạy được `python run.py`, hãy dùng `py run.py`.
-
-hoặc dùng Uvicorn:
-
-```bash
+# Hoặc sử dụng Uvicorn trực tiếp:
 uvicorn main:socket_app --host 0.0.0.0 --port 5000 --reload
 ```
 
-### 2. Frontend
+### 2. Cấu hình & Chạy Frontend (Client)
 
+Di chuyển vào thư mục client và cài đặt các gói Node.js:
 ```bash
 cd client
 npm install
 ```
 
-Tạo file `.env` trong `client/`:
-
+Tạo tệp cấu hình môi trường `.env` trong thư mục `client/`:
 ```env
 VITE_BACKEND_URL=http://localhost:5000
 ```
 
-Khởi động frontend:
-
+Khởi động môi trường phát triển Frontend:
 ```bash
 npm run dev
 ```
 
 ---
 
-## 📦 Triển khai
+## 📦 Triển khai sản phẩm (Deployment)
 
-### Backend (Render)
+### Triển khai Backend (ví dụ: Render)
+- **Thư mục gốc**: `server`
+- **Lệnh Build**: `pip install -r requirements.txt`
+- **Lệnh Start**: `uvicorn main:socket_app --host 0.0.0.0 --port $PORT`
+- *Lưu ý*: Cần điền đầy đủ các biến môi trường cấu hình trong phần Environment Variables của Render.
 
-- Root directory: `server`
-- Build command: `pip install -r requirements.txt`
-- Start command: `uvicorn main:socket_app --host 0.0.0.0 --port $PORT`
-- Thêm biến môi trường trong Render theo `.env`
-
-### Frontend (Vercel)
-
-- Root directory: `client`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Biến môi trường: `VITE_BACKEND_URL` trỏ về backend deploy
-
----
-
-## 📌 Ghi chú
-
-- Kiểm tra `client/README.md` để biết cấu hình frontend chi tiết.
-- Kiểm tra `server/README.md` để biết cấu hình backend chi tiết.
-- Không commit file `.env` vào Git.
+### Triển khai Frontend (ví dụ: Vercel)
+- **Thư mục gốc**: `client`
+- **Lệnh Build**: `npm run build`
+- **Thư mục Output**: `dist`
+- *Lưu ý*: Thêm biến môi trường `VITE_BACKEND_URL` trỏ tới URL API Backend đã deploy.
 
 ---
 
 ## 🙋‍♂️ Tác giả
-
-Dự án phát triển bởi **Thượng Mạnh Quỳnh**.
+Dự án được xây dựng và phát triển bởi **Thượng Mạnh Quỳnh**.
