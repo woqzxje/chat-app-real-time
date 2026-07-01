@@ -1,16 +1,16 @@
 export function DarkGradientBg({ children, className }) {
     return (
         <div
-            className={`relative w-full bg-black ${className || ''}`}
+            className={`relative w-full bg-black overflow-hidden ${className || ''}`}
         >
             {/* Radial gradient góc trên trái */}
             <div className="absolute inset-0">
                 <div
-                    className="absolute inset-0"
+                    className="absolute inset-0 opacity-100"
                     style={{
                         background: 'radial-gradient(100% 100% at 0% 0%, rgb(46,46,46) 0%, rgb(0,0,0) 100%)',
-                        mask: 'radial-gradient(125% 100% at 0% 0%, rgb(0,0,0) 0%, rgba(0,0,0,0.224) 88%, rgba(0,0,0,0) 100%)',
-                        WebkitMask: 'radial-gradient(125% 100% at 0% 0%, rgb(0,0,0) 0%, rgba(0,0,0,0.224) 88%, rgba(0,0,0,0) 100%)',
+                        mask: 'radial-gradient(125% 100% at 0% 0%, rgb(0,0,0) 0%, rgba(0,0,0,0.224) 88.2883%, rgba(0,0,0,0) 100%)',
+                        WebkitMask: 'radial-gradient(125% 100% at 0% 0%, rgb(0,0,0) 0%, rgba(0,0,0,0.224) 88.2883%, rgba(0,0,0,0) 100%)',
                     }}
                 >
                     {/* Tia sáng cyan 1 */}
@@ -26,12 +26,30 @@ export function DarkGradientBg({ children, className }) {
                 </div>
             </div>
 
-            {/* Dot pattern */}
+            {/* Texture image pattern overlay */}
             <div
-                className="absolute inset-0 opacity-[0.15]"
+                className="absolute inset-0 opacity-[0.05] bg-repeat"
                 style={{
-                    backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.5) 1px, transparent 0)',
-                    backgroundSize: '20px 20px',
+                    backgroundImage: 'url("https://framerusercontent.com/images/6mcf62RlDfRfU61Yg5vb2pefpi4.png")',
+                    backgroundSize: '149.76px',
+                }}
+            />
+
+            {/* Subtle dot pattern overlay */}
+            <div
+                className="absolute inset-0"
+                style={{
+                    opacity: 0.5,
+                    backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.7) 1.5px, transparent 1.5px)',
+                    backgroundSize: '24px 24px',
+                }}
+            />
+
+            {/* Subtle radial highlight */}
+            <div
+                className="absolute inset-0"
+                style={{
+                    background: 'radial-gradient(ellipse at center, rgba(100,116,139,0.2) 0%, transparent 50%, transparent 100%)',
                 }}
             />
 

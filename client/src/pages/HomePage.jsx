@@ -21,7 +21,7 @@ const HomePage = () => {
 
   return (
     <div className='w-full h-screen overflow-hidden bg-transparent'>
-      <div className={`backdrop-blur-xl overflow-hidden h-full grid grid-cols-1 relative ${selectedUser ? 'md:grid-cols-[1fr_1.5fr_1fr] xl:grid-cols-[1fr_2fr_1fr]' : 'md:grid-cols-2'}`}>
+      <div className={`bg-black/10 overflow-hidden h-full grid grid-cols-1 relative ${selectedUser ? 'md:grid-cols-[1fr_1.5fr_1fr] xl:grid-cols-[1fr_2fr_1fr]' : 'md:grid-cols-2'}`}>
         <Sidebar />
         <ChatContainer startCall={startCall} />
         <RightSidebar />

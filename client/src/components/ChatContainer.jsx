@@ -414,7 +414,7 @@ const ChatContainer = ({ startCall }) => {
 
   // Nếu đã chọn người dùng để chat, hiển thị khung chat
   return selectedUser ? (
-    <div className="flex flex-col h-full overflow-hidden relative backdrop-blur-lg">
+    <div className="flex flex-col h-full overflow-hidden relative">
 
       {/* ------------ Phần tiêu đề Chat (Header) ------------- */}
       <div className="flex items-center gap-4 py-4 mx-5 border-b border-stone-500">
