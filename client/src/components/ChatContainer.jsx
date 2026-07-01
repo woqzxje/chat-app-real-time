@@ -39,7 +39,6 @@ const proxyDownload = async (fileUrl, fileName) => {
     if (!res.ok) throw new Error('Download failed');
     const blob = await res.blob();
     // Ép kiểu blob thành octet-stream để browser luôn trigger download
-    // (tránh trường hợp browser hiển thị inline thay vì tải về)
     const forceBlob = new Blob([blob], { type: 'application/octet-stream' });
     const blobUrl = URL.createObjectURL(forceBlob);
     const a = document.createElement('a');
@@ -50,47 +49,128 @@ const proxyDownload = async (fileUrl, fileName) => {
     a.remove();
     URL.revokeObjectURL(blobUrl);
   } catch (err) {
-    // Fallback: mở trực tiếp URL gốc với fl_attachment để Cloudinary force download
-    const dlUrl = fileUrl.includes('/upload/')
-      ? fileUrl.replace('/upload/', '/upload/fl_attachment/')
-      : fileUrl;
+    // Fallback: tải trực tiếp từ Cloudinary
+    // fl_attachment chỉ hoạt động với image/video, KHÔNG dùng cho raw (zip, rar...)
+    let dlUrl = fileUrl;
+    if (fileUrl.includes('/image/upload/') || fileUrl.includes('/video/upload/')) {
+      dlUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
+    }
+    // Với raw resource, URL gốc đã tự trigger download
     window.open(dlUrl, '_blank');
   }
 };
 
-// ── Hàm tải toàn bộ folder (tải từng file riêng lẻ, giữ nguyên file gốc) ───
+// ── Lấy/tạo subfolder theo đường dẫn (vd: "folder/sub1/sub2") ───────────────
+const getOrCreateSubDir = async (parentHandle, pathParts) => {
+  let current = parentHandle;
+  for (const part of pathParts) {
+    current = await current.getDirectoryHandle(part, { create: true });
+  }
+  return current;
+};
+
+// ── Tải file từ Cloudinary qua proxy, trả về ArrayBuffer ────────────────────
+const fetchFileBuffer = async (fileUrl, fileName) => {
+  const token = localStorage.getItem('token');
+  const params = new URLSearchParams({ url: fileUrl, name: fileName });
+  const res = await fetch(`${BACKEND_URL}/api/files/download?${params}`, {
+    headers: { token },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.arrayBuffer();
+};
+
+// ── Hàm tải toàn bộ folder → tạo đúng folder trên máy người dùng ────────────
 const downloadFolder = async (folderName, files) => {
   if (!files || files.length === 0) {
     toast.error('Không có file nào trong folder!');
     return;
   }
 
-  toast.success(`Đang tải ${files.length} file từ "${folderName}"...`);
-
-  let successCount = 0;
-  let failCount = 0;
-
-  // Tải từng file một, có delay nhỏ giữa các lần để tránh browser chặn
-  for (let i = 0; i < files.length; i++) {
-    const f = files[i];
-    const fileName = basename(f.file_name);
-    try {
-      await proxyDownload(f.url, fileName);
-      successCount++;
-      // Delay 500ms giữa các file để browser xử lý kịp
-      if (i < files.length - 1) {
-        await new Promise(r => setTimeout(r, 500));
-      }
-    } catch (err) {
-      console.error(`Tải file thất bại: ${fileName}`, err);
-      failCount++;
-    }
+  // Kiểm tra browser có hỗ trợ File System Access API không
+  if (!('showDirectoryPicker' in window)) {
+    // Fallback: dùng zip cho browser không hỗ trợ (Firefox, Safari)
+    await downloadFolderAsZip(folderName, files);
+    return;
   }
 
-  if (failCount > 0) {
-    toast.error(`Tải xong ${successCount}/${files.length} file. ${failCount} file bị lỗi.`);
-  } else {
-    toast.success(`Đã tải xong ${successCount} file!`);
+  try {
+    // Mở dialog chọn nơi lưu → tạo folder con với tên folder gốc
+    const parentDir = await window.showDirectoryPicker({ mode: 'readwrite' });
+    const folderDir = await parentDir.getDirectoryHandle(folderName, { create: true });
+
+    toast.success(`Đang tải ${files.length} file vào "${folderName}"...`);
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const f of files) {
+      try {
+        // Tách đường dẫn tương đối: "ghichu/sub/file.txt" → ["sub"], "file.txt"
+        const relativePath = f.file_name.replace(/\\/g, '/');
+        const parts = relativePath.split('/');
+        // Bỏ phần tên folder gốc (phần đầu tiên) vì đã tạo folderDir
+        const withoutRoot = parts.length > 1 ? parts.slice(1) : parts;
+        const fileName = withoutRoot.pop(); // Phần cuối là tên file
+        
+        // Nếu còn subfolder, tạo cấu trúc thư mục con
+        const targetDir = withoutRoot.length > 0
+          ? await getOrCreateSubDir(folderDir, withoutRoot)
+          : folderDir;
+
+        // Tải file và ghi vào folder
+        const buffer = await fetchFileBuffer(f.url, fileName);
+        const fileHandle = await targetDir.getFileHandle(fileName, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(buffer);
+        await writable.close();
+
+        successCount++;
+      } catch (err) {
+        console.error(`Lỗi tải file ${f.file_name}:`, err);
+        failCount++;
+      }
+    }
+
+    if (failCount > 0) {
+      toast.error(`Tải xong ${successCount}/${files.length} file. ${failCount} file bị lỗi.`);
+    } else {
+      toast.success(`Đã lưu folder "${folderName}" với ${successCount} file!`);
+    }
+  } catch (err) {
+    // Người dùng nhấn Cancel hoặc lỗi quyền truy cập
+    if (err.name === 'AbortError') return; // Người dùng huỷ dialog
+    console.error('Download folder error:', err);
+    toast.error('Tải folder thất bại! Vui lòng thử lại.');
+  }
+};
+
+// ── Fallback: Nén zip cho browser không hỗ trợ File System Access API ────────
+const downloadFolderAsZip = async (folderName, files) => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${BACKEND_URL}/api/files/download-folder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', token },
+      body: JSON.stringify({
+        folder_name: folderName,
+        files: files.map((f) => ({ url: f.url, file_name: f.file_name })),
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rawBlob = await res.blob();
+    const zipBlob = new Blob([rawBlob], { type: 'application/zip' });
+    const blobUrl = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `${folderName}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  } catch (err) {
+    console.error('Zip download error:', err);
+    toast.error('Tải folder thất bại!');
   }
 };
 
