@@ -4,6 +4,7 @@ import { AuthContext } from '../../context/AuthContext'
 import { motion, AnimatePresence } from 'motion/react'
 import { Mail, Lock, Eye, EyeClosed, ArrowRight, User, FileText, ArrowLeft } from 'lucide-react'
 import FlickerSpinner from '../components/ui/FlickerSpinner'
+import { GradientButton } from '../components/ui/GradientButton'
 
 const LoginPage = () => {
 
@@ -333,25 +334,12 @@ const LoginPage = () => {
                 </div>
 
                 {/* Nút gửi form */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full relative group/button mt-2 cursor-pointer"
-                >
-                  {/* Button glow */}
-                  <div className="absolute inset-0 bg-cyan-500/20 rounded-lg blur-lg opacity-0 group-hover/button:opacity-70 transition-opacity duration-300" />
-
-                  <div className="relative overflow-hidden bg-gradient-to-r from-cyan-500 to-teal-600 text-white font-medium h-10 rounded-lg transition-all duration-300 flex items-center justify-center">
-                    {/* Button shimmer */}
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
-                      animate={{ x: ['-100%', '100%'] }}
-                      transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 2 }}
-                      style={{ opacity: isLoading ? 1 : 0, transition: 'opacity 0.3s ease' }}
-                    />
-
+                <div className="mt-2">
+                  <GradientButton
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-10 group/button"
+                  >
                     <AnimatePresence mode="wait">
                       {isLoading ? (
                         <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -366,8 +354,8 @@ const LoginPage = () => {
                         </motion.span>
                       )}
                     </AnimatePresence>
-                  </div>
-                </motion.button>
+                  </GradientButton>
+                </div>
 
                 {/* Chuyển đổi giữa Đăng ký và Đăng nhập */}
                 <motion.p

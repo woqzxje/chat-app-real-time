@@ -9,12 +9,26 @@ export default function FlickerSpinner({ size = 28 }) {
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       className="shrink-0"
-      style={{ '--on': '#00cfff', '--off': '#2a2a2a', '--dur': '1.350s', minWidth: size, minHeight: size }}
+      style={{ '--off': '#2a2a2a', '--dur': '1.350s', minWidth: size, minHeight: size, overflow: 'visible', animation: 'colorCycle 4s ease-in-out infinite' }}
     >
       <title>Loading</title>
+      <defs>
+        <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#b7fbffff" />
+          <stop offset="100%" stopColor="#22d3ee" />
+        </linearGradient>
+      </defs>
       <style>{`
+        @keyframes colorCycle {
+          0% { color: #06b6d4; }
+          50% { color: #0d9488; }
+          100% { color: #06b6d4; }
+        }
         circle { fill: var(--off); opacity: 0.2; }
-        circle.on { fill: var(--on); filter: drop-shadow(0 0 3px var(--on)); }
+        circle.on { 
+          fill: url(#heartGradient); 
+          filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 6px currentColor); 
+        }
         @media (prefers-reduced-motion: reduce) { circle { animation: none !important; } }
         @keyframes f011111000 { 0% { opacity: 0; } 11.10% { opacity: 0; } 11.11% { opacity: 1; } 66.66% { opacity: 1; } 66.67% { opacity: 0; } 100% { opacity: 0; } }
         @keyframes f001111000 { 0% { opacity: 0; } 22.21% { opacity: 0; } 22.22% { opacity: 1; } 66.66% { opacity: 1; } 66.67% { opacity: 0; } 100% { opacity: 0; } }

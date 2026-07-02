@@ -9,6 +9,8 @@ import { ChatContext } from '../../context/ChatContext';
 // Assets & UI Components
 import assets from '../assets/assets';
 import FlickerSpinner from './ui/FlickerSpinner';
+import { User, LogOut } from 'lucide-react';
+import { ExpandableTabs } from './ui/ExpandableTabs';
 
 /**
  * SideBar Component
@@ -70,15 +72,14 @@ const SideBar = () => {
             <span>ChatITC</span>
           </div>
 
-          {/* Menu Dropdown */}
-          <div className="relative py-2 group">
-            <img src={assets.menu_icon} alt="Menu" className='max-h-5 cursor-pointer' />
-            <div className='absolute top-full right-0 z-20 w-32 p-5 rounded-md bg-[#0e2230] border border-gray-600 text-gray-100 hidden group-hover:block shadow-xl'>
-              <p onClick={() => navigate('/profile')} className='cursor-pointer text-sm hover:text-cyan-400 transition-colors'>Edit Profile</p>
-              <hr className="my-2 border-t border-gray-500" />
-              <p onClick={() => logout()} className='cursor-pointer text-sm hover:text-cyan-400 transition-colors'>Logout</p>
-            </div>
-          </div>
+          {/* Menu Expandable Tabs */}
+          <ExpandableTabs
+            tabs={[
+              { title: "Edit Profile", icon: User, onClick: () => navigate('/profile') },
+              { type: "separator" },
+              { title: "Logout", icon: LogOut, onClick: () => logout() }
+            ]}
+          />
         </div>
 
         {/* KHU VỰC TÌM KIẾM: Thanh Search với hiệu ứng Glassmorphism & Animated Border */}
@@ -97,7 +98,7 @@ const SideBar = () => {
           </div>
 
           {/* Ô nhập liệu nền kính mờ */}
-          <div className='relative z-10 bg-black/60 backdrop-blur-xl border border-white/[0.08] rounded-full flex items-center gap-3 py-3 px-5'>
+          <div className='relative z-10 bg-[#0e2230]/30 backdrop-blur-xl border border-white/5 rounded-full flex items-center gap-3 py-3 px-5'>
             <img src={assets.search_icon} alt="Search" className='w-4 opacity-70 group-focus-within:opacity-100 transition-opacity' />
             <input
               onChange={(e) => setInput(e.target.value)}

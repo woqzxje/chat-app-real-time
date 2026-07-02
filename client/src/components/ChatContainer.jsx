@@ -5,8 +5,9 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Send, PanelRight } from 'lucide-react';
+import { Video, Send, PanelRight, Image as ImageIcon } from 'lucide-react';
 import FlickerSpinner from './ui/FlickerSpinner';
+import { ShinyButton } from './ui/ShinyButton';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
 
@@ -134,7 +135,7 @@ const downloadFolder = async (folderName, files) => {
 const basename = (path) => path?.replace(/\\/g, '/').split('/').pop() || path;
 
 // ── Hiển thị file đính kèm bên trong bubble tin nhắn ─────────────────────────
-const AttachmentBubble = ({ attachment }) => {
+const AttachmentBubble = ({ attachment, onMediaLoad }) => {
   const [expanded, setExpanded] = useState(false);
   const [downloading, setDownloading] = useState(false);
   if (!attachment) return null;
@@ -157,6 +158,7 @@ const AttachmentBubble = ({ attachment }) => {
         <img
           src={url}
           alt={file_name}
+          onLoad={onMediaLoad}
           className="max-w-[280px] rounded-2xl border border-white/10 cursor-pointer hover:opacity-90 transition-opacity mb-1"
         />
       </a>
@@ -169,6 +171,7 @@ const AttachmentBubble = ({ attachment }) => {
       <video
         src={url}
         controls
+        onLoadedData={onMediaLoad}
         className="max-w-[280px] sm:max-w-[320px] rounded-2xl border border-white/10 mb-1 outline-none bg-black/20"
       />
     );
@@ -459,11 +462,16 @@ const ChatContainer = ({ startCall }) => {
     if (selectedUser) getMessages(selectedUser._id);
   }, [selectedUser]);
 
-  // Tự động cuộn xuống cuối danh sách mỗi khi có tin nhắn mới
-  useEffect(() => {
-    if (scrollEnd.current && messages) {
+  // Hàm cuộn xuống cuối danh sách
+  const scrollToBottom = () => {
+    if (scrollEnd.current) {
       scrollEnd.current.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  // Tự động cuộn xuống cuối danh sách mỗi khi có tin nhắn mới
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
 
   // Nếu đã chọn người dùng để chat, hiển thị khung chat
@@ -527,13 +535,14 @@ const ChatContainer = ({ startCall }) => {
             <div className="flex flex-col items-end">
 
               {/* Hiển thị file/folder đính kèm nếu có */}
-              {msg.attachment && <AttachmentBubble attachment={msg.attachment} />}
+              {msg.attachment && <AttachmentBubble attachment={msg.attachment} onMediaLoad={scrollToBottom} />}
 
               {/* Hiển thị ảnh nếu tin nhắn có ảnh (flow gốc) */}
               {msg.image && (
                 <img
                   src={msg.image}
                   alt="Sent content"
+                  onLoad={scrollToBottom}
                   className="max-w-[320px] border border-gray-700 rounded-2xl overflow-hidden mb-1"
                 />
               )}
@@ -587,10 +596,10 @@ const ChatContainer = ({ startCall }) => {
               className="flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400 bg-transparent"
             />
 
-            {/* Nút chọn và gửi ảnh (giữ nguyên flow gốc) */}
+            {/* Nút chọn và gửi ảnh */}
             <input onChange={handleSendImage} type="file" id="image" accept="image/png, image/jpeg" hidden />
-            <label htmlFor="image" title="Gửi ảnh" className="cursor-pointer">
-              <img src={assets.gallery_icon} alt="Gửi ảnh" className="w-6 mr-1" />
+            <label htmlFor="image" title="Gửi ảnh" className="cursor-pointer text-gray-400 hover:text-white transition-colors mr-3 flex items-center">
+              <ImageIcon className="w-5 h-5" />
             </label>
 
             {/* Nút đính kèm file (pdf, docx, zip...) */}
@@ -634,13 +643,12 @@ const ChatContainer = ({ startCall }) => {
               </svg>
             </div>
           ) : (
-            <button
+            <ShinyButton
               onClick={handleSendMessage}
-              className="w-9 h-9 shrink-0 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-full flex items-center justify-center text-white hover:opacity-80 transition-opacity cursor-pointer"
-              title="Gửi"
+              className="w-10 h-10 shrink-0"
             >
               <Send className="w-[18px] h-[18px] -ml-[2px] mt-[1px]" />
-            </button>
+            </ShinyButton>
           )}
         </div>
       </div>

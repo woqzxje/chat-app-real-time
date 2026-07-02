@@ -1,3 +1,10 @@
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
+
 export function formatMessageTime(date) {
     // Đảm bảo chuỗi ngày tháng được coi là giờ UTC (do backend trả về datetime naive)
     let dateStr = date;
