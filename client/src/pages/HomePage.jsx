@@ -40,7 +40,7 @@ const HomePage = () => {
       <div 
         className={`h-full flex-shrink-0 overflow-hidden transition-all duration-500 ease-in-out border-white/5 ${selectedUser && showRightSidebar ? "w-full md:w-[300px] xl:w-[350px] border-l" : "w-0 border-l-0"}`}
       >
-        <div className="w-full md:w-[300px] xl:w-[350px] h-full">
+        <div className="w-[100vw] md:w-[300px] xl:w-[350px] h-full">
           {/* Luôn render component để giữ trạng thái, nhưng bị ẩn đi bởi width 0 của cha */}
           <RightSidebar />
         </div>

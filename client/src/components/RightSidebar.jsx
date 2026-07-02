@@ -23,7 +23,7 @@ const RightSidebar = () => {
 
   // Chỉ hiển thị sidebar phải khi có người dùng đang được chọn để chat
   return selectedUser && (
-    <div className={`bg-[#8185B2]/10 text-white w-full relative overflow-y-scroll ${selectedUser ? "max-md:hidden" : ""}`}>
+    <div className="bg-[#8185B2]/10 h-full text-white w-full relative overflow-y-scroll">
 
       {/* ----------- Thông tin người dùng đang chat ----------- */}
       <div className='pt-16 flex flex-col items-center gap-3 text-sm font-light mx-auto'>
