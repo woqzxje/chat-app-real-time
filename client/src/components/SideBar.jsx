@@ -25,9 +25,9 @@ import FlickerSpinner from './ui/FlickerSpinner';
  */
 const SideBar = () => {
   // 1. --- Hooks & Contexts ---
-  
+
   // Lấy dữ liệu và các hàm quản lý trạng thái chat từ ChatContext
-  const { 
+  const {
     users,              // Danh sách toàn bộ người dùng từ server
     selectedUser,       // Đối tượng người dùng đang được chọn để chat
     setSelectedUser,    // Hàm cập nhật người dùng đang chat
@@ -36,7 +36,7 @@ const SideBar = () => {
   } = useContext(ChatContext);
 
   // Lấy dữ liệu xác thực từ AuthContext
-  const { 
+  const {
     logout,             // Hàm đăng xuất tài khoản
     onlineUser          // Mảng chứa ID của các người dùng đang online (realtime từ Socket)
   } = useContext(AuthContext);
@@ -45,25 +45,25 @@ const SideBar = () => {
   const navigate = useNavigate();
 
   // 2. --- Local State ---
-  
+
   // Lưu trữ giá trị văn bản người dùng nhập vào thanh tìm kiếm
   const [input, setInput] = useState('');
 
   // 3. --- Lọc dữ liệu (Derived State) ---
-  
+
   // Lọc danh sách người dùng dựa theo giá trị tìm kiếm (không phân biệt hoa/thường)
-  const filteredUsers = input 
-    ? users.filter((u) => u.fullName.toLowerCase().includes(input.toLowerCase())) 
+  const filteredUsers = input
+    ? users.filter((u) => u.fullName.toLowerCase().includes(input.toLowerCase()))
     : users;
 
   // 4. --- Giao diện (Render) ---
   return (
     <div className='bg-[#8185B2]/10 h-full p-6 overflow-y-scroll text-white'>
-      
+
       {/* KHU VỰC HEADER: Logo và Menu */}
       <div className='pb-6'>
         <div className='flex justify-between items-center gap-4'>
-          
+
           {/* Logo & Tên ứng dụng */}
           <div className="flex items-center gap-3 font-extrabold text-xl tracking-wider text-white">
             <FlickerSpinner size={32} />
@@ -83,7 +83,7 @@ const SideBar = () => {
 
         {/* KHU VỰC TÌM KIẾM: Thanh Search với hiệu ứng Glassmorphism & Animated Border */}
         <div className='relative mt-6 rounded-full overflow-hidden p-[1px] group shadow-[0_0_15px_rgba(0,207,255,0.1)] hover:shadow-[0_0_20px_rgba(0,207,255,0.2)] focus-within:shadow-[0_0_25px_rgba(0,207,255,0.3)] transition-all duration-300'>
-          
+
           {/* Các tia sáng chạy dọc viền (Framer Motion) */}
           <div className="absolute inset-0 z-0 opacity-50 group-focus-within:opacity-100 transition-opacity duration-300">
             {/* Tia trên chạy từ trái sang phải */}
@@ -99,12 +99,12 @@ const SideBar = () => {
           {/* Ô nhập liệu nền kính mờ */}
           <div className='relative z-10 bg-black/60 backdrop-blur-xl border border-white/[0.08] rounded-full flex items-center gap-3 py-3 px-5'>
             <img src={assets.search_icon} alt="Search" className='w-4 opacity-70 group-focus-within:opacity-100 transition-opacity' />
-            <input 
-              onChange={(e) => setInput(e.target.value)} 
-              value={input} 
-              type="text" 
-              className='bg-transparent border-none outline-none text-white text-base placeholder-gray-400 flex-1' 
-              placeholder='Search User...' 
+            <input
+              onChange={(e) => setInput(e.target.value)}
+              value={input}
+              type="text"
+              className='bg-transparent border-none outline-none text-white text-base placeholder-gray-400 flex-1'
+              placeholder='Search User...'
             />
           </div>
         </div>
@@ -113,15 +113,15 @@ const SideBar = () => {
       {/* KHU VỰC DANH SÁCH NGƯỜI DÙNG */}
       <div className='flex flex-col gap-3'>
         {filteredUsers.map((user) => (
-          <div 
+          <div
             key={user._id}
-            onClick={() => { 
+            onClick={() => {
               if (selectedUser?._id === user._id) {
                 // Hủy chọn user để quay về 50/50
                 setSelectedUser(null);
               } else {
                 // Chọn user và reset số đếm tin nhắn
-                setSelectedUser(user); 
+                setSelectedUser(user);
                 setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
               }
             }}
@@ -129,7 +129,7 @@ const SideBar = () => {
           >
             {/* Ảnh đại diện */}
             <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
-            
+
             {/* Thông tin tên và trạng thái */}
             <div className='flex flex-col leading-6'>
               <p className='text-base font-medium'>{user.fullName}</p>
@@ -139,7 +139,7 @@ const SideBar = () => {
                   : <span className='text-neutral-400 text-sm'>Offline</span>
               }
             </div>
-            
+
             {/* Badge thông báo số lượng tin nhắn chưa đọc */}
             {unseenMessages && unseenMessages[user._id] > 0 && (
               <p className='absolute top-4 right-4 bg-cyan-500 text-sm rounded-full w-6 h-6 flex items-center justify-center text-white shadow-[0_0_10px_rgba(0,207,255,0.5)]'>
