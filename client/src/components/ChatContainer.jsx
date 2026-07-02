@@ -5,6 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { Video } from 'lucide-react';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
 
@@ -442,9 +443,10 @@ const ChatContainer = ({ startCall }) => {
         {/* Nút gọi Video */}
         <button
           onClick={() => startCall(selectedUser)}
-          className="hidden md:flex items-center gap-1 text-white text-sm bg-cyan-600 hover:bg-cyan-700 px-3 py-1.5 rounded-full cursor-pointer"
+          className="text-gray-400 hover:text-cyan-400 p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+          title="Cuộc gọi Video"
         >
-          Video
+          <Video className="w-6 h-6" />
         </button>
         {/* Nút Trợ giúp */}
         <img src={assets.help_icon} alt="Trợ giúp" className="hidden md:block w-6" />
