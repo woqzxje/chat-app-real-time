@@ -58,7 +58,7 @@ const SideBar = () => {
 
   // 4. --- Giao diện (Render) ---
   return (
-    <div className={`bg-[#8185B2]/10 h-full p-6 overflow-y-scroll text-white ${selectedUser ? "max-md:hidden" : ''}`}>
+    <div className='bg-[#8185B2]/10 h-full p-6 overflow-y-scroll text-white'>
       
       {/* KHU VỰC HEADER: Logo và Menu */}
       <div className='pb-6'>

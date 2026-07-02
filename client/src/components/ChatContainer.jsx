@@ -602,7 +602,7 @@ const ChatContainer = ({ startCall }) => {
     </div>
   ) : (
     /* Hiển thị màn hình chờ khi chưa chọn ai để chat */
-    <div className="flex flex-col items-center justify-center gap-4 text-gray-500 bg-white/10 max-md:hidden">
+    <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-gray-500 bg-white/5 max-md:hidden">
       <FlickerSpinner size={64} />
       <p className="text-lg font-medium text-white">Chat mọi lúc, mọi nơi</p>
     </div>

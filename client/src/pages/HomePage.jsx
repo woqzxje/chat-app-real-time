@@ -23,8 +23,12 @@ const HomePage = () => {
     <div className='w-full h-screen overflow-hidden bg-black/10 flex relative'>
       
       {/* Cột 1: Left Sidebar */}
-      <div className={`h-full flex-shrink-0 transition-all duration-500 ease-in-out ${selectedUser ? "w-0 md:w-[30%] xl:w-[25%]" : "w-full md:w-1/2"}`}>
-        <Sidebar />
+      <div 
+        className={`h-full flex-shrink-0 overflow-hidden transition-all duration-500 ease-in-out ${selectedUser ? "w-0 md:w-[30%] xl:w-[25%]" : "w-full md:w-[350px] xl:w-[400px]"}`}
+      >
+        <div className="w-[100vw] md:w-[350px] xl:w-[400px] h-full">
+          <Sidebar />
+        </div>
       </div>
 
       {/* Cột 2: Chat Container */}
