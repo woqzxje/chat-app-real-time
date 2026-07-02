@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react'
+import React, { useContext, useState } from 'react'
 import assets from '../assets/assets'
 import { AuthContext } from '../../context/AuthContext'
 import { motion, AnimatePresence } from 'motion/react'
@@ -9,7 +9,7 @@ const LoginPage = () => {
 
   // Các trạng thái của form: "Sign up" (Đăng ký) hoặc "Login" (Đăng nhập)
   const [currState, setCurrState] = useState("Sign up")
-  
+
   // Các biến lưu trữ giá trị nhập từ người dùng
   const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
@@ -18,12 +18,12 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [focusedInput, setFocusedInput] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
-  
+
   // Trạng thái kiểm soát việc chuyển sang bước nhập Bio khi đăng ký
   const [isDataSubmitted, setIsDataSubmitted] = useState(false);
 
   // Lấy hàm login từ AuthContext
-  const {login} = useContext(AuthContext)
+  const { login } = useContext(AuthContext)
 
   // 3D card tilt effect (CSS state-based to avoid hook conflicts)
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 })
@@ -45,9 +45,9 @@ const LoginPage = () => {
   // Xử lý khi nhấn nút Submit (Gửi form)
   const onSubmitHandler = async (event) => {
     event.preventDefault();
-   
+
     // Nếu đang ở chế độ Đăng ký và chưa nhập Bio, chuyển sang màn hình nhập Bio
-    if(currState === "Sign up" && !isDataSubmitted){
+    if (currState === "Sign up" && !isDataSubmitted) {
       setIsDataSubmitted(true)
       return;
     }
@@ -55,12 +55,12 @@ const LoginPage = () => {
     setIsLoading(true)
 
     // Gọi API đăng nhập hoặc đăng ký thông qua hàm login từ context
-    const success = await login(currState === "Sign up" ? 'signup' : 'login', {fullName, email, password, bio})
+    const success = await login(currState === "Sign up" ? 'signup' : 'login', { fullName, email, password, bio })
 
     setIsLoading(false)
 
     // Sau khi đăng ký thành công, tự động chuyển về màn hình Đăng nhập để người dùng nhập lại thông tin
-    if(success && currState === "Sign up"){
+    if (success && currState === "Sign up") {
       setCurrState("Login")
       setIsDataSubmitted(false)
       setFullName("")
@@ -79,7 +79,7 @@ const LoginPage = () => {
         className="flex flex-col items-center justify-center gap-4 text-white"
       >
         <FlickerSpinner size={100} />
-        <h1 className="text-4xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50">QuickChat</h1>
+        <h1 className="text-4xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50">ChatITC</h1>
       </motion.div>
 
       {/* ----------- Phần bên phải: Card đăng nhập ----------- */}
@@ -98,7 +98,7 @@ const LoginPage = () => {
         >
           <div className="relative group">
             {/* Card glow effect */}
-            <motion.div 
+            <motion.div
               className="absolute -inset-[1px] rounded-2xl opacity-0 group-hover:opacity-70 transition-opacity duration-700"
               animate={{
                 boxShadow: [
@@ -114,28 +114,28 @@ const LoginPage = () => {
             {/* Traveling light beam effect */}
             <div className="absolute -inset-[1px] rounded-2xl overflow-hidden pointer-events-none">
               {/* Top beam */}
-              <motion.div 
+              <motion.div
                 className="absolute top-0 left-0 h-[3px] w-[60%]"
                 style={{ background: 'linear-gradient(90deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }}
                 animate={{ left: ["-60%", "100%"] }}
                 transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }}
               />
               {/* Right beam */}
-              <motion.div 
+              <motion.div
                 className="absolute top-0 right-0 h-[60%] w-[3px]"
                 style={{ background: 'linear-gradient(180deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }}
                 animate={{ top: ["-60%", "100%"] }}
                 transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 0.75 }}
               />
               {/* Bottom beam */}
-              <motion.div 
+              <motion.div
                 className="absolute bottom-0 right-0 h-[3px] w-[60%]"
                 style={{ background: 'linear-gradient(90deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }}
                 animate={{ right: ["-60%", "100%"] }}
                 transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 1.5 }}
               />
               {/* Left beam */}
-              <motion.div 
+              <motion.div
                 className="absolute bottom-0 left-0 h-[60%] w-[3px]"
                 style={{ background: 'linear-gradient(180deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }}
                 animate={{ bottom: ["-60%", "100%"] }}
@@ -159,7 +159,7 @@ const LoginPage = () => {
             {/* ═══════════ Glass card background ═══════════ */}
             <div className="relative bg-black/40 backdrop-blur-xl rounded-2xl p-6 border border-white/[0.08] shadow-2xl overflow-hidden">
               {/* Subtle card inner pattern */}
-              <div className="absolute inset-0 opacity-[0.03]" 
+              <div className="absolute inset-0 opacity-[0.03]"
                 style={{
                   backgroundImage: 'linear-gradient(135deg, white 0.5px, transparent 0.5px), linear-gradient(45deg, white 0.5px, transparent 0.5px)',
                   backgroundSize: '30px 30px'
@@ -168,7 +168,7 @@ const LoginPage = () => {
 
               {/* ─── Form content ─── */}
               <form onSubmit={onSubmitHandler} className="relative space-y-4">
-                
+
                 {/* Header */}
                 <div className="text-center space-y-1 mb-5">
 
@@ -193,8 +193,8 @@ const LoginPage = () => {
                     transition={{ delay: 0.3 }}
                     className="text-white/50 text-xs"
                   >
-                    {currState === "Sign up" 
-                      ? (isDataSubmitted ? "Hãy cho mọi người biết về bạn" : "Đăng ký để bắt đầu trò chuyện") 
+                    {currState === "Sign up"
+                      ? (isDataSubmitted ? "Hãy cho mọi người biết về bạn" : "Đăng ký để bắt đầu trò chuyện")
                       : "Đăng nhập để tiếp tục với QuickChat"}
                   </motion.p>
                 </div>
@@ -211,7 +211,7 @@ const LoginPage = () => {
                     >
                       {/* Nhập Họ và tên (chỉ hiện khi Đăng ký) */}
                       {currState === "Sign up" && (
-                        <motion.div 
+                        <motion.div
                           className="relative"
                           whileHover={{ scale: 1.01 }}
                           transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -233,7 +233,7 @@ const LoginPage = () => {
                       )}
 
                       {/* Email input */}
-                      <motion.div 
+                      <motion.div
                         className="relative"
                         whileHover={{ scale: 1.01 }}
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -254,7 +254,7 @@ const LoginPage = () => {
                       </motion.div>
 
                       {/* Password input */}
-                      <motion.div 
+                      <motion.div
                         className="relative"
                         whileHover={{ scale: 1.01 }}
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -294,7 +294,7 @@ const LoginPage = () => {
                       exit={{ opacity: 0, x: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <motion.div 
+                      <motion.div
                         className="relative"
                         whileHover={{ scale: 1.01 }}
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -342,10 +342,10 @@ const LoginPage = () => {
                 >
                   {/* Button glow */}
                   <div className="absolute inset-0 bg-cyan-500/20 rounded-lg blur-lg opacity-0 group-hover/button:opacity-70 transition-opacity duration-300" />
-                  
+
                   <div className="relative overflow-hidden bg-gradient-to-r from-cyan-500 to-teal-600 text-white font-medium h-10 rounded-lg transition-all duration-300 flex items-center justify-center">
                     {/* Button shimmer */}
-                    <motion.div 
+                    <motion.div
                       className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
                       animate={{ x: ['-100%', '100%'] }}
                       transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 2 }}
@@ -370,7 +370,7 @@ const LoginPage = () => {
                 </motion.button>
 
                 {/* Chuyển đổi giữa Đăng ký và Đăng nhập */}
-                <motion.p 
+                <motion.p
                   className="text-center text-xs text-white/50 mt-3"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -379,7 +379,7 @@ const LoginPage = () => {
                   {currState === "Sign up" ? (
                     <>Bạn đã có tài khoản?{' '}
                       <span
-                        onClick={() => {setCurrState("Login"); setIsDataSubmitted(false)}}
+                        onClick={() => { setCurrState("Login"); setIsDataSubmitted(false) }}
                         className="relative inline-block group/link cursor-pointer"
                       >
                         <span className="relative z-10 text-cyan-400 group-hover/link:text-cyan-300 transition-colors duration-300 font-medium">

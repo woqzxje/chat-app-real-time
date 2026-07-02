@@ -25,7 +25,7 @@ const SideBar = () => {
         <div className='flex justify-between items-center gap-4'>
           <div className="flex items-center gap-3 font-extrabold text-xl tracking-wider text-white">
             <FlickerSpinner size={32} />
-            <span>QuickChat</span>
+            <span>ChatITC</span>
           </div>
           <div className="relative py-2 group">
             <img src={assets.menu_icon} alt="Menu" className='max-h-5 cursor-pointer' />
