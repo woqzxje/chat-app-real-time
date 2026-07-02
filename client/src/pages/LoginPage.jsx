@@ -3,6 +3,8 @@ import assets from '../assets/assets'
 import { AuthContext } from '../../context/AuthContext'
 import { motion, AnimatePresence } from 'motion/react'
 import { Mail, Lock, Eye, EyeClosed, ArrowRight, User, FileText, ArrowLeft } from 'lucide-react'
+import { GoogleLogin } from '@react-oauth/google'
+import toast from 'react-hot-toast'
 import FlickerSpinner from '../components/ui/FlickerSpinner'
 import { GradientButton } from '../components/ui/GradientButton'
 
@@ -68,6 +70,18 @@ const LoginPage = () => {
       setPassword("")
       setBio("")
     }
+  }
+
+  // Xử lý khi đăng nhập Google thành công
+  const onGoogleSuccess = async (credentialResponse) => {
+    setIsLoading(true)
+    await login('google-login', { credential: credentialResponse.credential })
+    setIsLoading(false)
+  }
+
+  // Xử lý khi đăng nhập Google thất bại
+  const onGoogleError = () => {
+    toast.error('Đăng nhập Google thất bại')
   }
 
   return (
@@ -334,7 +348,7 @@ const LoginPage = () => {
                 </div>
 
                 {/* Nút gửi form */}
-                <div className="mt-2">
+                <div className="mt-2 space-y-3">
                   <GradientButton
                     type="submit"
                     disabled={isLoading}
@@ -355,6 +369,22 @@ const LoginPage = () => {
                       )}
                     </AnimatePresence>
                   </GradientButton>
+
+                  <div className="flex items-center gap-2 py-1">
+                    <div className="h-[1px] bg-white/10 flex-1" />
+                    <span className="text-white/30 text-[10px] uppercase font-bold tracking-widest">Hoặc</span>
+                    <div className="h-[1px] bg-white/10 flex-1" />
+                  </div>
+                  
+                  <div className="flex justify-center w-full overflow-hidden transition-all duration-300 hover:scale-[1.02]">
+                    <GoogleLogin
+                      onSuccess={onGoogleSuccess}
+                      onError={onGoogleError}
+                      theme="filled_black"
+                      shape="pill"
+                      width="300"
+                    />
+                  </div>
                 </div>
 
                 {/* Chuyển đổi giữa Đăng ký và Đăng nhập */}

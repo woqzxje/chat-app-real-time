@@ -7,6 +7,10 @@ from app.models import User
 from app.utils import generate_token
 from app.cloudinary_client import upload_image
 from app.dependencies import get_current_user
+from google.oauth2 import id_token
+from google.auth.transport import requests
+
+GOOGLE_CLIENT_ID = "305811701965-jb4e6qmo0m3vs24llllv3455fm47b5q6.apps.googleusercontent.com"
 
 # Khởi tạo router cho các tính năng liên quan đến người dùng (Xác thực)
 user_router = APIRouter()
@@ -33,6 +37,9 @@ class UpdateProfileBody(BaseModel):
     profilePic: Optional[str] = None
     bio: Optional[str] = None
     fullName: Optional[str] = None
+
+class GoogleLoginBody(BaseModel):
+    credential: str
 
 
 # ── Các hàm hỗ trợ (Helpers) ──────────────────────────────────────────────────
@@ -111,6 +118,49 @@ async def login(body: LoginBody):
         "token": token,
         "message": "Đăng nhập thành công",
     }
+
+
+# ── POST /api/auth/google-login ──────────────────────────────────────────────
+
+@user_router.post("/google-login")
+async def google_login(body: GoogleLoginBody):
+    try:
+        # Xác thực Token từ Google
+        idinfo = id_token.verify_oauth2_token(body.credential, requests.Request(), GOOGLE_CLIENT_ID)
+        
+        email = idinfo['email']
+        name = idinfo.get('name', 'User')
+        picture = idinfo.get('picture', '')
+        
+        # Kiểm tra user đã tồn tại chưa
+        user = await User.find_one(User.email == email)
+        
+        if not user:
+            # Tạo tài khoản mới (không cần password)
+            user = User(
+                fullName=name,
+                email=email,
+                password="",  # Không dùng password
+                profilePic=picture,
+                bio="Đăng nhập bằng Google",
+            )
+            await user.insert()
+            
+            # Thông báo real-time có user mới
+            from app.socket_manager import sio as _sio
+            await _sio.emit("newUserRegistered", _user_dict(user))
+
+        # Cấp token cho user
+        token = generate_token(str(user.id))
+        return {
+            "success": True,
+            "userData": _user_dict(user),
+            "token": token,
+            "message": "Đăng nhập bằng Google thành công",
+        }
+    except ValueError:
+        return {"success": False, "message": "Token Google không hợp lệ"}
+
 
 
 # ── GET /api/auth/check ──────────────────────────────────────────────────────

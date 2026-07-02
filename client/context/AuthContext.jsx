@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
         try {
             const { data } = await axios.post(`/api/auth/${state}`, credentials);
             if(data.success){
-                if(state === 'login' || state === 'signup'){
+                if(state === 'login' || state === 'signup' || state === 'google-login'){
                     setAuthUser(data.userData);
                     connectSocket(data.userData); // Kết nối socket ngay lập tức
                     
