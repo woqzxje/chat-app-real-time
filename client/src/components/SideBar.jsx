@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { ChatContext } from '../../context/ChatContext';
 import FlickerSpinner from './ui/FlickerSpinner';
+import { motion } from 'framer-motion';
 
 const SideBar = () => {
 
@@ -38,9 +39,22 @@ const SideBar = () => {
           </div>
         </div>
 
-        <div className='bg-[#0e2230] rounded-full flex items-center gap-3 py-4 px-5 mt-6'>
-          <img src={assets.search_icon} alt="Search" className='w-4' />
-          <input onChange={(e) => setInput(e.target.value)} value={input} type="text" className='bg-transparent border-none outline-none text-white text-base placeholder-[#c8c8c8] flex-1' placeholder='Search User...' />
+        <div className='relative mt-6 rounded-full overflow-hidden p-[1px] group shadow-[0_0_15px_rgba(0,207,255,0.1)] hover:shadow-[0_0_20px_rgba(0,207,255,0.2)] focus-within:shadow-[0_0_25px_rgba(0,207,255,0.3)] transition-all duration-300'>
+          
+          {/* Animated border beams */}
+          <div className="absolute inset-0 z-0 opacity-50 group-focus-within:opacity-100 transition-opacity duration-300">
+            <motion.div className="absolute top-0 left-0 h-[2px] w-[50%]"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(0,207,255,1), transparent)', filter: 'blur(1px)' }}
+              animate={{ left: ["-50%", "100%"] }} transition={{ duration: 2.5, ease: "linear", repeat: Infinity }} />
+            <motion.div className="absolute bottom-0 right-0 h-[2px] w-[50%]"
+              style={{ background: 'linear-gradient(270deg, transparent, rgba(0,207,255,1), transparent)', filter: 'blur(1px)' }}
+              animate={{ right: ["-50%", "100%"] }} transition={{ duration: 2.5, ease: "linear", repeat: Infinity }} />
+          </div>
+
+          <div className='relative z-10 bg-black/60 backdrop-blur-xl border border-white/[0.08] rounded-full flex items-center gap-3 py-3 px-5'>
+            <img src={assets.search_icon} alt="Search" className='w-4 opacity-70 group-focus-within:opacity-100 transition-opacity' />
+            <input onChange={(e) => setInput(e.target.value)} value={input} type="text" className='bg-transparent border-none outline-none text-white text-base placeholder-gray-400 flex-1' placeholder='Search User...' />
+          </div>
         </div>
 
       </div>
