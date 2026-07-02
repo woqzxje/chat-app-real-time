@@ -1,5 +1,4 @@
-import React, { useContext, useState } from 'react'
-import assets from '../assets/assets'
+import { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import { motion, AnimatePresence } from 'motion/react'
 import { Mail, Lock, Eye, EyeClosed, ArrowRight, User, FileText, ArrowLeft } from 'lucide-react'

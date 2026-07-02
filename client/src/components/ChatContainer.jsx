@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, Phone, PhoneOff, PhoneMissed, MoreVertical } from 'lucide-react';
+import { Video, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical } from 'lucide-react';
 import FlickerSpinner from './ui/FlickerSpinner';
 import { ShinyButton } from './ui/ShinyButton';
 
@@ -54,7 +54,7 @@ const proxyDownload = async (fileUrl, fileName) => {
       toast.success('Tải xuống thành công!', { id: toastId });
       return;
     }
-  } catch (e) {
+  } catch {
     // Nếu proxy chết, tiếp tục thử qua Backend của mình
   }
 
@@ -300,7 +300,7 @@ const formatCallDuration = (seconds) => {
   return `${m}:${s}`;
 };
 
-const CallBubble = ({ callInfo, isSender, createdAt }) => {
+const CallBubble = ({ callInfo, createdAt }) => {
   if (!callInfo) return null;
   const { call_type, duration } = callInfo;
 
@@ -745,7 +745,6 @@ const ChatContainer = ({ startCall }) => {
             <div key={index} className="flex justify-center my-2">
               <CallBubble
                 callInfo={msg.callInfo}
-                isSender={msg.senderId === authUser._id}
                 createdAt={msg.createdAt}
               />
             </div>
