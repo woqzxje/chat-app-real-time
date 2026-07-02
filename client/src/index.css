@@ -22,6 +22,16 @@ body {
   display: none;
 }
 
+/* Fix lỗi màu nền khi trình duyệt tự động điền (Autofill) form trên Chrome/Edge */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px #111827 inset !important; /* Thay màu nền autofill thành màu tối */
+    -webkit-text-fill-color: white !important; /* Màu chữ trắng */
+    transition: background-color 5000s ease-in-out 0s;
+}
+
 @layer base {
   @property --pos-x {
     syntax: '<percentage>';
