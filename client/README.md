@@ -1,72 +1,81 @@
-# 🖥️ QuickChat Client
+<div align="center">
+  <h1 align="center">ChatApp - Client (Giao Diện Người Dùng)</h1>
 
-Phần Frontend của **QuickChat**, xây dựng bằng **React 19 + Vite + Tailwind CSS v4**. Client xử lý giao diện chat thời gian thực, cuộc gọi Video Call WebRTC, đính kèm và tải thư mục tập tin, cùng thiết kế Glassmorphism hiện đại cho trang đăng nhập/đăng ký.
+  <p align="center">
+    Mã nguồn Frontend của ChatApp, được xây dựng bằng ReactJS và Vite. Nó cung cấp một giao diện Dark Mode bóng bẩy, hiệu năng cao và cực kỳ mượt mà trên cả thiết bị di động lẫn máy tính để bàn.
+  </p>
+</div>
 
----
+<div align="center">
+  <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS" />
+  <img src="https://img.shields.io/badge/Framer_Motion-black?style=for-the-badge&logo=framer&logoColor=blue" alt="Framer Motion" />
+  <img src="https://img.shields.io/badge/Socket.io-010101?&style=for-the-badge&logo=Socket.io&logoColor=white" alt="Socket.io" />
+  <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white" alt="WebRTC" />
+</div>
 
-## 🎯 Tính năng nổi bật ở Client
-
-- **Login/Register Glassmorphism**: Sử dụng React & CSS state để tạo hiệu ứng xoay 3D (3D Tilt) và viền sáng phát quang chạy xung quanh mượt mà, hạn chế lỗi hook của `framer-motion` trên một số phiên bản React cũ.
-- **Tải tệp & Thư mục an toàn**: Tích hợp trình tải proxy tự động xử lý CORS giúp người dùng tải trực tiếp các tệp `.zip`, `.rar` và các cấu trúc thư mục mà không gặp sự cố chặn của trình duyệt.
-- **Cuộc gọi Video Call trực tuyến**: Giao diện modal đàm thoại trực tiếp với các tín hiệu điều phối thời gian thực, thông báo lịch sử cuộc gọi trực quan.
-- **Sidebar thông minh**: Cập nhật trạng thái hoạt động (online/offline) và bộ đếm tin nhắn chưa đọc của từng người dùng tức thì.
-
----
-
-## 🛠 Công nghệ sử dụng
-
-- **React 19** & **Vite**
-- **Tailwind CSS v4** (thiết kế tối giản và hiện đại)
-- **Framer Motion** & **Lucide React** (cho giao diện Glassmorphic)
-- **Socket.IO Client** (kết nối thời gian thực)
-- **Axios** (gửi yêu cầu API)
-- **React Hot Toast** (thông báo popup trực quan)
+<br />
 
 ---
 
-## ⚙️ Cấu hình & Chạy cục bộ
+## Công Nghệ Nền Tảng
 
-Cài đặt các thư viện liên quan:
-```bash
-npm install
-```
+* **Core:** ReactJS 19 + Vite (Build tool siêu tốc).
+* **Styling:** TailwindCSS 4, hỗ trợ responsive hoàn hảo qua các thẻ tiện ích.
+* **Animations:** Framer Motion & GSAP giúp các biểu tượng và popup xuất hiện mượt mà.
+* **State Management:** React Context API (`AuthContext`, `ChatContext`).
+* **Giao Tiếp (Real-time):** `socket.io-client` cho nhắn tin & `simple-peer` cho WebRTC Video Call.
+* **UI Components:** `lucide-react` (Bộ icon tối giản), React-Hot-Toast (Thông báo nổi).
 
-Tạo tệp cấu hình môi trường `.env` trong thư mục `client/`:
+---
+
+## Cấu Trúc Thư Mục Chính
+
+Toàn bộ logic cốt lõi nằm trong thư mục `/src`:
+* `assets/`: Chứa hình ảnh tĩnh, avatar mặc định, logo.
+* `components/`: Các thành phần tái sử dụng.
+  * `ChatContainer.jsx`: Khung hiển thị và điều khiển luồng chat (chứa `MessageItem`, `AttachmentBubble`, `CallBubble`).
+  * `SideBar.jsx` & `RightSidebar.jsx`: Thanh công cụ hai bên.
+  * `VideoCallModal.jsx`: Giao diện gọi điện P2P.
+  * `ui/`: Các thành phần giao diện nhỏ như Button, FlickerSpinner.
+* `context/`: Quản lý trạng thái toàn cầu.
+  * `AuthContext.jsx`: Quản lý user, token, thiết lập kết nối Socket.
+  * `ChatContext.jsx`: Quản lý danh sách tin nhắn, thao tác với tin nhắn (gửi, sửa, thu hồi, thả cảm xúc).
+* `hooks/`: 
+  * `useVideoCall.js`: Trừu tượng hóa logic phức tạp của WebRTC ra khỏi component giao diện.
+* `pages/`: Các trang chính (`HomePage`, `LoginPage`, `ProfilePage`).
+* `lib/`: Chứa file `utils.js` (hàm tiện ích format thời gian, định dạng dung lượng file).
+
+---
+
+## Tính Năng Giao Diện Nổi Bật
+
+1. **Chống Tràn Viền Mobile:** Áp dụng thuật toán tính chiều cao động `h-[100dvh]` và `absolute inset-0` để ngăn chặn lỗi trình duyệt điện thoại che mất các thành phần điều hướng.
+2. **Trải Nghiệm Thả Cảm Xúc (Long-press):** Bắt sự kiện chạm cảm ứng 500ms để hiện thanh cảm xúc giống ứng dụng gốc (Native App) trên điện thoại di động.
+3. **Cuộn Thông Minh (Smart Auto-Scroll):** Theo dõi vị trí cuộn chuột; tự động cuộn xuống khi có tin nhắn mới nếu người dùng đang ở cuối, nhưng không làm phiền nếu họ đang xem lịch sử cũ.
+4. **Xác Thực Đa Kênh:** Đăng nhập truyền thống và hỗ trợ Google OAuth thông qua `@react-oauth/google`.
+
+---
+
+## Cấu Hình Môi Trường (Environment Variables)
+
+Tạo file `.env` ở thư mục gốc của `/client` với các biến sau:
+
 ```env
-VITE_BACKEND_URL=http://localhost:5000
+# URL của Server Backend (Dùng để kết nối API và Socket.IO)
+VITE_BACKEND_URL=http://localhost:5001
+
+# Google Client ID (Dành cho tính năng đăng nhập Google)
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 ```
 
-Khởi động dự án ở chế độ phát triển:
+## Khởi Chạy
+
 ```bash
-npm run dev
+# Cài đặt thư viện
+pnpm install
+
+# Chạy server lập trình
+pnpm run dev
 ```
-
-Build production:
-```bash
-npm run build
-```
-
----
-
-## 📡 Các API Backend sử dụng
-
-| Phương thức | Endpoint | Mục đích |
-|---|---|---|
-| `POST` | `/api/auth/signup` | Đăng ký tài khoản |
-| `POST` | `/api/auth/login` | Đăng nhập hệ thống |
-| `GET` | `/api/auth/check` | Xác thực token hiện tại |
-| `PUT` | `/api/auth/update-profile` | Cập nhật hồ sơ |
-| `GET` | `/api/messages/users` | Lấy danh sách người dùng & tin chưa đọc |
-| `GET` | `/api/messages/{userId}` | Lấy lịch sử nhắn tin |
-| `POST` | `/api/messages/send/{userId}` | Gửi tin nhắn / hình ảnh / tệp tin |
-| `GET` | `/api/files/download` | Tải tập tin qua proxy (tránh CORS) |
-| `POST` | `/api/files/download-folder` | Tải thư mục dạng nén ZIP |
-
----
-
-## 🌐 Triển khai lên Vercel
-
-1. Thư mục gốc (Root directory): `client`
-2. Lệnh build (Build command): `npm run build`
-3. Thư mục đầu ra (Output directory): `dist`
-4. Biến môi trường: `VITE_BACKEND_URL` (trỏ đến API backend đã triển khai)
