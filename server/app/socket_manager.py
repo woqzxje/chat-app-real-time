@@ -60,6 +60,27 @@ async def disconnect(sid):
     # Thông báo cho các client khác cập nhật lại danh sách online
     await sio.emit("getOnlineUsers", list(user_socket_map.keys()))
 
+@sio.on("markMessagesSeen")
+async def on_mark_messages_seen(sid, data):
+    """Đánh dấu tin nhắn đã xem khi đang mở sẵn khung chat"""
+    from app.models import Message
+    
+    sender_id = data.get("senderId")
+    receiver_id = data.get("receiverId")
+    
+    if sender_id and receiver_id:
+        # Cập nhật database
+        await Message.find(
+            Message.senderId == sender_id,
+            Message.receiverId == receiver_id,
+            Message.seen == False
+        ).update({"$set": {"seen": True}})
+        
+        # Bắn sự kiện cho người gửi
+        sender_socket_id = user_socket_map.get(sender_id)
+        if sender_socket_id:
+            await sio.emit("messagesSeen", {"receiverId": receiver_id}, to=sender_socket_id)
+
 # =====================================================================================
 #  VIDEO CALL SIGNALING (Python) — Xử lý WebRTC signaling cho cuộc gọi video
 #  Tất cả logic signaling được viết bằng Python, chạy trên FastAPI + Socket.IO

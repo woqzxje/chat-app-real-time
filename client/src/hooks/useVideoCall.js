@@ -2,17 +2,28 @@ import { useRef, useState, useEffect, useCallback } from "react";
 
 const ICE_SERVERS = {
     iceServers: [
+        // Danh sách các STUN servers miễn phí và ổn định nhất
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
-        { urls: "stun:stun3.l.google.com:19302" },
-        { urls: "stun:stun4.l.google.com:19302" },
-        // TURN servers miễn phí (backup khi P2P qua NAT thất bại)
+        { urls: "stun:stun.cloudflare.com:3478" },
+        { urls: "stun:stun.twilio.com:3478" },
+        // GHI CHÚ: Bạn cần một TURN Server thực tế để Video Call hoạt động 100% khi khác mạng.
         {
-            urls: "turn:relay1.expressturn.com:443",
-            username: "efFKTGOVKNYNJVYHLI",
-            credential: "KmkiISaT8K89Jgrp",
+            urls: "turn:myvideocallquynh.metered.live:80",
+            username: "bd487ff8e692cad2e03607db",
+            credential: "R6pum4ID8oUFmioB",
         },
+        {
+            urls: "turn:myvideocallquynh.metered.live:443",
+            username: "bd487ff8e692cad2e03607db",
+            credential: "R6pum4ID8oUFmioB",
+        },
+        {
+            urls: "turn:myvideocallquynh.metered.live:443?transport=tcp",
+            username: "bd487ff8e692cad2e03607db",
+            credential: "R6pum4ID8oUFmioB",
+        }
     ],
 };
 

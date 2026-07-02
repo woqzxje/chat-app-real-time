@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus } from 'lucide-react';
+import { Video, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck } from 'lucide-react';
 import FlickerSpinner from './ui/FlickerSpinner';
 import { ShinyButton } from './ui/ShinyButton';
 
@@ -616,7 +616,16 @@ const ChatContainer = ({ startCall }) => {
                 alt="User"
                 className="rounded-full w-9"
               />
-              <p className="text-gray-400">{formatMessageTime(msg.createdAt)}</p>
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <p className="text-gray-400 text-[10px]">{formatMessageTime(msg.createdAt)}</p>
+                {msg.senderId === authUser._id && (
+                  msg.seen ? (
+                    <CheckCheck className="w-3.5 h-3.5 text-cyan-400" />
+                  ) : (
+                    <Check className="w-3 h-3 text-gray-500" />
+                  )
+                )}
+              </div>
             </div>
           </div>
           )

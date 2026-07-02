@@ -123,6 +123,11 @@ export const ChatProvider = ({ children }) => {
                     if (prev.some((m) => m._id === newMessage._id)) return prev;
                     return [...prev, newMessage];
                 });
+                
+                // Nếu tin nhắn là từ người mình đang mở chat, báo cho server là mình đã xem ngay
+                if (isFromSelected) {
+                    socket.emit("markMessagesSeen", { senderId: newMessage.senderId, receiverId: authUser._id })
+                }
             } else if (newMessage.senderId !== authUser?._id) {
                 // Tăng số tin nhắn chưa đọc từ người gửi khác
                 setUnseenMessages(prev => ({
@@ -158,6 +163,15 @@ export const ChatProvider = ({ children }) => {
                 : m
             ));
         });
+
+        // Lắng nghe sự kiện báo tin nhắn đã được xem
+        socket.on("messagesSeen", ({ receiverId }) => {
+            setMessages((prev) => prev.map(m => 
+                m.receiverId === receiverId 
+                ? { ...m, seen: true } 
+                : m
+            ));
+        });
     }
 
     // Ngừng lắng nghe tin nhắn (dọn dẹp bộ nhớ)
@@ -167,6 +181,7 @@ export const ChatProvider = ({ children }) => {
             socket.off("messageEdited");
             socket.off("messageDeleted");
             socket.off("messageReacted");
+            socket.off("messagesSeen");
         }
     }
 

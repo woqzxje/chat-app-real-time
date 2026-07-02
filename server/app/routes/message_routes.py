@@ -94,11 +94,23 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
     ).to_list()
 
     # Đánh dấu các tin nhắn họ gửi cho mình là 'đã xem' (seen)
-    await Message.find(
+    unseen_msgs = await Message.find(
         Message.senderId == id,
         Message.receiverId == my_id,
         Message.seen == False,  # noqa: E712
-    ).update({"$set": {"seen": True}})
+    ).to_list()
+    
+    if unseen_msgs:
+        await Message.find(
+            Message.senderId == id,
+            Message.receiverId == my_id,
+            Message.seen == False,  # noqa: E712
+        ).update({"$set": {"seen": True}})
+        
+        # Bắn sự kiện qua socket cho người gửi biết mình đã xem
+        sender_socket_id = user_socket_map.get(id)
+        if sender_socket_id:
+            await sio.emit("messagesSeen", {"receiverId": my_id}, to=sender_socket_id)
 
     return {"success": True, "messages": [_msg_dict(m) for m in messages]}
 
