@@ -13,7 +13,7 @@ const App = () => {
 
   return (
     // Đặt background cho toàn bộ ứng dụng
-    <DarkGradientBg className="absolute inset-0 overflow-hidden">
+    <DarkGradientBg className="h-[100dvh] w-full overflow-hidden">
       {/* Component hiển thị các thông báo (toast) */}
       <Toaster />
 
