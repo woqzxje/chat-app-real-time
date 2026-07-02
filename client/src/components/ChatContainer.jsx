@@ -163,6 +163,17 @@ const AttachmentBubble = ({ attachment }) => {
     );
   }
 
+  // Nếu là video đơn → hiển thị video player
+  if (file_type === 'video') {
+    return (
+      <video
+        src={url}
+        controls
+        className="max-w-[280px] sm:max-w-[320px] rounded-2xl border border-white/10 mb-1 outline-none bg-black/20"
+      />
+    );
+  }
+
   // ── Nếu là FOLDER → hiển thị danh sách file mở rộng ────────────────────────
   if (file_type === 'folder' && files && files.length > 0) {
 
