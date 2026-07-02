@@ -9,7 +9,7 @@ import { VideoCallModal } from '../components/VideoCallModal'
 
 const HomePage = () => {
 
-  const { selectedUser } = useContext(ChatContext)
+  const { selectedUser, showRightSidebar } = useContext(ChatContext)
   const { authUser, socket } = useContext(AuthContext)
 
   // ✅ DÒNG NÀY ĐANG BỊ THIẾU — đây là nguyên nhân white screen
@@ -21,10 +21,10 @@ const HomePage = () => {
 
   return (
     <div className='w-full h-screen overflow-hidden bg-transparent'>
-      <div className={`bg-black/10 overflow-hidden h-full grid grid-cols-1 relative ${selectedUser ? 'md:grid-cols-[1fr_1.5fr_1fr] xl:grid-cols-[1fr_2fr_1fr]' : 'md:grid-cols-2'}`}>
+      <div className={`bg-black/10 overflow-hidden h-full grid grid-cols-1 relative transition-all duration-300 ${selectedUser ? (showRightSidebar ? 'md:grid-cols-[1fr_1.5fr_1fr] xl:grid-cols-[1fr_2fr_1fr]' : 'md:grid-cols-[1fr_2.5fr] xl:grid-cols-[1fr_3fr]') : 'md:grid-cols-2'}`}>
         <Sidebar />
         <ChatContainer startCall={startCall} />
-        <RightSidebar />
+        {showRightSidebar && <RightSidebar />}
       </div>
 
       <VideoCallModal

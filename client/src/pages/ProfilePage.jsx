@@ -1,5 +1,6 @@
 import React, {useContext, useState} from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import assets from '../assets/assets'
 import { AuthContext } from '../../context/AuthContext'
 
@@ -43,8 +44,13 @@ const ProfilePage = () => {
       {/* Khung nội dung hồ sơ với hiệu ứng làm mờ kính */}
       <div className='w-5/6 max-w-2xl bg-white/5 text-gray-300 border-2 border-gray-600 flex items-center justify-between max-sm:flex-col-reverse rounded-lg'>
         
-        <form onSubmit={handleSubmit} className='flex flex-col gap-5 p-10 flex-1'>
-          <h3 className="text-lg">Chi tiết hồ sơ</h3>
+        <form onSubmit={handleSubmit} className='flex flex-col gap-5 p-10 flex-1 relative'>
+          <div className="flex items-center gap-4">
+            <button type="button" onClick={() => navigate('/')} className="p-2 -ml-2 rounded-full hover:bg-white/10 hover:text-cyan-400 transition-all cursor-pointer" title="Quay lại">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h3 className="text-lg font-medium">Chi tiết hồ sơ</h3>
+          </div>
           
           {/* Khu vực chọn ảnh đại diện */}
           <label htmlFor="avatar" className='flex items-center gap-3 cursor-pointer'>
@@ -65,7 +71,7 @@ const ProfilePage = () => {
         </form>
 
         {/* Hiển thị ảnh đại diện hiện tại bên cạnh form */}
-        <img className={`max-w-44 aspect-square rounded-full mx-10 max-sm:mt-10 ${selectedImage && 'rounded-full'}`} src={authUser?.profilePic || assets.logo_icon} alt="Preview" />
+        <img className={`max-w-44 aspect-square rounded-full mx-10 max-sm:mt-10 ${selectedImage && 'rounded-full'}`} src={selectedImage ? URL.createObjectURL(selectedImage) : (authUser?.profilePic || "/logo.jpg")} alt="Preview" />
       </div>
 
     </div>

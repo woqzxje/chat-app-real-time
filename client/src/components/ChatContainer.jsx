@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video } from 'lucide-react';
+import { Video, Send, PanelRight } from 'lucide-react';
 import FlickerSpinner from './ui/FlickerSpinner';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
@@ -298,7 +298,7 @@ const CallBubble = ({ callInfo, isSender, createdAt }) => {
 const ChatContainer = ({ startCall }) => {
 
   // Lấy dữ liệu tin nhắn, người dùng đang chọn và các hàm xử lý từ ChatContext
-  const { messages, selectedUser, setSelectedUser, sendMessage, getMessages } = useContext(ChatContext);
+  const { messages, selectedUser, setSelectedUser, sendMessage, getMessages, showRightSidebar, setShowRightSidebar } = useContext(ChatContext);
 
   // Lấy thông tin người dùng hiện tại và danh sách online từ AuthContext
   const { authUser, onlineUser } = useContext(AuthContext);
@@ -449,8 +449,14 @@ const ChatContainer = ({ startCall }) => {
         >
           <Video className="w-6 h-6" />
         </button>
-        {/* Nút Trợ giúp */}
-        <img src={assets.help_icon} alt="Trợ giúp" className="hidden md:block w-6" />
+        {/* Nút bật tắt Sidebar Phải */}
+        <button
+          onClick={() => setShowRightSidebar(prev => !prev)}
+          className={`hidden md:flex p-2 rounded-lg transition-colors cursor-pointer ${showRightSidebar ? 'bg-cyan-500/20 text-cyan-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+          title="Thông tin chi tiết"
+        >
+          <PanelRight className="w-6 h-6" />
+        </button>
       </div>
 
       {/* ------------ Khu vực hiển thị tin nhắn (Chat Area) ------------- */}
@@ -582,12 +588,13 @@ const ChatContainer = ({ startCall }) => {
               </svg>
             </div>
           ) : (
-            <img
+            <button
               onClick={handleSendMessage}
-              src={assets.send_button}
-              alt="Gửi"
-              className="w-9 cursor-pointer"
-            />
+              className="w-9 h-9 shrink-0 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-full flex items-center justify-center text-white hover:opacity-80 transition-opacity cursor-pointer"
+              title="Gửi"
+            >
+              <Send className="w-[18px] h-[18px] -ml-[2px] mt-[1px]" />
+            </button>
           )}
         </div>
       </div>

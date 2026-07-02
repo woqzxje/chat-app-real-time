@@ -13,6 +13,7 @@ export const ChatProvider = ({ children }) => {
     const [unseenMessages, setUnseenMessages] = useState({}); // Số tin nhắn chưa đọc
     const [isUserLoading, setIsUserLoading] = useState(false);
     const [isMessagesLoading, setIsMessagesLoading] = useState(false);
+    const [showRightSidebar, setShowRightSidebar] = useState(false); // Trạng thái mở/đóng RightSidebar
 
     const { socket, authUser } = useContext(AuthContext)
 
@@ -151,6 +152,8 @@ export const ChatProvider = ({ children }) => {
         getUsers,
         getMessages,
         sendMessage,
+        showRightSidebar,
+        setShowRightSidebar,
     }
 
     return (
