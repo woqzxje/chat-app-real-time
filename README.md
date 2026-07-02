@@ -199,7 +199,7 @@ Phân phối theo giấy phép MIT. Xem thêm `LICENSE` để biết thông tin 
 
 **Tác giả:** [woqzxje](https://github.com/woqzxje)
 
-**Repository Link:** [https://github.com/woqzxje/chat-app](https://github.com/woqzxje/chat-app)
+**Repository Link:** [https://github.com/woqzxje/chat-app](https://github.com/woqzxje/chat-app-real-time)
 
 ---
 <p align="center">Made with ❤️ by woqzxje</p>
