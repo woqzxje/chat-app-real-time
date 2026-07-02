@@ -12,8 +12,8 @@ export default function FlickerSpinner({ size = 28 }) {
     >
       <title>Loading</title>
       <style>{`
-        circle { fill: var(--off); }
-        circle.on { fill: var(--on); }
+        circle { fill: var(--off); opacity: 0.2; }
+        circle.on { fill: var(--on); filter: drop-shadow(0 0 3px var(--on)); }
         @media (prefers-reduced-motion: reduce) { circle { animation: none !important; } }
         @keyframes f011111000 { 0% { opacity: 0; } 11.10% { opacity: 0; } 11.11% { opacity: 1; } 66.66% { opacity: 1; } 66.67% { opacity: 0; } 100% { opacity: 0; } }
         @keyframes f001111000 { 0% { opacity: 0; } 22.21% { opacity: 0; } 22.22% { opacity: 1; } 66.66% { opacity: 1; } 66.67% { opacity: 0; } 100% { opacity: 0; } }
