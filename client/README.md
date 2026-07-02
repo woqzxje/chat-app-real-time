@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/Framer_Motion-black?style=for-the-badge&logo=framer&logoColor=blue" alt="Framer Motion" />
   <img src="https://img.shields.io/badge/Socket.io-010101?&style=for-the-badge&logo=Socket.io&logoColor=white" alt="Socket.io" />
   <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white" alt="WebRTC" />
+  <img src="https://img.shields.io/badge/Google_OAuth-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google OAuth" />
 </div>
 
 <br />
@@ -26,6 +27,8 @@
 * **Animations:** Framer Motion & GSAP giúp các biểu tượng và popup xuất hiện mượt mà.
 * **State Management:** React Context API (`AuthContext`, `ChatContext`).
 * **Giao Tiếp (Real-time):** `socket.io-client` cho nhắn tin & `simple-peer` cho WebRTC Video Call.
+* **Xác thực (Auth):** `@react-oauth/google` để tích hợp đăng nhập Google an toàn.
+* **Kết nối Mạng (Video Call):** Kết nối P2P được đảm bảo bởi STUN/TURN server mạnh mẽ từ **Metered.ca** và **Cloudflare/Twilio** giúp đàm thoại không gián đoạn.
 * **UI Components:** `lucide-react` (Bộ icon tối giản), React-Hot-Toast (Thông báo nổi).
 
 ---

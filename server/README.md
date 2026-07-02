@@ -13,6 +13,7 @@
   <img src="https://img.shields.io/badge/Socket.io-010101?&style=for-the-badge&logo=Socket.io&logoColor=white" alt="Socket.io" />
   <img src="https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens" alt="JWT" />
   <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=Cloudinary&logoColor=white" alt="Cloudinary" />
+  <img src="https://img.shields.io/badge/Google_OAuth-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google OAuth" />
 </div>
 
 <br />
@@ -24,8 +25,11 @@
 * **Core:** Node.js + Express Framework.
 * **Database:** MongoDB kết hợp với thư viện ODM Mongoose.
 * **Real-time:** `socket.io` (Phiên bản 4.x).
-* **Authentication:** Xác thực bằng JWT (JSON Web Tokens) lưu trữ an toàn trong HTTP-only Cookie. Giải mã token Google bằng thư viện `google-auth-library`.
-* **Media & Storage:** `cloudinary` (CDN) và `multer` để xử lý việc tải lên (upload) hình ảnh, video, tài liệu và lưu trữ an toàn trên đám mây.
+* **Authentication & Security:** 
+  * Cấp phát và quản lý phiên đăng nhập (Session) bằng **JWT (JSON Web Tokens)** lưu trữ an toàn trong HTTP-only Cookie. 
+  * Giải mã và xác thực tài khoản qua Google bằng thư viện `google-auth-library` (`@react-oauth/google` phía Client).
+  * Mã hóa mật khẩu bảo mật tuyệt đối với `bcryptjs`.
+* **Media & Storage:** Tích hợp nền tảng **Cloudinary** (thông qua `cloudinary`, `multer`) để xử lý việc tải lên (upload) hình ảnh, video, tài liệu, và nén Zip an toàn trên đám mây CDN.
 
 ---
 

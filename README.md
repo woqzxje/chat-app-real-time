@@ -29,6 +29,9 @@
   <img src="https://img.shields.io/badge/Socket.io-010101?&style=for-the-badge&logo=Socket.io&logoColor=white" alt="Socket.io" />
   <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white" alt="WebRTC" />
   <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens" alt="JWT" />
+  <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=for-the-badge&logo=Cloudinary&logoColor=white" alt="Cloudinary" />
+  <img src="https://img.shields.io/badge/Google_OAuth-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google OAuth" />
 </div>
 
 <br />
@@ -78,6 +81,13 @@
 * ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=flat&logo=mongodb&logoColor=white) **MongoDB & Mongoose**
 * ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=flat&logo=socket.io&badgeColor=010101) **Socket.IO** (Real-time Messaging & Relay)
 * ![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=flat&logo=webrtc&logoColor=white) **WebRTC (Simple-Peer)** (P2P Video Call)
+
+Các dịch vụ và tiện ích bổ sung:
+* **Metered.ca:** Cung cấp hệ thống máy chủ **STUN/TURN Server** chất lượng cao, giúp định tuyến hình ảnh, vượt màng lọc NAT/Tường lửa để thiết lập Video Call (WebRTC) thành công ở mọi loại mạng (4G, Wifi công cộng).
+* **Cloudinary:** Dịch vụ lưu trữ đám mây (CDN) để tải lên, lưu trữ và nén ảnh, tệp tin, tập tin Zip tốc độ cao.
+* **Google OAuth 2.0:** Giao thức xác thực an toàn thông qua thư viện `google-auth-library` và `@react-oauth/google`.
+* **JWT (JSON Web Tokens):** Quản lý phiên đăng nhập và bảo mật các API thông qua HttpOnly Cookie.
+* **Lucide-React:** Bộ thư viện Icon SVG gọn nhẹ và tinh tế.
 
 ---
 
