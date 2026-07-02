@@ -1,104 +1,205 @@
-# 💬 QuickChat — Ứng dụng nhắn tin thời gian thực cao cấp
+<div align="center">
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="NodeJS" />
+  <img src="https://img.shields.io/badge/Socket.io-010101?&style=for-the-badge&logo=Socket.io&logoColor=white" alt="Socket.io" />
+  <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white" alt="WebRTC" />
+  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
+</div>
 
-**QuickChat** là một ứng dụng chat 1-1 thời gian thực được xây dựng dựa trên kiến trúc tách biệt giữa **Client (React + Vite)** và **Server (FastAPI + Socket.IO)**. Dự án được thiết kế với giao diện người dùng hiện đại, nhiều hiệu ứng động mượt mà và các tính năng truyền tải tập tin cao cấp.
+<br />
+<div align="center">
+  <a href="#">
+    <!-- Thay đổi URL ảnh bên dưới thành link logo thực tế của bạn nếu có -->
+    <img src="client/public/logo.jpg" alt="Logo" width="120" height="120" style="border-radius: 20px;">
+  </a>
 
----
+  <h1 align="center">ChatITC (Realtime MERN Chat App)</h1>
 
-## 🎯 Điểm nổi bật & Tính năng chính
-
-- **Giao diện Modern Glassmorphism**: Trang đăng nhập và đăng ký được thiết kế với hiệu ứng kính mờ cao cấp, hiệu ứng nghiêng 3D (3D Tilt Effect) động theo con trỏ chuột, và viền sáng phát quang chuyển động (Animated Border Light Beams).
-- **Trải nghiệm Realtime mượt mà**: Đồng bộ hóa tin nhắn, thông báo cuộc gọi và danh sách người dùng online tức thì thông qua Socket.IO.
-- **Cuộc gọi Video Call (WebRTC)**: Tích hợp cuộc gọi video trực tuyến giữa hai người dùng với giao diện modal chuyên nghiệp, xử lý ngắt kết nối an toàn và hiển thị lịch sử cuộc gọi trực quan.
-- **Truyền tải File & Thư mục**:
-  - Hỗ trợ gửi ảnh trực tiếp (preview nhanh).
-  - Đính kèm tập tin riêng lẻ (PDF, Word, Excel, ZIP, RAR, v.v.).
-  - **Gửi và tải cả thư mục (Folder)**: Giữ nguyên cấu trúc thư mục con bên trong. Khi tải xuống, hệ thống tự động đóng gói zip an toàn qua proxy từ Cloudinary giúp giải quyết lỗi tải file archive (.zip, .rar).
-- **Trình tải an toàn (Proxy Download)**: Toàn bộ quá trình tải tập tin được xử lý qua proxy backend giúp bỏ qua chính sách chặn CORS của trình duyệt đối với các liên kết từ bên ngoài (Cloudinary).
-
----
-
-## 🧩 Kiến trúc hệ thống
-
-```
-CLIENT (React 19 + Vite)  <======>  SERVER (FastAPI + Socket.IO)
-      │                                     │
-      │ - HTTP / REST API (JWT Auth)         │
-      │ - WebSockets (Socket.IO realtime)   │
-      │                                     │
-      ▼                                     ▼
-   Browser                              MongoDB + Cloudinary
-```
-
-### Phân bổ thư mục
-
-- `client/`: Mã nguồn giao diện người dùng React, quản lý Auth Context, Chat Context và Socket.IO Client.
-- `server/`: REST API FastAPI, quản lý Socket.IO Server, điều phối WebRTC signaling và lưu trữ tệp Cloudinary.
-- `render.yaml`: Tệp cấu hình tự động triển khai hệ thống lên dịch vụ Render.
+  <p align="center">
+    Một ứng dụng trò chuyện thời gian thực hiện đại, thiết kế theo phong cách Glassmorphism tuyệt đẹp, tích hợp cuộc gọi Video ngang hàng (P2P) và truyền tệp đa phương tiện.
+    <br />
+    <br />
+    <a href="#usage"><strong>Khám phá tài liệu »</strong></a>
+    <br />
+    <br />
+    <a href="#">Xem Demo (Sắp tới)</a>
+    ·
+    <a href="#">Báo cáo Lỗi</a>
+    ·
+    <a href="#">Yêu cầu Tính năng</a>
+  </p>
+</div>
 
 ---
 
-## ⚙️ Hướng dẫn cài đặt & Chạy cục bộ
+<details>
+  <summary><h2>📖 Mục lục (Table of Contents)</h2></summary>
+  <ol>
+    <li><a href="#about-the-project">Về Dự Án</a></li>
+    <li><a href="#built-with">Công Nghệ Sử Dụng</a></li>
+    <li><a href="#key-features">Các Tính Năng Chính</a></li>
+    <li>
+      <a href="#getting-started">Hướng Dẫn Cài Đặt</a>
+      <ul>
+        <li><a href="#prerequisites">Điều Kiện Kiên Quyết</a></li>
+        <li><a href="#installation">Cài Đặt</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Cách Sử Dụng</a></li>
+    <li><a href="#roadmap">Định Hướng Phát Triển (Roadmap)</a></li>
+    <li><a href="#contributing">Đóng Góp</a></li>
+    <li><a href="#license">Giấy Phép</a></li>
+    <li><a href="#contact">Liên Hệ</a></li>
+  </ol>
+</details>
 
-### 1. Cấu hình & Chạy Backend (Server)
+---
 
-Di chuyển vào thư mục server và cài đặt các thư viện Python cần thiết:
-```bash
+## 🚀 About The Project (Về Dự Án)
+
+**ChatITC** không chỉ là một ứng dụng nhắn tin thông thường, mà còn là một nền tảng giao tiếp toàn diện được xây dựng từ đầu (from scratch) nhằm cung cấp trải nghiệm mượt mà, bảo mật và thân thiện với người dùng. Điểm nhấn lớn nhất của dự án nằm ở **giao diện UI/UX được chau chuốt cực kỳ kĩ lưỡng** với tông màu Đen - Xanh Cyan chủ đạo, kết hợp hiệu ứng kính mờ (Glassmorphism) và các Animation linh hoạt mang lại cảm giác cao cấp.
+
+Dự án giải quyết nhu cầu có một hệ thống giao tiếp đa kênh (Text, Ảnh, Video, Tập tin, Gọi Video) mà vẫn duy trì được tốc độ nhanh chóng thông qua việc kết hợp Socket.IO và WebRTC.
+
+---
+
+## 🛠 Built With (Công Nghệ Sử Dụng)
+
+Ứng dụng được xây dựng trên nền tảng **MERN Stack** cùng hàng loạt công nghệ hiện đại ở phía Client để tối ưu hóa hiệu suất và trải nghiệm đồ họa.
+
+* ![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB) **React 18**
+* ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=flat&logo=vite&logoColor=white) **Vite** (Build Tool)
+* ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white) **Tailwind CSS** (UI Styling)
+* ![Framer](https://img.shields.io/badge/Framer_Motion-black?style=flat&logo=framer&logoColor=blue) **Framer Motion** (Animations)
+* ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=flat&logo=node.js&logoColor=white) **Node.js & Express**
+* ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=flat&logo=mongodb&logoColor=white) **MongoDB** & Mongoose
+* ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=flat&logo=socket.io&badgeColor=010101) **Socket.IO** (Real-time Messaging)
+* ![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=flat&logo=webrtc&logoColor=white) **WebRTC** (P2P Video Call)
+
+---
+
+## ✨ Key Features (Tính Năng Chính)
+
+- **Nhắn tin Thời gian thực**: Gửi và nhận tin nhắn không độ trễ nhờ Socket.IO.
+- **Gọi Video Trực Tuyến**: WebRTC (Peer-to-Peer) cho phép đàm thoại video sắc nét, đi kèm Modal từ chối/nhận cuộc gọi.
+- **Gửi Tệp Tin & Thư Mục**: Hỗ trợ gửi ảnh, video, tài liệu, đính kèm và tự động nén thư mục (zip) trước khi gửi.
+- **Glassmorphism UI**: Thiết kế giao diện trong suốt, viền sáng (glowing borders) và hiệu ứng chuyển cảnh mượt mà.
+- **Xác thực An toàn**: Đăng ký, Đăng nhập (với JWT) và Quản lý Hồ sơ (Đổi Avatar/Bio).
+
+---
+
+## ⚙️ Getting Started (Hướng Dẫn Cài Đặt)
+
+Làm theo các bước dưới đây để sao chép (clone) dự án và chạy trên máy tính (local) của bạn.
+
+### Prerequisites
+Hãy đảm bảo bạn đã cài đặt các công cụ sau:
+* Node.js (phiên bản >= 18.x)
+* pnpm (Trình quản lý package được khuyên dùng cho Frontend)
+  ```sh
+  npm install -g pnpm
+  ```
+
+### Installation
+
+1. **Clone kho lưu trữ này**
+   ```sh
+   git clone https://github.com/woqzxje/chat-app.git
+   cd chat-app
+   ```
+
+2. **Cài đặt thư viện phía Server (Backend)**
+   ```sh
+   cd server
+   npm install
+   ```
+
+3. **Cấu hình Biến môi trường (Server)**
+   Tạo file `.env` trong thư mục `server` và thêm các thông số:
+   ```env
+   PORT=5000
+   MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/
+   JWT_SECRET=your_super_secret_key
+   CLOUDINARY_URL=cloudinary://...
+   ```
+
+4. **Cài đặt thư viện phía Client (Frontend)**
+   Mở một Terminal mới:
+   ```sh
+   cd client
+   pnpm install
+   ```
+
+5. **Cấu hình Biến môi trường (Client)**
+   Tạo file `.env` trong thư mục `client`:
+   ```env
+   VITE_BACKEND_URL=http://localhost:5000
+   ```
+
+---
+
+## 💻 Usage (Cách Sử Dụng)
+
+Để khởi chạy dự án, bạn cần khởi chạy cùng lúc cả Server và Client.
+
+**Khởi chạy Server (Terminal 1):**
+```sh
 cd server
-pip install -r requirements.txt
-```
-
-Tạo tệp cấu hình môi trường `.env` từ tệp `.env.example`:
-```env
-MONGODB_URL=mongodb://localhost:27017
-JWT_SECRET=your_jwt_secret_key
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-PORT=5000
-```
-
-Khởi động Backend Server:
-```bash
-py run.py
-# Hoặc sử dụng Uvicorn trực tiếp:
-uvicorn main:socket_app --host 0.0.0.0 --port 5000 --reload
-```
-
-### 2. Cấu hình & Chạy Frontend (Client)
-
-Di chuyển vào thư mục client và cài đặt các gói Node.js:
-```bash
-cd client
-npm install
-```
-
-Tạo tệp cấu hình môi trường `.env` trong thư mục `client/`:
-```env
-VITE_BACKEND_URL=http://localhost:5000
-```
-
-Khởi động môi trường phát triển Frontend:
-```bash
 npm run dev
+# Hoặc nếu dùng script Python có sẵn:
+python run.py
 ```
 
----
+**Khởi chạy Client (Terminal 2):**
+```sh
+cd client
+pnpm run dev
+```
 
-## 📦 Triển khai sản phẩm (Deployment)
-
-### Triển khai Backend (ví dụ: Render)
-- **Thư mục gốc**: `server`
-- **Lệnh Build**: `pip install -r requirements.txt`
-- **Lệnh Start**: `uvicorn main:socket_app --host 0.0.0.0 --port $PORT`
-- *Lưu ý*: Cần điền đầy đủ các biến môi trường cấu hình trong phần Environment Variables của Render.
-
-### Triển khai Frontend (ví dụ: Vercel)
-- **Thư mục gốc**: `client`
-- **Lệnh Build**: `npm run build`
-- **Thư mục Output**: `dist`
-- *Lưu ý*: Thêm biến môi trường `VITE_BACKEND_URL` trỏ tới URL API Backend đã deploy.
+> [!NOTE] 
+> Sau khi khởi chạy thành công, truy cập ứng dụng thông qua trình duyệt tại địa chỉ: `http://localhost:5173`
 
 ---
 
-## 🙋‍♂️ Tác giả
-Dự án được xây dựng và phát triển bởi **Thượng Mạnh Quỳnh**.
+## 🗺 Roadmap (Định Hướng)
+
+- [x] Thiết kế lại giao diện Dark/Cyan Glassmorphism
+- [x] Tích hợp Custom Animations (FlickerSpinner)
+- [x] WebRTC Video Call cơ bản
+- [ ] Tính năng Chat Nhóm (Group Chat)
+- [ ] Phản hồi tin nhắn (Reactions) bằng Emojis
+- [ ] Ghi âm (Voice Messages)
+- [ ] Triển khai lên Vercel / Render
+
+---
+
+## 🤝 Contributing (Đóng Góp)
+
+Những đóng góp của cộng đồng chính là điều làm cho Open Source trở thành một nơi tuyệt vời để học hỏi, truyền cảm hứng và sáng tạo. Bất kỳ sự đóng góp nào của bạn cũng được **đánh giá cao**.
+
+Nếu bạn có gợi ý muốn cải thiện ứng dụng này, vui lòng fork repo và tạo pull request. Bạn cũng có thể mở issue với tag "enhancement". Đừng quên cho dự án 1 ⭐️ nhé! Cảm ơn bạn!
+
+1. Fork Dự Án
+2. Tạo Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit Thay Đổi (`git commit -m 'Thêm một tính năng tuyệt vời'`)
+4. Push lên Branch (`git push origin feature/AmazingFeature`)
+5. Mở Pull Request
+
+---
+
+## 📜 License (Giấy Phép)
+
+Phân phối theo giấy phép MIT. Xem thêm `LICENSE` để biết thông tin chi tiết.
+
+---
+
+## 📬 Contact (Liên Hệ)
+
+**Tác giả:** [woqzxje](https://github.com/woqzxje)
+
+**Repository Link:** [https://github.com/woqzxje/chat-app](https://github.com/woqzxje/chat-app)
+
+---
+<p align="center">Made with ❤️ by woqzxje</p>
