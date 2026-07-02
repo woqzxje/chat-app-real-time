@@ -106,8 +106,8 @@ Hãy đảm bảo bạn đã cài đặt các công cụ sau:
 
 1. **Clone kho lưu trữ này**
    ```sh
-   git clone https://github.com/woqzxje/chat-app.git
-   cd chat-app
+   git clone https://github.com/woqzxje/chat-app-real-time.git
+   cd chat-app-real-time
    ```
 
 2. **Cài đặt thư viện phía Server (Backend)**
@@ -149,7 +149,7 @@ Hãy đảm bảo bạn đã cài đặt các công cụ sau:
 cd server
 npm run dev
 # Hoặc nếu dùng script Python có sẵn:
-python run.py
+py run.py
 ```
 
 **Khởi chạy Client (Terminal 2):**
@@ -199,7 +199,7 @@ Phân phối theo giấy phép MIT. Xem thêm `LICENSE` để biết thông tin 
 
 **Tác giả:** [woqzxje](https://github.com/woqzxje)
 
-**Repository Link:** [https://github.com/woqzxje/chat-app](https://github.com/woqzxje/chat-app)
+**Repository Link:** [https://github.com/woqzxje/chat-app-real-time](https://github.com/woqzxje/chat-app-real-time)
 
 ---
 <p align="center">Made with ❤️ by woqzxje</p>
