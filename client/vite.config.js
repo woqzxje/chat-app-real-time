@@ -9,15 +9,6 @@ export default defineConfig({
     host: true,   // Mở trên mạng LAN (để mobile truy cập được)
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          // Gom các thư viện nặng vào 1 chunk lớn
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['motion/react', 'framer-motion', 'lucide-react', '@radix-ui/react-slot'],
-          'vendor-utils': ['axios', 'socket.io-client', 'zustand', 'toast-notifications', 'date-fns'],
-        },
-      }
-    }
-  }
+    chunkSizeWarningLimit: 1000, // Tăng giới hạn lên 1000 kB (1 MB)
+  },
 })
