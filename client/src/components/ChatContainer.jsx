@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, Phone, PhoneOff, PhoneMissed } from 'lucide-react';
+import { Video, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, Phone, PhoneOff, PhoneMissed, MoreVertical } from 'lucide-react';
 import FlickerSpinner from './ui/FlickerSpinner';
 import { ShinyButton } from './ui/ShinyButton';
 
@@ -345,6 +345,176 @@ const CallBubble = ({ callInfo, isSender, createdAt }) => {
   );
 };
 
+// ── Component MessageItem (Tin nhắn đơn lẻ) ──────────────────────────────────
+const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, revokeMessage, scrollToBottom }) => {
+  const isOwn = msg.senderId === authUser._id;
+  const [showOptions, setShowOptions] = useState(false);
+  const [showEmojis, setShowEmojis] = useState(false);
+  const timerRef = useRef(null);
+
+  // Xử lý sự kiện đè (Long press) trên Mobile
+  const handleTouchStart = () => {
+    timerRef.current = setTimeout(() => {
+      setShowEmojis(true);
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, 500);
+  };
+
+  const handleTouchEndOrMove = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  return (
+    <div 
+      className={`flex items-end gap-3 justify-end group ${!isOwn ? 'flex-row-reverse' : ''}`}
+      onMouseLeave={() => {
+        if (showOptions) setShowOptions(false);
+        if (showEmojis) setShowEmojis(false);
+      }}
+    >
+      {/* ── Action Menu (Emoji & Tùy chọn) ── */}
+      {!msg.isDeleted && (
+        <div className={`relative flex items-center gap-1 transition-opacity md:opacity-0 group-hover:opacity-100 opacity-100 ${isOwn ? 'mr-1' : 'ml-1 flex-row-reverse'}`}>
+          
+          {/* Nút thả Emoji (Chỉ hiện trên Desktop / Hover) */}
+          <div className="relative group/react hidden md:flex items-center">
+            <button title="Thả cảm xúc" className="text-gray-400 hover:text-yellow-400 cursor-pointer p-1">
+              <SmilePlus className="w-4 h-4" />
+            </button>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 translate-y-2 pb-2 hidden group-hover/react:flex z-50">
+              <div className="bg-gray-800 rounded-full px-2 py-1 shadow-lg border border-gray-600 gap-1.5 flex items-center">
+                {['👍', '❤️', '😂', '😮', '😢', '😡'].map(emoji => (
+                  <button key={emoji} onClick={() => reactMessage(msg._id, emoji)} className="hover:scale-125 transition-transform text-base cursor-pointer">{emoji}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Nút 3 chấm (Hiện trên Mobile & Desktop Hover) */}
+          {isOwn && (!msg.image && !msg.attachment || true) && (
+            <div className="relative">
+              <button 
+                onClick={() => setShowOptions(!showOptions)} 
+                className="text-gray-400 hover:text-white p-1 cursor-pointer"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+              
+              {/* Dropdown Options */}
+              {showOptions && (
+                <div className="absolute bottom-full mb-1 right-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden z-50 min-w-[140px] animate-in fade-in zoom-in-95 duration-100">
+                  {(!msg.image && !msg.attachment) && (
+                    <button 
+                      onClick={() => {
+                        setShowOptions(false);
+                        const newText = prompt('Chỉnh sửa tin nhắn:', msg.text || '');
+                        if (newText !== null && newText.trim() !== '' && newText.trim() !== msg.text) {
+                            editMessage(msg._id, newText.trim());
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2 cursor-pointer"
+                    >
+                      <Pencil className="w-4 h-4" /> Chỉnh sửa
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => {
+                      setShowOptions(false);
+                      if(window.confirm('Bạn có chắc muốn thu hồi tin nhắn này?')) {
+                          revokeMessage(msg._id);
+                      }
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/10 hover:text-red-300 flex items-center gap-2 cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" /> Thu hồi
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Nội dung tin nhắn ── */}
+      <div 
+        className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} relative`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchEndOrMove}
+        onTouchEnd={handleTouchEndOrMove}
+        onTouchCancel={handleTouchEndOrMove}
+      >
+        {/* Thanh Emoji nổi lên trên Mobile khi Long Press */}
+        {showEmojis && !msg.isDeleted && (
+          <div className="absolute bottom-full mb-2 z-50">
+            <div className="bg-gray-800 rounded-full px-3 py-2 shadow-2xl border border-gray-600 gap-3 flex items-center animate-in fade-in zoom-in duration-200">
+              {['👍', '❤️', '😂', '😮', '😢', '😡'].map(emoji => (
+                <button 
+                  key={emoji} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    reactMessage(msg._id, emoji);
+                    setShowEmojis(false);
+                  }} 
+                  className="hover:scale-125 transition-transform text-2xl cursor-pointer"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            {/* Overlay ảo để chạm ra ngoài tự đóng Emoji */}
+            <div className="fixed inset-0 z-[-1]" onTouchStart={(e) => { e.stopPropagation(); setShowEmojis(false); }} onClick={(e) => { e.stopPropagation(); setShowEmojis(false); }} />
+          </div>
+        )}
+        
+        {msg.isDeleted ? (
+            <p className="px-4 py-3 text-sm italic text-gray-500 bg-white/5 rounded-2xl mb-1 border border-white/10">Tin nhắn đã bị thu hồi</p>
+        ) : (
+            <div className="relative">
+                {msg.attachment && <AttachmentBubble attachment={msg.attachment} onMediaLoad={scrollToBottom} />}
+                {msg.image && (
+                  <img src={msg.image} alt="Sent content" onLoad={scrollToBottom} className="max-w-[320px] border border-gray-700 rounded-2xl overflow-hidden mb-1" />
+                )}
+                {msg.text && (
+                  <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-1 break-all bg-cyan-500/30 text-white ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+                    {msg.text}
+                    {msg.isEdited && <span className="block text-[10px] text-white/50 text-right mt-1">(Đã chỉnh sửa)</span>}
+                  </p>
+                )}
+                {/* Reactions Bubble */}
+                {msg.reactions && msg.reactions.length > 0 && (
+                    <div className={`absolute -bottom-2 flex bg-[#1e293b] rounded-full px-1.5 py-0.5 shadow-md border border-white/10 gap-1 z-10 text-[10px] ${isOwn ? 'right-2' : 'left-2'}`}>
+                        {Object.entries(msg.reactions.reduce((acc, r) => { acc[r.emoji] = (acc[r.emoji] || 0) + 1; return acc; }, {})).map(([emoji, count]) => (
+                            <span key={emoji} className="flex items-center gap-0.5 cursor-pointer" onClick={() => reactMessage(msg._id, emoji)} title="Bấm để thả/hủy cảm xúc này">
+                                {emoji} {count > 1 && <span className="text-gray-300 font-semibold">{count}</span>}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+        )}
+      </div>
+
+      {/* ── Avatar và Thời gian ── */}
+      <div className="text-center text-xs md:text-sm flex-shrink-0">
+        <img
+          src={isOwn ? authUser?.profilePic || assets.avatar_icon : selectedUser?.profilePic || assets.avatar_icon}
+          alt="User"
+          className="rounded-full w-9"
+        />
+        <div className="flex items-center justify-center gap-1 mt-1">
+          <p className="text-gray-400 text-[10px]">{formatMessageTime(msg.createdAt)}</p>
+          {isOwn && (
+            msg.seen ? <CheckCheck className="w-3.5 h-3.5 text-cyan-400" /> : <Check className="w-3 h-3 text-gray-500" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Component chính ───────────────────────────────────────────────────────────
 const ChatContainer = ({ startCall }) => {
 
@@ -529,107 +699,16 @@ const ChatContainer = ({ startCall }) => {
             </div>
           ) : (
           // ── Tin nhắn bình thường ──────────────────────────────────────
-          <div
+          <MessageItem
             key={index}
-            className={`flex items-end gap-3 justify-end group ${msg.senderId !== authUser._id ? 'flex-row-reverse' : ''}`}
-          >
-            {/* Action Menu */}
-            {!msg.isDeleted && (
-               <div className={`opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 items-center mb-3 ${msg.senderId === authUser._id ? 'mr-1' : 'ml-1 flex-row-reverse'}`}>
-                  
-                  {/* Menu thả cảm xúc */}
-                  <div className="relative group/react flex items-center">
-                      <button title="Thả cảm xúc" className="text-gray-400 hover:text-yellow-400 cursor-pointer"><SmilePlus className="w-4 h-4" /></button>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 translate-y-2 pb-4 hidden group-hover/react:flex z-50">
-                          <div className="bg-gray-800 rounded-full px-2 py-1 shadow-lg border border-gray-600 gap-1.5 flex items-center">
-                              {['👍', '❤️', '😂', '😮', '😢', '😡'].map(emoji => (
-                                  <button key={emoji} onClick={() => reactMessage(msg._id, emoji)} className="hover:scale-125 transition-transform text-base cursor-pointer">{emoji}</button>
-                              ))}
-                          </div>
-                      </div>
-                  </div>
-
-                  {msg.senderId === authUser._id && (!msg.image && !msg.attachment) && (
-                      <button onClick={() => {
-                          const newText = prompt('Chỉnh sửa tin nhắn:', msg.text || '');
-                          if (newText !== null && newText.trim() !== '' && newText.trim() !== msg.text) {
-                              editMessage(msg._id, newText.trim());
-                          }
-                      }} title="Chỉnh sửa" className="text-gray-400 hover:text-cyan-400 cursor-pointer"><Pencil className="w-4 h-4" /></button>
-                  )}
-                  
-                  {msg.senderId === authUser._id && (
-                      <button onClick={() => {
-                          if(window.confirm('Bạn có chắc muốn thu hồi tin nhắn này?')) {
-                              revokeMessage(msg._id);
-                          }
-                      }} title="Thu hồi" className="text-gray-400 hover:text-red-400 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
-                  )}
-               </div>
-            )}
-
-            {/* Nội dung tin nhắn — bao gồm file đính kèm, ảnh và văn bản */}
-            <div className={`flex flex-col ${msg.senderId === authUser._id ? 'items-end' : 'items-start'}`}>
-              {msg.isDeleted ? (
-                  <p className="px-4 py-3 text-sm italic text-gray-500 bg-white/5 rounded-2xl mb-1 border border-white/10">Tin nhắn đã bị thu hồi</p>
-              ) : (
-                  <div className="relative">
-                      {/* Hiển thị file/folder đính kèm nếu có */}
-                      {msg.attachment && <AttachmentBubble attachment={msg.attachment} onMediaLoad={scrollToBottom} />}
-
-                      {/* Hiển thị ảnh nếu tin nhắn có ảnh (flow gốc) */}
-                      {msg.image && (
-                        <img
-                          src={msg.image}
-                          alt="Sent content"
-                          onLoad={scrollToBottom}
-                          className="max-w-[320px] border border-gray-700 rounded-2xl overflow-hidden mb-1"
-                        />
-                      )}
-
-                      {/* Hiển thị văn bản tin nhắn */}
-                      {msg.text && (
-                        <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-1 break-all bg-cyan-500/30 text-white ${msg.senderId === authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
-                          {msg.text}
-                          {msg.isEdited && <span className="block text-[10px] text-white/50 text-right mt-1">(Đã chỉnh sửa)</span>}
-                        </p>
-                      )}
-                      
-                      {/* Hiển thị cảm xúc */}
-                      {msg.reactions && msg.reactions.length > 0 && (
-                          <div className={`absolute -bottom-2 flex bg-[#1e293b] rounded-full px-1.5 py-0.5 shadow-md border border-white/10 gap-1 z-10 text-[10px] ${msg.senderId === authUser._id ? 'right-2' : 'left-2'}`}>
-                              {Object.entries(msg.reactions.reduce((acc, r) => { acc[r.emoji] = (acc[r.emoji] || 0) + 1; return acc; }, {})).map(([emoji, count]) => (
-                                  <span key={emoji} className="flex items-center gap-0.5 cursor-pointer" onClick={() => reactMessage(msg._id, emoji)} title="Bấm để thả/hủy cảm xúc này">
-                                      {emoji} {count > 1 && <span className="text-gray-300 font-semibold">{count}</span>}
-                                  </span>
-                              ))}
-                          </div>
-                      )}
-                  </div>
-              )}
-            </div>
-
-            {/* Hiển thị ảnh đại diện nhỏ và thời gian gửi */}
-            <div className="text-center text-xs md:text-sm flex-shrink-0">
-              <img
-                src={msg.senderId === authUser._id
-                  ? authUser?.profilePic || assets.avatar_icon
-                  : selectedUser?.profilePic || assets.avatar_icon}
-                alt="User"
-                className="rounded-full w-9"
-              />
-              <div className="flex items-center justify-center gap-1 mt-1">
-                <p className="text-gray-400 text-[10px]">{formatMessageTime(msg.createdAt)}</p>
-                {msg.senderId === authUser._id && (
-                  msg.seen ? (
-                    <CheckCheck className="w-3.5 h-3.5 text-cyan-400" />
-                  ) : (
-                    <Check className="w-3 h-3 text-gray-500" />
-                  )
-                )}
-              </div>
-            </div>
-          </div>
+            msg={msg}
+            authUser={authUser}
+            selectedUser={selectedUser}
+            reactMessage={reactMessage}
+            editMessage={editMessage}
+            revokeMessage={revokeMessage}
+            scrollToBottom={scrollToBottom}
+          />
           )
         ))}
         {/* Điểm neo để tự động cuộn xuống */}
