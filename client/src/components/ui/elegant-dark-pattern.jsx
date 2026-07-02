@@ -54,7 +54,7 @@ export function DarkGradientBg({ children, className }) {
             />
 
             {/* Nội dung */}
-            <div className="relative z-10">{children}</div>
+            <div className="absolute inset-0 z-10">{children}</div>
         </div>
     )
 }

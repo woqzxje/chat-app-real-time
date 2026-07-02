@@ -20,7 +20,7 @@ const HomePage = () => {
   } = useVideoCall(socket, authUser?._id, authUser?.fullName)
 
   return (
-    <div className='w-full h-[100dvh] overflow-hidden bg-black/10 flex relative'>
+    <div className='absolute inset-0 overflow-hidden bg-black/10 flex'>
 
       {/* Cột 1: Left Sidebar */}
       <div
