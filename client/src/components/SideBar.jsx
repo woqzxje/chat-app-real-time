@@ -3,6 +3,7 @@ import assets from '../assets/assets'
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { ChatContext } from '../../context/ChatContext';
+import FlickerSpinner from './ui/FlickerSpinner';
 
 const SideBar = () => {
 
@@ -22,7 +23,10 @@ const SideBar = () => {
       <div className='pb-6'>
         {/* Logo và Menu */}
         <div className='flex justify-between items-center gap-4'>
-          <img src={assets.logo} alt="logo" className='max-w-52' />
+          <div className="flex items-center gap-3 font-extrabold text-xl tracking-wider text-white">
+            <FlickerSpinner size={32} />
+            <span>QuickChat</span>
+          </div>
           <div className="relative py-2 group">
             <img src={assets.menu_icon} alt="Menu" className='max-h-5 cursor-pointer' />
             {/* Menu dropdown */}

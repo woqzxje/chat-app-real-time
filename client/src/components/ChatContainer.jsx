@@ -6,6 +6,7 @@ import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { Video } from 'lucide-react';
+import FlickerSpinner from './ui/FlickerSpinner';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
 
@@ -594,8 +595,8 @@ const ChatContainer = ({ startCall }) => {
     </div>
   ) : (
     /* Hiển thị màn hình chờ khi chưa chọn ai để chat */
-    <div className="flex flex-col items-center justify-center gap-2 text-gray-500 bg-white/10 max-md:hidden">
-      <img src={assets.logo_icon} className="max-w-16" alt="Logo" />
+    <div className="flex flex-col items-center justify-center gap-4 text-gray-500 bg-white/10 max-md:hidden">
+      <FlickerSpinner size={64} />
       <p className="text-lg font-medium text-white">Chat mọi lúc, mọi nơi</p>
     </div>
   );

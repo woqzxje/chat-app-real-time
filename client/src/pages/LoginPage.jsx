@@ -3,6 +3,7 @@ import assets from '../assets/assets'
 import { AuthContext } from '../../context/AuthContext'
 import { motion, AnimatePresence } from 'motion/react'
 import { Mail, Lock, Eye, EyeClosed, ArrowRight, User, FileText, ArrowLeft } from 'lucide-react'
+import FlickerSpinner from '../components/ui/FlickerSpinner'
 
 const LoginPage = () => {
 
@@ -71,14 +72,15 @@ const LoginPage = () => {
   return (
     <div className='min-h-screen flex items-center justify-center gap-8 sm:justify-evenly max-sm:flex-col px-4'>
       {/* ----------- Phần bên trái: Logo lớn ----------- */}
-      <motion.img
+      <motion.div
         initial={{ opacity: 0, x: -30 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6 }}
-        src={assets.logo_big}
-        alt="QuickChat Logo"
-        className='w-[min(30vw,250px)]'
-      />
+        className="flex flex-col items-center justify-center gap-4 text-white"
+      >
+        <FlickerSpinner size={100} />
+        <h1 className="text-4xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50">QuickChat</h1>
+      </motion.div>
 
       {/* ----------- Phần bên phải: Card đăng nhập ----------- */}
       <motion.div
@@ -169,15 +171,6 @@ const LoginPage = () => {
                 
                 {/* Header */}
                 <div className="text-center space-y-1 mb-5">
-                  <motion.div
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", duration: 0.8 }}
-                    className="mx-auto w-11 h-11 rounded-full border border-white/10 flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-cyan-500/20 to-cyan-600/20"
-                  >
-                    <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70">Q</span>
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
-                  </motion.div>
 
                   <motion.h2
                     initial={{ opacity: 0, y: 10 }}
