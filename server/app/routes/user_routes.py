@@ -158,8 +158,12 @@ async def google_login(body: GoogleLoginBody):
             "token": token,
             "message": "Đăng nhập bằng Google thành công",
         }
-    except ValueError:
-        return {"success": False, "message": "Token Google không hợp lệ"}
+    except ValueError as e:
+        print("Google Auth ValueError:", e)
+        return {"success": False, "message": f"Token Google không hợp lệ: {str(e)}"}
+    except Exception as e:
+        print("Google Auth Exception:", e)
+        return {"success": False, "message": f"Lỗi xác thực: {str(e)}"}
 
 
 
