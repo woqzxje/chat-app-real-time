@@ -61,6 +61,50 @@ export const ChatProvider = ({ children }) => {
         }
     }
 
+    // Hàm chỉnh sửa tin nhắn
+    const editMessage = async (msgId, newText) => {
+        try {
+            const { data } = await axios.put(`/api/messages/edit/${msgId}`, { text: newText })
+            if (data.success) {
+                setMessages((prev) => prev.map(m => m._id === msgId ? data.message : m))
+                toast.success('Chỉnh sửa tin nhắn thành công')
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message || error.message)
+        }
+    }
+
+    // Hàm thu hồi tin nhắn
+    const revokeMessage = async (msgId) => {
+        try {
+            const { data } = await axios.put(`/api/messages/revoke/${msgId}`)
+            if (data.success) {
+                setMessages((prev) => prev.map(m => m._id === msgId ? data.message : m))
+                toast.success('Đã thu hồi tin nhắn')
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message || error.message)
+        }
+    }
+
+    // Hàm thả cảm xúc
+    const reactMessage = async (msgId, emoji) => {
+        try {
+            const { data } = await axios.post(`/api/messages/react/${msgId}`, { emoji })
+            if (data.success) {
+                setMessages((prev) => prev.map(m => m._id === msgId ? data.message : m))
+            } else {
+                toast.error(data.message)
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message || error.message)
+        }
+    }
+
     // Lắng nghe tin nhắn mới từ Socket.IO
     const subscribeToMessages = () => {
         if (!socket) return;
@@ -87,12 +131,42 @@ export const ChatProvider = ({ children }) => {
                 }))
             }
         });
+
+        // Lắng nghe sự kiện tin nhắn bị chỉnh sửa
+        socket.on("messageEdited", ({ msgId, text }) => {
+            setMessages((prev) => prev.map(m => 
+                m._id === msgId 
+                ? { ...m, text, isEdited: true, editedAt: new Date().toISOString() } 
+                : m
+            ));
+        });
+
+        // Lắng nghe sự kiện tin nhắn bị thu hồi
+        socket.on("messageDeleted", ({ msgId }) => {
+            setMessages((prev) => prev.map(m => 
+                m._id === msgId 
+                ? { ...m, isDeleted: true, text: null, image: null, attachment: null } 
+                : m
+            ));
+        });
+
+        // Lắng nghe sự kiện thả cảm xúc
+        socket.on("messageReacted", ({ msgId, reactions }) => {
+            setMessages((prev) => prev.map(m => 
+                m._id === msgId 
+                ? { ...m, reactions } 
+                : m
+            ));
+        });
     }
 
     // Ngừng lắng nghe tin nhắn (dọn dẹp bộ nhớ)
     const unSubscribeToMessages = () => {
         if (socket) {
             socket.off("receiveMessage");
+            socket.off("messageEdited");
+            socket.off("messageDeleted");
+            socket.off("messageReacted");
         }
     }
 
@@ -152,6 +226,9 @@ export const ChatProvider = ({ children }) => {
         getUsers,
         getMessages,
         sendMessage,
+        editMessage,
+        revokeMessage,
+        reactMessage,
         showRightSidebar,
         setShowRightSidebar,
     }

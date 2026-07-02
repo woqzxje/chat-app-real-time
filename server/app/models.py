@@ -35,6 +35,13 @@ class CallInfo(BaseModel):
     receiver_id: str                  # ID người nhận
 
 
+# ── Thông tin Reaction (thả cảm xúc) ─────────────────────────
+class Reaction(BaseModel):
+    """Lưu thông tin một lượt thả cảm xúc trên tin nhắn."""
+    emoji: str
+    userId: str
+
+
 # Định nghĩa cấu trúc dữ liệu người dùng trong MongoDB (sử dụng Beanie ODM)
 class User(Document):
     """
@@ -64,6 +71,15 @@ class Message(Document):
     attachment: Optional[FileAttachment] = None
     callInfo: Optional[CallInfo] = None  # Thông tin cuộc gọi video (nếu là tin nhắn lịch sử cuộc gọi)
     seen: bool = False  # Trạng thái đã đọc hay chưa
+    
+    # Các trường phục vụ chức năng Thu hồi và Chỉnh sửa
+    isDeleted: bool = False
+    isEdited: bool = False
+    editedAt: Optional[datetime] = None
+    
+    # Cảm xúc trên tin nhắn
+    reactions: List[Reaction] = Field(default_factory=list)
+    
     createdAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm gửi tin nhắn
     updatedAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm cập nhật (nếu có)
 

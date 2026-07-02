@@ -25,6 +25,10 @@ def _msg_dict(msg: Message) -> dict:
         "attachment": msg.attachment.dict() if msg.attachment else None,
         "callInfo": msg.callInfo.dict() if msg.callInfo else None,
         "seen": msg.seen,
+        "isDeleted": getattr(msg, 'isDeleted', False),
+        "isEdited": getattr(msg, 'isEdited', False),
+        "editedAt": msg.editedAt.isoformat() if getattr(msg, 'editedAt', None) else None,
+        "reactions": [r.dict() for r in getattr(msg, 'reactions', [])],
         "createdAt": msg.createdAt.isoformat(),
         "updatedAt": msg.updatedAt.isoformat(),
     }
@@ -151,3 +155,116 @@ async def send_message(
         await sio.emit("receiveMessage", _msg_dict(new_msg), to=receiver_socket_id)
 
     return {"success": True, "newMessage": _msg_dict(new_msg)}
+
+# ── PUT /api/messages/edit/{id} ──────────────────────────────────────────────
+
+class EditMessageBody(BaseModel):
+    text: str
+
+@message_router.put("/edit/{id}")
+async def edit_message(
+    id: str,
+    body: EditMessageBody,
+    current_user: User = Depends(get_current_user),
+):
+    """Chỉnh sửa nội dung tin nhắn"""
+    msg = await Message.get(id)
+    if not msg:
+        return {"success": False, "message": "Tin nhắn không tồn tại"}
+    
+    if msg.senderId != str(current_user.id):
+        return {"success": False, "message": "Không có quyền chỉnh sửa"}
+
+    if msg.image or msg.attachment:
+        return {"success": False, "message": "Chỉ có thể chỉnh sửa tin nhắn văn bản"}
+
+    await msg.set({
+        "text": body.text,
+        "isEdited": True,
+        "editedAt": datetime.utcnow()
+    })
+    
+    # Phát sự kiện qua Socket.io
+    receiver_socket_id = user_socket_map.get(msg.receiverId)
+    if receiver_socket_id:
+        await sio.emit("messageEdited", {"msgId": id, "text": body.text}, to=receiver_socket_id)
+
+    return {"success": True, "message": _msg_dict(msg)}
+
+# ── PUT /api/messages/revoke/{id} ─────────────────────────────────────────────
+
+@message_router.put("/revoke/{id}")
+async def revoke_message(
+    id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Thu hồi tin nhắn (Soft Delete)"""
+    msg = await Message.get(id)
+    if not msg:
+        return {"success": False, "message": "Tin nhắn không tồn tại"}
+    
+    if msg.senderId != str(current_user.id):
+        return {"success": False, "message": "Không có quyền thu hồi"}
+
+    # Xóa nội dung để giải phóng và bảo mật, đánh dấu là đã xóa
+    await msg.set({
+        "isDeleted": True,
+        "text": None,
+        "image": None,
+        "attachment": None
+    })
+    
+    # Phát sự kiện qua Socket.io
+    receiver_socket_id = user_socket_map.get(msg.receiverId)
+    if receiver_socket_id:
+        await sio.emit("messageDeleted", {"msgId": id}, to=receiver_socket_id)
+
+    return {"success": True, "message": _msg_dict(msg)}
+
+# ── POST /api/messages/react/{id} ─────────────────────────────────────────────
+
+class ReactMessageBody(BaseModel):
+    emoji: str
+
+@message_router.post("/react/{id}")
+async def react_message(
+    id: str,
+    body: ReactMessageBody,
+    current_user: User = Depends(get_current_user),
+):
+    """Thả hoặc bỏ cảm xúc trên tin nhắn"""
+    msg = await Message.get(id)
+    if not msg:
+        return {"success": False, "message": "Tin nhắn không tồn tại"}
+    
+    uid = str(current_user.id)
+    emoji = body.emoji
+    
+    # Khởi tạo mảng reactions nếu rỗng (phòng hờ dữ liệu cũ)
+    reactions = msg.reactions or []
+    
+    # Kiểm tra xem user này đã thả cảm xúc đó chưa
+    existing_reaction = next((r for r in reactions if r.userId == uid and r.emoji == emoji), None)
+    
+    if existing_reaction:
+        # Nếu đã có, tiến hành xóa (toggle off)
+        reactions = [r for r in reactions if not (r.userId == uid and r.emoji == emoji)]
+    else:
+        # Nếu chưa có, thêm mới (có thể xóa các cảm xúc khác của user này nếu chỉ cho phép 1, nhưng ở đây cho phép nhiều như Discord/Slack)
+        # Hoặc như Zalo/Messenger: Chỉ được thả 1 loại. Ta sẽ xóa tất cả các cảm xúc cũ của user này trước khi thêm mới.
+        reactions = [r for r in reactions if r.userId != uid]
+        
+        # Để import Reaction thì dùng dict, do Beanie hỗ trợ mapping
+        # Ta có thể import Reaction class ở đầu file hoặc append một dict
+        from app.models import Reaction
+        reactions.append(Reaction(emoji=emoji, userId=uid))
+        
+    await msg.set({"reactions": reactions})
+    
+    # Bắn socket cho mọi người biết
+    # Ở đây cần bắn cho cả 2 người, hoặc chỉ người kia nếu họ online
+    receiver_socket_id = user_socket_map.get(msg.receiverId if msg.senderId == uid else msg.senderId)
+    if receiver_socket_id:
+        await sio.emit("messageReacted", {"msgId": id, "reactions": [r.dict() for r in reactions]}, to=receiver_socket_id)
+
+    return {"success": True, "message": _msg_dict(msg)}
