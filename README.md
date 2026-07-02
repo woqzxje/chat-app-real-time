@@ -36,6 +36,14 @@
 
 <br />
 
+<div align="center">
+  <img src="client/public/demo-chat.png" alt="Main Chat Interface" width="800" style="border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.5);">
+  <br /><br />
+  <img src="client/public/demo-login.png" alt="Login Interface" width="800" style="border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.5);">
+</div>
+
+<br />
+
 ---
 
 <details>
