@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from typing import List
 from pydantic import BaseModel
 import uuid, httpx, zipfile, io
+from urllib.parse import unquote
 
 import cloudinary.uploader
 
@@ -52,12 +53,14 @@ async def upload_file(
     )
 
     try:
+        public_id = f"chat_files/{uuid.uuid4().hex}_{file.filename}"
+        if resource_type == "raw":
+            public_id += ".dat"
+
         result = cloudinary.uploader.upload(
             content,
             resource_type=resource_type,
-            public_id=f"chat_files/{uuid.uuid4().hex}_{file.filename}",
-            use_filename=True,
-            unique_filename=False,
+            public_id=public_id,
         )
         return {
             "url": result["secure_url"],
@@ -102,12 +105,14 @@ async def upload_folder(
         )
 
         try:
+            public_id = f"chat_files/{uuid.uuid4().hex}_{basename}"
+            if resource_type == "raw":
+                public_id += ".dat"
+
             result = cloudinary.uploader.upload(
                 content,
                 resource_type=resource_type,
-                public_id=f"chat_files/{uuid.uuid4().hex}_{basename}",
-                use_filename=True,
-                unique_filename=False,
+                public_id=public_id,
             )
             uploaded_files.append({
                 "url": result["secure_url"],
@@ -145,8 +150,10 @@ async def download_file(
     Lý do cần proxy: Thuộc tính HTML `download` không hoạt động với cross-origin URL.
     """
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=120.0) as client:
-            resp = await client.get(url)
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+        target_url = unquote(url)
+        async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=120.0) as client:
+            resp = await client.get(target_url, headers=headers)
             if resp.status_code != 200:
                 raise HTTPException(status_code=502, detail="Không thể tải file từ nguồn")
 
@@ -194,10 +201,11 @@ async def download_folder(
     buf = io.BytesIO()
 
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=120.0) as client:
+        async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=120.0) as client:
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for item in body.files:
-                    resp = await client.get(item.url)
+                    target_url = unquote(item.url)
+                    resp = await client.get(target_url)
                     if resp.status_code != 200:
                         print(f"[download-folder] Bỏ qua file lỗi: {item.file_name}")
                         continue

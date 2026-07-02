@@ -30,17 +30,46 @@ const formatFileSize = (bytes) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-// ── Hàm tải file qua proxy backend (dùng chung) ─────────────────────────────
+// ── Hàm tải file qua proxy backend hoặc trực tiếp (dùng chung) ────────────────
 const proxyDownload = async (fileUrl, fileName) => {
+  const toastId = toast.loading('Đang xử lý tải xuống...');
+  
   try {
+    // 1. Dùng CORS Proxy để tải file ở Client (Mượt nhất, vượt CORS, không cần backend)
+    const corsProxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fileUrl)}`;
+    const directRes = await fetch(corsProxyUrl);
+    
+    if (directRes.ok) {
+      const blob = await directRes.blob();
+      const forceBlob = new Blob([blob], { type: 'application/octet-stream' });
+      const blobUrl = URL.createObjectURL(forceBlob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+      toast.success('Tải xuống thành công!', { id: toastId });
+      return;
+    }
+  } catch (e) {
+    // Nếu proxy chết, tiếp tục thử qua Backend của mình
+  }
+
+  try {
+    // 2. Dùng Backend Proxy (Backend tải file rồi stream cho Frontend)
     const token = localStorage.getItem('token');
     const params = new URLSearchParams({ url: fileUrl, name: fileName });
     const res = await fetch(`${BACKEND_URL}/api/files/download?${params}`, {
       headers: { token },
     });
-    if (!res.ok) throw new Error('Download failed');
+    
+    if (!res.ok) {
+       throw new Error(`Lỗi máy chủ (${res.status})`);
+    }
+    
     const blob = await res.blob();
-    // Ép kiểu blob thành octet-stream để browser luôn trigger download
     const forceBlob = new Blob([blob], { type: 'application/octet-stream' });
     const blobUrl = URL.createObjectURL(forceBlob);
     const a = document.createElement('a');
@@ -50,15 +79,21 @@ const proxyDownload = async (fileUrl, fileName) => {
     a.click();
     a.remove();
     URL.revokeObjectURL(blobUrl);
+    toast.success('Tải xuống thành công!', { id: toastId });
+    
   } catch (err) {
-    // Fallback: tải trực tiếp từ Cloudinary
-    // fl_attachment chỉ hoạt động với image/video, KHÔNG dùng cho raw (zip, rar...)
+    toast.error(`Không thể tải file: ${err.message}`, { id: toastId, duration: 4000 });
+    
+    // 3. Chấp nhận mở tab mới (vì không ép tải được)
     let dlUrl = fileUrl;
     if (fileUrl.includes('/image/upload/') || fileUrl.includes('/video/upload/')) {
       dlUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
     }
-    // Với raw resource, URL gốc đã tự trigger download
-    window.open(dlUrl, '_blank');
+    
+    toast('Đang mở file trên trình duyệt...', { id: toastId, icon: '📄' });
+    setTimeout(() => {
+      window.open(dlUrl, '_blank');
+    }, 1500);
   }
 };
 // ── Hàm tải toàn bộ folder (backend nén zip → tải thẳng về Downloads) ────────
