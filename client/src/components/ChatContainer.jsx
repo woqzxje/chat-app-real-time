@@ -577,6 +577,9 @@ const ChatContainer = ({ startCall }) => {
     e.preventDefault();
     if (input.trim() === '' && !attachment) return; // Không gửi nếu cả hai đều trống
 
+    // Ép cuộn xuống dưới cùng khi chính mình gửi tin nhắn
+    setTimeout(scrollToBottom, 50);
+
     await sendMessage({
       text: input.trim() || null,
       attachment: attachment || null,
@@ -593,6 +596,8 @@ const ChatContainer = ({ startCall }) => {
       toast.error('Vui lòng chọn một file hình ảnh hợp lệ');
       return;
     }
+
+    setTimeout(scrollToBottom, 50);
 
     // Đọc file ảnh dưới dạng base64 để gửi lên server
     const reader = new FileReader();
@@ -660,21 +665,34 @@ const ChatContainer = ({ startCall }) => {
     e.target.value = '';
   };
 
-  // Tải lịch sử tin nhắn mỗi khi người dùng đang chat cùng (selectedUser) thay đổi
+  // Lấy danh sách tin nhắn
   useEffect(() => {
     if (selectedUser) getMessages(selectedUser._id);
   }, [selectedUser]);
+
+  // Ref để kiểm tra xem có đang ở cuối danh sách hay không
+  const isNearBottomRef = useRef(true);
+
+  // Theo dõi thao tác cuộn để biết người dùng có đang xem tin nhắn cũ không
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // Ngưỡng 150px từ đáy được xem là "ở cuối"
+    isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 150;
+  };
 
   // Hàm cuộn xuống cuối danh sách
   const scrollToBottom = () => {
     if (scrollEnd.current) {
       scrollEnd.current.scrollIntoView({ behavior: 'smooth' });
     }
+    isNearBottomRef.current = true;
   };
 
-  // Tự động cuộn xuống cuối danh sách mỗi khi có tin nhắn mới
+  // Tự động cuộn xuống cuối danh sách (Chỉ khi người dùng ĐANG Ở CUỐI)
   useEffect(() => {
-    scrollToBottom();
+    if (isNearBottomRef.current) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   // Nếu đã chọn người dùng để chat, hiển thị khung chat
@@ -717,7 +735,10 @@ const ChatContainer = ({ startCall }) => {
       </div>
 
       {/* ------------ Khu vực hiển thị tin nhắn (Chat Area) ------------- */}
-      <div className="flex flex-col flex-1 overflow-y-auto p-4 pb-28 gap-4 min-h-0">
+      <div 
+        className="flex flex-col flex-1 overflow-y-auto p-4 pb-28 gap-4 min-h-0"
+        onScroll={handleScroll}
+      >
         {messages.map((msg, index) => (
           // ── Tin nhắn lịch sử cuộc gọi → hiển thị giữa, không có avatar ──
           msg.callInfo ? (
