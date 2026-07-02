@@ -106,8 +106,8 @@ Hãy đảm bảo bạn đã cài đặt các công cụ sau:
 
 1. **Clone kho lưu trữ này**
    ```sh
-   git clone https://github.com/woqzxje/chat-app-real-time.git
-   cd chat-app-real-time
+   git clone https://github.com/woqzxje/chat-app.git
+   cd chat-app
    ```
 
 2. **Cài đặt thư viện phía Server (Backend)**
