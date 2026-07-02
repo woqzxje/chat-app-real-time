@@ -20,11 +20,26 @@ const HomePage = () => {
   } = useVideoCall(socket, authUser?._id, authUser?.fullName)
 
   return (
-    <div className='w-full h-screen overflow-hidden bg-transparent'>
-      <div className={`bg-black/10 overflow-hidden h-full grid grid-cols-1 relative transition-all duration-300 ${selectedUser ? (showRightSidebar ? 'md:grid-cols-[1fr_1.5fr_1fr] xl:grid-cols-[1fr_2fr_1fr]' : 'md:grid-cols-[1fr_2.5fr] xl:grid-cols-[1fr_3fr]') : 'md:grid-cols-2'}`}>
+    <div className='w-full h-screen overflow-hidden bg-black/10 flex relative'>
+      
+      {/* Cột 1: Left Sidebar */}
+      <div className={`h-full flex-shrink-0 transition-all duration-500 ease-in-out ${selectedUser ? "w-0 md:w-[30%] xl:w-[25%]" : "w-full md:w-1/2"}`}>
         <Sidebar />
+      </div>
+
+      {/* Cột 2: Chat Container */}
+      <div className='h-full flex-1 min-w-0 transition-all duration-500 ease-in-out relative'>
         <ChatContainer startCall={startCall} />
-        {showRightSidebar && <RightSidebar />}
+      </div>
+
+      {/* Cột 3: Right Sidebar (Push effect - Animated Width) */}
+      <div 
+        className={`h-full flex-shrink-0 overflow-hidden transition-all duration-500 ease-in-out border-white/5 ${selectedUser && showRightSidebar ? "w-full md:w-[300px] xl:w-[350px] border-l" : "w-0 border-l-0"}`}
+      >
+        <div className="w-full md:w-[300px] xl:w-[350px] h-full">
+          {/* Luôn render component để giữ trạng thái, nhưng bị ẩn đi bởi width 0 của cha */}
+          <RightSidebar />
+        </div>
       </div>
 
       <VideoCallModal
