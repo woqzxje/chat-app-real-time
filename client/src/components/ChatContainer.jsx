@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck } from 'lucide-react';
+import { Video, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, Phone, PhoneOff, PhoneMissed } from 'lucide-react';
 import FlickerSpinner from './ui/FlickerSpinner';
 import { ShinyButton } from './ui/ShinyButton';
 
@@ -306,21 +306,21 @@ const CallBubble = ({ callInfo, isSender, createdAt }) => {
 
   const configs = {
     completed: {
-      icon: '📞',
+      icon: <Video className="w-5 h-5" />,
       bg: 'bg-emerald-500/15 border-emerald-500/30',
       label: 'Cuộc gọi video',
       detail: formatCallDuration(duration),
       textColor: 'text-emerald-400',
     },
     missed: {
-      icon: '📵',
+      icon: <PhoneMissed className="w-5 h-5" />,
       bg: 'bg-red-500/15 border-red-500/30',
       label: 'Cuộc gọi nhỡ',
       detail: '',
       textColor: 'text-red-400',
     },
     rejected: {
-      icon: '🚫',
+      icon: <PhoneOff className="w-5 h-5" />,
       bg: 'bg-orange-500/15 border-orange-500/30',
       label: 'Cuộc gọi bị từ chối',
       detail: '',
@@ -331,7 +331,9 @@ const CallBubble = ({ callInfo, isSender, createdAt }) => {
 
   return (
     <div className={`flex items-center gap-3 ${cfg.bg} border rounded-2xl px-4 py-3 mx-auto min-w-[220px] max-w-[300px]`}>
-      <span className="text-2xl">{cfg.icon}</span>
+      <span className={`flex items-center justify-center p-2 rounded-full ${cfg.bg.split(' ')[0].replace('/15', '/30')} ${cfg.textColor}`}>
+        {cfg.icon}
+      </span>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold ${cfg.textColor}`}>{cfg.label}</p>
         <p className="text-[11px] text-gray-400 mt-0.5">

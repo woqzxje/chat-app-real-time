@@ -8,6 +8,7 @@
  *   - "active"   → chỉ hiện nút "Kết thúc"
  */
 import { useState, useEffect } from "react";
+import { Phone, PhoneOff, Video } from "lucide-react";
 
 // ── Hàm format thời gian mm:ss ──────────────────────────────────────────────
 const formatDuration = (seconds) => {
@@ -45,16 +46,18 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                 <p style={{
                     color: "white", fontSize: 18, marginBottom: 16,
                     animation: "vcPulse 1.5s infinite",
+                    display: "flex", alignItems: "center", gap: "8px"
                 }}>
-                    📞 Đang gọi {remoteUser?.fullName || remoteUser?.name}...
+                    <Phone className="w-5 h-5" /> Đang gọi {remoteUser?.fullName || remoteUser?.name}...
                 </p>
             )}
             {callState === "incoming" && (
                 <p style={{
                     color: "#1D9E75", fontSize: 18, marginBottom: 16,
                     animation: "vcPulse 1.5s infinite",
+                    display: "flex", alignItems: "center", gap: "8px"
                 }}>
-                    📲 {remoteUser?.name || "Ai đó"} đang gọi cho bạn...
+                    <Video className="w-5 h-5 animate-bounce" /> {remoteUser?.name || "Ai đó"} đang gọi cho bạn...
                 </p>
             )}
             {callState === "active" && (
@@ -62,8 +65,9 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                     color: "#00cfff", fontSize: 16, marginBottom: 12,
                     fontVariantNumeric: "tabular-nums",
                     letterSpacing: 1,
+                    display: "flex", alignItems: "center", gap: "6px"
                 }}>
-                    🔴 {formatDuration(elapsed)}
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" /> {formatDuration(elapsed)}
                 </p>
             )}
 
@@ -105,7 +109,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                             style={{
                                 background: "linear-gradient(135deg, #10b981, #059669)",
                                 color: "white", padding: "14px 32px",
-                                borderRadius: 28, border: "none",
+                                borderRadius: 28, border: "none", display: "flex", alignItems: "center", gap: "8px",
                                 cursor: "pointer", fontSize: 16, fontWeight: "bold",
                                 boxShadow: "0 4px 20px rgba(16,185,129,0.4)",
                                 transition: "transform 0.15s, box-shadow 0.15s",
@@ -113,14 +117,14 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                             onMouseEnter={(e) => { e.target.style.transform = "scale(1.05)"; }}
                             onMouseLeave={(e) => { e.target.style.transform = "scale(1)"; }}
                         >
-                            ✅ Trả lời
+                            <Phone className="w-5 h-5 fill-current" /> Trả lời
                         </button>
                         <button
                             onClick={onReject}
                             style={{
                                 background: "linear-gradient(135deg, #ef4444, #dc2626)",
                                 color: "white", padding: "14px 32px",
-                                borderRadius: 28, border: "none",
+                                borderRadius: 28, border: "none", display: "flex", alignItems: "center", gap: "8px",
                                 cursor: "pointer", fontSize: 16, fontWeight: "bold",
                                 boxShadow: "0 4px 20px rgba(239,68,68,0.4)",
                                 transition: "transform 0.15s, box-shadow 0.15s",
@@ -128,7 +132,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                             onMouseEnter={(e) => { e.target.style.transform = "scale(1.05)"; }}
                             onMouseLeave={(e) => { e.target.style.transform = "scale(1)"; }}
                         >
-                            ❌ Từ chối
+                            <PhoneOff className="w-5 h-5" /> Từ chối
                         </button>
                     </>
                 )}
@@ -140,7 +144,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                         style={{
                             background: "linear-gradient(135deg, #6b7280, #4b5563)",
                             color: "white", padding: "14px 32px",
-                            borderRadius: 28, border: "none",
+                            borderRadius: 28, border: "none", display: "flex", alignItems: "center", gap: "8px",
                             cursor: "pointer", fontSize: 16, fontWeight: "bold",
                             boxShadow: "0 4px 20px rgba(107,114,128,0.4)",
                             transition: "transform 0.15s, box-shadow 0.15s",
@@ -148,7 +152,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                         onMouseEnter={(e) => { e.target.style.transform = "scale(1.05)"; }}
                         onMouseLeave={(e) => { e.target.style.transform = "scale(1)"; }}
                     >
-                        📞 Huỷ cuộc gọi
+                        <PhoneOff className="w-5 h-5" /> Huỷ cuộc gọi
                     </button>
                 )}
 
@@ -159,7 +163,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                         style={{
                             background: "linear-gradient(135deg, #ef4444, #b91c1c)",
                             color: "white", padding: "14px 36px",
-                            borderRadius: 28, border: "none",
+                            borderRadius: 28, border: "none", display: "flex", alignItems: "center", gap: "8px",
                             cursor: "pointer", fontSize: 16, fontWeight: "bold",
                             boxShadow: "0 4px 24px rgba(239,68,68,0.5)",
                             transition: "transform 0.15s, box-shadow 0.15s",
@@ -167,7 +171,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                         onMouseEnter={(e) => { e.target.style.transform = "scale(1.05)"; }}
                         onMouseLeave={(e) => { e.target.style.transform = "scale(1)"; }}
                     >
-                        📕 Kết thúc
+                        <PhoneOff className="w-5 h-5" /> Kết thúc
                     </button>
                 )}
             </div>
