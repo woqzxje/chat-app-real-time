@@ -8,7 +8,8 @@ export default function FlickerSpinner({ size = 28 }) {
       viewBox="0 0 42 42"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
-      style={{ '--on': '#00cfff', '--off': '#2a2a2a', '--dur': '1.350s' }}
+      className="shrink-0"
+      style={{ '--on': '#00cfff', '--off': '#2a2a2a', '--dur': '1.350s', minWidth: size, minHeight: size }}
     >
       <title>Loading</title>
       <style>{`
