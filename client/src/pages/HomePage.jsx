@@ -21,9 +21,9 @@ const HomePage = () => {
 
   return (
     <div className='w-full h-screen overflow-hidden bg-black/10 flex relative'>
-      
+
       {/* Cột 1: Left Sidebar */}
-      <div 
+      <div
         className={`h-full flex-shrink-0 overflow-hidden transition-all duration-500 ease-in-out ${selectedUser ? "w-0 md:w-[30%] xl:w-[25%]" : "w-full md:w-[350px] xl:w-[400px]"}`}
       >
         <div className="w-[100vw] md:w-[350px] xl:w-[400px] h-full">
@@ -37,7 +37,7 @@ const HomePage = () => {
       </div>
 
       {/* Cột 3: Right Sidebar (Push effect - Animated Width) */}
-      <div 
+      <div
         className={`h-full flex-shrink-0 overflow-hidden transition-all duration-500 ease-in-out border-white/5 ${selectedUser && showRightSidebar ? "w-full md:w-[300px] xl:w-[350px] border-l" : "w-0 border-l-0"}`}
       >
         <div className="w-[100vw] md:w-[300px] xl:w-[350px] h-full">
