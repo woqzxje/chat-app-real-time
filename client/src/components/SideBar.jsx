@@ -116,11 +116,16 @@ const SideBar = () => {
           <div 
             key={user._id}
             onClick={() => { 
-              // Khi bấm vào 1 user: Đặt user đó làm mục tiêu chat và reset số tin nhắn chưa đọc về 0
-              setSelectedUser(user); 
-              setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
+              if (selectedUser?._id === user._id) {
+                // Hủy chọn user để quay về 50/50
+                setSelectedUser(null);
+              } else {
+                // Chọn user và reset số đếm tin nhắn
+                setSelectedUser(user); 
+                setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
+              }
             }}
-            className={`relative flex items-center gap-3 p-4 pl-5 rounded-xl cursor-pointer hover:bg-white/5 transition-colors ${selectedUser?._id === user._id && 'bg-[#00cfff]/15 hover:bg-[#00cfff]/20'}`}
+            className={`relative flex items-center gap-3 p-4 pl-5 rounded-xl cursor-pointer hover:bg-white/5 transition-colors ${selectedUser?._id === user._id ? 'bg-[#00cfff]/15 hover:bg-[#00cfff]/20' : ''}`}
           >
             {/* Ảnh đại diện */}
             <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
