@@ -481,7 +481,7 @@ const ChatContainer = ({ startCall }) => {
     <div className="flex flex-col h-full overflow-hidden relative">
 
       {/* ------------ Phần tiêu đề Chat (Header) ------------- */}
-      <div className="flex items-center gap-4 py-4 mx-5 border-b border-stone-500">
+      <div className="flex items-center gap-4 py-4 mx-5 border-b border-stone-500 shrink-0">
         <img src={selectedUser.profilePic || assets.avatar_icon} alt="Avatar" className="w-12 rounded-full" />
         <p className="flex-1 text-xl md:text-2xl text-white flex items-center gap-3">
           {selectedUser.fullName}
