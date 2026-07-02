@@ -55,13 +55,13 @@ const ProfilePage = () => {
 
           {/* Nhập Họ và tên */}
           <input onChange={(e)=>setName(e.target.value)} value={name}
-          type="text" required placeholder='Tên của bạn' className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500' />
+          type="text" required placeholder='Tên của bạn' className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500' />
           
           {/* Nhập Lời giới thiệu */}
-          <textarea onChange={(e)=>setBio(e.target.value)} value={bio} placeholder="Viết giới thiệu về bạn" required className="p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500" rows={4}></textarea>
+          <textarea onChange={(e)=>setBio(e.target.value)} value={bio} placeholder="Viết giới thiệu về bạn" required className="p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500" rows={4}></textarea>
 
           {/* Nút lưu thay đổi */}
-          <button type="submit" className="bg-linear-to-r from-purple-400 to-violet-600 text-white p-2 rounded-full text-lg cursor-pointer">Lưu hồ sơ</button>
+          <button type="submit" className="bg-linear-to-r from-cyan-500 to-teal-600 text-white p-2 rounded-full text-lg cursor-pointer">Lưu hồ sơ</button>
         </form>
 
         {/* Hiển thị ảnh đại diện hiện tại bên cạnh form */}

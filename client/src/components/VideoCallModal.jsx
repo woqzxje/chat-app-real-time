@@ -59,7 +59,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
             )}
             {callState === "active" && (
                 <p style={{
-                    color: "#a78bfa", fontSize: 16, marginBottom: 12,
+                    color: "#00cfff", fontSize: 16, marginBottom: 12,
                     fontVariantNumeric: "tabular-nums",
                     letterSpacing: 1,
                 }}>

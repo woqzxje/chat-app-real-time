@@ -158,7 +158,7 @@ const AttachmentBubble = ({ attachment }) => {
             onClick={handleDownloadAll}
             disabled={downloading}
             title="Tải toàn bộ folder"
-            className="flex-shrink-0 p-1.5 rounded-lg bg-violet-500/30 hover:bg-violet-500/50 text-white transition-colors disabled:opacity-40 cursor-pointer"
+            className="flex-shrink-0 p-1.5 rounded-lg bg-cyan-500/30 hover:bg-cyan-500/50 text-white transition-colors disabled:opacity-40 cursor-pointer"
           >
             {downloading ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -223,7 +223,7 @@ const AttachmentBubble = ({ attachment }) => {
 
 // ── Hiển thị preview file đang chờ gửi (phía trên ô nhập) ───────────────────
 const AttachmentPreview = ({ attachment, onClear }) => (
-  <div className="flex items-center gap-2 bg-violet-500/20 border border-violet-400/30 rounded-2xl px-3 py-2 mb-2">
+  <div className="flex items-center gap-2 bg-cyan-500/20 border border-cyan-400/30 rounded-2xl px-3 py-2 mb-2">
     <FileIcon type={attachment.file_type} />
     <div className="flex-1 min-w-0">
       <p className="text-xs font-medium text-white truncate">{attachment.file_name}</p>
@@ -442,7 +442,7 @@ const ChatContainer = ({ startCall }) => {
         {/* Nút gọi Video */}
         <button
           onClick={() => startCall(selectedUser)}
-          className="hidden md:flex items-center gap-1 text-white text-sm bg-violet-600 hover:bg-violet-700 px-3 py-1.5 rounded-full cursor-pointer"
+          className="hidden md:flex items-center gap-1 text-white text-sm bg-cyan-600 hover:bg-cyan-700 px-3 py-1.5 rounded-full cursor-pointer"
         >
           Video
         </button>
@@ -485,7 +485,7 @@ const ChatContainer = ({ startCall }) => {
 
               {/* Hiển thị văn bản tin nhắn */}
               {msg.text && (
-                <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-1 break-all bg-violet-500/30 text-white ${msg.senderId === authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+                <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-1 break-all bg-cyan-500/30 text-white ${msg.senderId === authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>
                   {msg.text}
                 </p>
               )}
@@ -572,7 +572,7 @@ const ChatContainer = ({ startCall }) => {
           {/* Nút gửi tin nhắn — hiện spinner khi đang upload file */}
           {uploading ? (
             <div className="w-9 h-9 flex items-center justify-center">
-              <svg className="w-5 h-5 text-violet-400 animate-spin" fill="none" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-cyan-400 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />

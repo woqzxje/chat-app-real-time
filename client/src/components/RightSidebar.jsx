@@ -51,7 +51,7 @@ const RightSidebar = () => {
       </div>
 
       {/* Nút đăng xuất cố định ở dưới cùng */}
-      <button onClick={() => logout()} className='absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-linear-to-r from-purple-400 to-violet-600 text-white border-none text-base font-medium py-3 px-24 rounded-full cursor-pointer'>
+      <button onClick={() => logout()} className='absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-linear-to-r from-cyan-500 to-teal-600 text-white border-none text-base font-medium py-3 px-24 rounded-full cursor-pointer'>
         Logout
       </button>
 
