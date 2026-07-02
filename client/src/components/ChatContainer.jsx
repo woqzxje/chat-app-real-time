@@ -377,7 +377,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
     >
       {/* ── Action Menu (Emoji & Tùy chọn) ── */}
       {!msg.isDeleted && (
-        <div className={`relative flex items-center gap-1 transition-opacity md:opacity-0 group-hover:opacity-100 opacity-100 ${isOwn ? 'mr-1' : 'ml-1 flex-row-reverse'}`}>
+        <div className={`relative flex items-center gap-2 transition-opacity md:opacity-0 group-hover:opacity-100 opacity-100 ${isOwn ? 'mr-1' : 'ml-1 flex-row-reverse'}`}>
           
           {/* Nút thả Emoji (Chỉ hiện trên Desktop / Hover) */}
           <div className="relative group/react hidden md:flex items-center">
@@ -393,9 +393,39 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
             </div>
           </div>
 
-          {/* Nút 3 chấm (Hiện trên Mobile & Desktop Hover) */}
-          {isOwn && (!msg.image && !msg.attachment || true) && (
-            <div className="relative">
+          {/* CÁC NÚT TÍNH NĂNG TRỰC TIẾP TRÊN DESKTOP (Giữ nguyên như cũ) */}
+          {isOwn && (!msg.image && !msg.attachment) && (
+            <button 
+              onClick={() => {
+                const newText = prompt('Chỉnh sửa tin nhắn:', msg.text || '');
+                if (newText !== null && newText.trim() !== '' && newText.trim() !== msg.text) {
+                    editMessage(msg._id, newText.trim());
+                }
+              }} 
+              title="Chỉnh sửa" 
+              className="hidden md:block text-gray-400 hover:text-cyan-400 cursor-pointer"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          
+          {isOwn && (
+            <button 
+              onClick={() => {
+                if(window.confirm('Bạn có chắc muốn thu hồi tin nhắn này?')) {
+                    revokeMessage(msg._id);
+                }
+              }} 
+              title="Thu hồi" 
+              className="hidden md:block text-gray-400 hover:text-red-400 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Nút 3 chấm (CHỈ HIỆN TRÊN MOBILE) */}
+          {isOwn && (
+            <div className="relative md:hidden">
               <button 
                 onClick={() => setShowOptions(!showOptions)} 
                 className="text-gray-400 hover:text-white p-1 cursor-pointer"
@@ -403,9 +433,9 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                 <MoreVertical className="w-4 h-4" />
               </button>
               
-              {/* Dropdown Options */}
+              {/* Dropdown Options (Mobile) - Mở xuống dưới để không bị cắt xén */}
               {showOptions && (
-                <div className="absolute bottom-full mb-1 right-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden z-50 min-w-[140px] animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute top-full mt-2 right-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden z-50 min-w-[140px] animate-in fade-in zoom-in-95 duration-100">
                   {(!msg.image && !msg.attachment) && (
                     <button 
                       onClick={() => {
