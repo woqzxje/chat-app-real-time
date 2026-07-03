@@ -51,7 +51,10 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
     // Gắn remote stream vào video element khi ref sẵn sàng
     useEffect(() => {
         if (remoteVideoRef.current && remoteStreamRef.current) {
-            remoteVideoRef.current.srcObject = remoteStreamRef.current;
+            if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
+                remoteVideoRef.current.srcObject = remoteStreamRef.current;
+                remoteVideoRef.current.play().catch(e => console.error("Play error:", e));
+            }
         }
     });
 
@@ -78,11 +81,14 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
 
         peer.ontrack = (e) => {
             console.log("[WebRTC] ontrack fired, streams:", e.streams.length);
-            const stream = e.streams?.[0];
+            const stream = e.streams?.[0] || new MediaStream([e.track]);
             if (stream) {
                 remoteStreamRef.current = stream;
                 if (remoteVideoRef.current) {
-                    remoteVideoRef.current.srcObject = stream;
+                    if (remoteVideoRef.current.srcObject !== stream) {
+                        remoteVideoRef.current.srcObject = stream;
+                        remoteVideoRef.current.play().catch(err => console.error("Play error:", err));
+                    }
                 }
             }
         };

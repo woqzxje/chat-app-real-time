@@ -77,10 +77,13 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                 autoPlay
                 playsInline
                 style={{
-                    width: "80%", maxWidth: 640,
+                    maxWidth: 640,
                     borderRadius: 12, background: "#111",
-                    minHeight: 300,
-                    display: isVideoCall ? 'block' : 'none'
+                    visibility: isVideoCall ? 'visible' : 'hidden',
+                    position: isVideoCall ? 'relative' : 'absolute',
+                    width: isVideoCall ? '80%' : '1px',
+                    height: isVideoCall ? 'auto' : '1px',
+                    minHeight: isVideoCall ? 300 : 1,
                 }}
             />
             {!isVideoCall && (
@@ -105,7 +108,8 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                     width: 160, borderRadius: 8,
                     border: "2px solid white",
                     background: "#222",
-                    display: isVideoCall ? 'block' : 'none'
+                    visibility: isVideoCall ? 'visible' : 'hidden',
+                    opacity: isVideoCall ? 1 : 0
                 }}
             />
 
