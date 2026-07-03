@@ -955,17 +955,17 @@ const ChatContainer = ({ startCall }) => {
                 options={[
                   {
                     label: "Hình ảnh",
-                    Icon: <ImageIcon className="w-4 h-4 text-cyan-400" />,
+                    Icon: <ImageIcon className="w-4 h-4" />,
                     onClick: () => document.getElementById('image').click(),
                   },
                   {
                     label: "Tệp tin",
-                    Icon: <Paperclip className="w-4 h-4 text-emerald-400" />,
+                    Icon: <Paperclip className="w-4 h-4" />,
                     onClick: () => fileRef.current.click(),
                   },
                   {
                     label: "Thư mục",
-                    Icon: <FolderPlus className="w-4 h-4 text-orange-400" />,
+                    Icon: <FolderPlus className="w-4 h-4" />,
                     onClick: () => folderRef.current.click(),
                   }
                 ]}
