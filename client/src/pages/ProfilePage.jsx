@@ -14,8 +14,8 @@ const ProfilePage = () => {
   const navigate = useNavigate()
   
   // Khởi tạo các biến với dữ liệu hiện tại của người dùng
-  const [name, setName] = useState(authUser.fullName)
-  const [bio, setBio] = useState(authUser.bio)
+  const [name, setName] = useState(authUser.fullName || '')
+  const [bio, setBio] = useState(authUser.bio || '')
 
   // Xử lý khi nhấn nút Lưu (Gửi form)
   const handleSubmit = async (e) => {

@@ -2,7 +2,7 @@ services:
   - type: web
     name: chat-app-python-server
     runtime: python
-    rootDir: server-python
+    rootDir: server
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:socket_app --host 0.0.0.0 --port $PORT
     envVars:
@@ -15,4 +15,8 @@ services:
       - key: CLOUDINARY_API_KEY
         sync: false
       - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
         sync: false

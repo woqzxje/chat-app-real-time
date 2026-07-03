@@ -12,11 +12,11 @@ const HomePage = () => {
   const { selectedUser, showRightSidebar } = useContext(ChatContext)
   const { authUser, socket } = useContext(AuthContext)
 
-  // ✅ DÒNG NÀY ĐANG BỊ THIẾU — đây là nguyên nhân white screen
   const {
     callState, remoteUser,
     localVideoRef, remoteVideoRef,
-    startCall, answerCall, endCall, rejectCall, isVideoCall
+    startCall, answerCall, endCall, rejectCall, isVideoCall,
+    isMuted, isCameraOff, toggleMute, toggleCamera
   } = useVideoCall(socket, authUser?._id, authUser?.fullName)
 
   return (
@@ -55,6 +55,10 @@ const HomePage = () => {
         onEnd={endCall}
         onReject={rejectCall}
         isVideoCall={isVideoCall}
+        isMuted={isMuted}
+        isCameraOff={isCameraOff}
+        onToggleMute={toggleMute}
+        onToggleCamera={toggleCamera}
       />
     </div>
   )

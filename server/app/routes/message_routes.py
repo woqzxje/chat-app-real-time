@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -82,15 +82,13 @@ async def get_users_for_sidebar(current_user: User = Depends(get_current_user)):
 
     # (Tùy chọn) Kiểm tra số tin nhắn chưa đọc từ mỗi người dùng
     unseen_messages: dict[str, int] = {}
-    for user in all_users:
-        uid = str(user.id)
-        count = await Message.find(
-            Message.senderId == uid,
-            Message.receiverId == my_id,
-            Message.seen == False,   # noqa: E712
-        ).count()
-        if count > 0:
-            unseen_messages[uid] = count
+    # Toi uu: dung 1 aggregation thay vi N+1 truy van count() cho tung user.
+    pipeline = [
+        {"$match": {"receiverId": my_id, "seen": False}},
+        {"$group": {"_id": "$senderId", "count": {"$sum": 1}}},
+    ]
+    async for row in Message.get_motor_collection().aggregate(pipeline):
+        unseen_messages[row["_id"]] = row["count"]
 
     return {
         "success": True,
@@ -102,19 +100,42 @@ async def get_users_for_sidebar(current_user: User = Depends(get_current_user)):
 # ── GET /api/messages/{id} ───────────────────────────────────────────────────
 
 @message_router.get("/{id}")
-async def get_messages(id: str, current_user: User = Depends(get_current_user)):
-    """Lấy lịch sử tin nhắn giữa người dùng hiện tại và một người dùng khác (theo id)"""
+async def get_messages(
+    id: str,
+    current_user: User = Depends(get_current_user),
+    limit: int = 50,
+    before: Optional[str] = None,
+):
+    """Lay lich su tin nhan giua nguoi dung hien tai va mot nguoi dung khac (theo id).
+
+    Ho tro phan trang (infinite scroll):
+    - limit: so tin nhan toi da moi lan (mac dinh 50, toi da 100).
+    - before: lay cac tin cu hon moc thoi gian ISO nay (de tai them khi cuon len).
+    Tra ve theo thu tu cu -> moi, kem hasMore.
+    """
     my_id = str(current_user.id)
 
-    # Tìm các tin nhắn mà mình là người gửi và họ là người nhận HOẶC ngược lại
-    messages = await Message.find(
-        {
-            "$or": [
-                {"senderId": my_id, "receiverId": id},
-                {"senderId": id, "receiverId": my_id},
-            ]
-        }
-    ).to_list()
+    limit = max(1, min(limit, 100))
+
+    query: dict = {
+        "$or": [
+            {"senderId": my_id, "receiverId": id},
+            {"senderId": id, "receiverId": my_id},
+        ]
+    }
+    if before:
+        from datetime import datetime as _dt
+        try:
+            before_dt = _dt.fromisoformat(before)
+            query["createdAt"] = {"$lt": before_dt}
+        except ValueError:
+            pass
+
+    # Lay `limit` tin moi nhat thoa dieu kien (giam dan theo thoi gian) roi dao lai.
+    page = await Message.find(query).sort("-createdAt").limit(limit + 1).to_list()
+    has_more = len(page) > limit
+    page = page[:limit]
+    messages = list(reversed(page))
 
     # Đánh dấu các tin nhắn họ gửi cho mình là 'đã xem' (seen)
     unseen_msgs = await Message.find(
@@ -135,7 +156,11 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
         if sender_socket_id:
             await sio.emit("messagesSeen", {"receiverId": my_id}, to=sender_socket_id)
 
-    return {"success": True, "messages": [_msg_dict(m) for m in messages]}
+    return {
+        "success": True,
+        "messages": [_msg_dict(m) for m in messages],
+        "hasMore": has_more,
+    }
 
 
 # ── PUT /api/messages/mark/{id} ──────────────────────────────────────────────
@@ -144,8 +169,12 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
 async def mark_message_as_seen(id: str, current_user: User = Depends(get_current_user)):
     """Đánh dấu một tin nhắn cụ thể là đã xem"""
     msg = await Message.get(id)
-    if msg:
-        await msg.set({"seen": True})
+    if not msg:
+        return {"success": False, "message": "Tin nhắn không tồn tại"}
+    # BAO MAT: chi nguoi nhan (receiverId) moi duoc danh dau tin nhan la da xem
+    if msg.receiverId != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Không có quyền thực hiện")
+    await msg.set({"seen": True})
     return {"success": True}
 
 
@@ -166,6 +195,12 @@ async def send_message(
 ):
     """Gửi tin nhắn mới cho một người dùng"""
     sender_id = str(current_user.id)
+
+    # Toan ven du lieu: yeu cau it nhat mot trong text/image/attachment
+    has_text = bool(body.text and body.text.strip())
+    if not has_text and not body.image and not body.attachment:
+        raise HTTPException(status_code=400, detail="Tin nhắn phải có nội dung (văn bản, ảnh hoặc tệp đính kèm)")
+
     image_url: Optional[str] = None
 
     # Nếu có gửi kèm ảnh, tải ảnh lên Cloudinary

@@ -14,6 +14,9 @@ export const ChatProvider = ({ children }) => {
     const [isUserLoading, setIsUserLoading] = useState(false);
     const [isMessagesLoading, setIsMessagesLoading] = useState(false);
     const [showRightSidebar, setShowRightSidebar] = useState(false); // Trạng thái mở/đóng RightSidebar
+    const [typingUsers, setTypingUsers] = useState({}); // { userId: true } dang go
+    const [hasMoreMessages, setHasMoreMessages] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     const { socket, authUser } = useContext(AuthContext)
 
@@ -37,14 +40,38 @@ export const ChatProvider = ({ children }) => {
     const getMessages = async (userId) => {
         setIsMessagesLoading(true)
         try {
-            const { data } = await axios.get(`/api/messages/${userId}`)
+            const { data } = await axios.get(`/api/messages/${userId}`, { params: { limit: 50 } })
             if (data.success) {
                 setMessages(data.messages)
+                setHasMoreMessages(!!data.hasMore)
             }
         } catch (error) {
             toast.error(error.message)
         } finally {
             setIsMessagesLoading(false)
+        }
+    }
+
+    // Tai them tin nhan cu hon (infinite scroll khi cuon len dau)
+    const loadMoreMessages = async (userId) => {
+        if (isLoadingMore || !hasMoreMessages) return
+        const oldest = messages[0]
+        if (!oldest) return
+        setIsLoadingMore(true)
+        try {
+            const { data } = await axios.get(`/api/messages/${userId}`, { params: { limit: 50, before: oldest.createdAt } })
+            if (data.success) {
+                setMessages((prev) => {
+                    const existing = new Set(prev.map((m) => m._id))
+                    const older = data.messages.filter((m) => !existing.has(m._id))
+                    return [...older, ...prev]
+                })
+                setHasMoreMessages(!!data.hasMore)
+            }
+        } catch (error) {
+            toast.error(error.message)
+        } finally {
+            setIsLoadingMore(false)
         }
     }
 
@@ -114,11 +141,32 @@ export const ChatProvider = ({ children }) => {
     }
 
     // Lắng nghe tin nhắn mới từ Socket.IO
+    // Gui trang thai 'dang go' cho nguoi dang chat
+    const sendTyping = (isTyping) => {
+        if (socket && selectedUser) {
+            socket.emit('typing', { to_user_id: selectedUser._id, is_typing: isTyping });
+        }
+    };
+
+    // Hien thong bao trinh duyet khi tab khong duoc focus
+    const notifyNewMessage = (msg, fromName) => {
+        try {
+            if (typeof Notification === 'undefined') return;
+            if (document.visibilityState === 'visible') return;
+            if (Notification.permission !== 'granted') return;
+            const body = msg.text || (msg.image ? '[Hinh anh]' : (msg.attachment ? '[Tep dinh kem]' : 'Tin nhan moi'));
+            const n = new Notification(fromName || 'Tin nhan moi', { body });
+            n.onclick = () => { window.focus(); n.close(); };
+        } catch { /* ignore */ }
+    };
+
     const subscribeToMessages = () => {
         if (!socket) return;
 
         // Khi nhận được sự kiện "receiveMessage" từ server
         socket.on("receiveMessage", (newMessage) => {
+            // Tin nhan den -> khong con "dang go" nua
+            setTypingUsers((prev) => { const n = { ...prev }; delete n[newMessage.senderId]; return n; });
             // Kiểm tra xem tin nhắn có thuộc cuộc trò chuyện hiện tại không
             // (từ người đang chat HOẶC từ mình gửi cho người đang chat — ví dụ: lịch sử cuộc gọi)
             const isFromSelected = newMessage.senderId === selectedUser?._id;
@@ -142,6 +190,12 @@ export const ChatProvider = ({ children }) => {
                     ...prev,
                     [newMessage.senderId]: (prev[newMessage.senderId] || 0) + 1
                 }))
+            }
+
+            // Thong bao trinh duyet neu tab khong focus
+            if (newMessage.senderId !== authUser?._id) {
+                const senderUser = users.find(u => u._id === newMessage.senderId);
+                notifyNewMessage(newMessage, senderUser?.fullName);
             }
 
             // Nếu người nhắn tin đến chưa có trong Sidebar, load lại danh sách
@@ -182,6 +236,16 @@ export const ChatProvider = ({ children }) => {
         });
 
         // Lắng nghe sự kiện báo tin nhắn đã được xem
+        // Lang nghe trang thai "dang go" tu nguoi kia
+        socket.on("typing", ({ from_user_id, is_typing }) => {
+            setTypingUsers((prev) => {
+                const next = { ...prev };
+                if (is_typing) next[from_user_id] = true;
+                else delete next[from_user_id];
+                return next;
+            });
+        });
+
         socket.on("messagesSeen", ({ receiverId }) => {
             setMessages((prev) => prev.map(m => 
                 m.receiverId === receiverId 
@@ -199,6 +263,7 @@ export const ChatProvider = ({ children }) => {
             socket.off("messageDeleted");
             socket.off("messageReacted");
             socket.off("messagesSeen");
+            socket.off("typing");
         }
     }
 
@@ -263,6 +328,11 @@ export const ChatProvider = ({ children }) => {
         reactMessage,
         showRightSidebar,
         setShowRightSidebar,
+        typingUsers,
+        sendTyping,
+        hasMoreMessages,
+        isLoadingMore,
+        loadMoreMessages,
     }
 
     return (

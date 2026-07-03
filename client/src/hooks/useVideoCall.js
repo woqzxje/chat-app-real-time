@@ -1,36 +1,91 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 
-const ICE_SERVERS = {
-    iceServers: [
-        // Danh sách các STUN servers miễn phí và ổn định nhất
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        { urls: "stun:stun2.l.google.com:19302" },
-        { urls: "stun:stun.cloudflare.com:3478" },
-        { urls: "stun:stun.twilio.com:3478" },
-        // Sử dụng Public TURN Server từ OpenRelay Project cho kết nối khác mạng (NAT traversal)
-        {
-            urls: "turn:openrelay.metered.ca:80",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-        },
-        {
-            urls: "turn:openrelay.metered.ca:443",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-        },
-        {
-            urls: "turn:openrelay.metered.ca:443?transport=tcp",
-            username: "openrelayproject",
-            credential: "openrelayproject",
+// -- Cau hinh ICE servers ------------------------------------------------
+// Co the ghi de HOAN TOAN qua bien moi truong VITE_ICE_SERVERS (chuoi JSON),
+// hoac cau hinh mot TURN server rieng qua VITE_TURN_URL / VITE_TURN_USERNAME /
+// VITE_TURN_CREDENTIAL. Neu khong cau hinh, dung STUN cua Google + TURN cong
+// khai (OpenRelay) lam mac dinh "best-effort" cho ket noi khac mang (NAT).
+//
+// LUU Y QUAN TRONG: TURN cong khai mien phi thuong KHONG on dinh. De goi on
+// dinh giua cac mang khac nhau (4G <-> Wi-Fi, sau NAT/tuong lua), hay cau hinh
+// TURN rieng (vd: Metered.ca goi mien phi 50GB/thang, Twilio, hoac coturn tu host)
+// qua cac bien moi truong VITE_TURN_URL / VITE_TURN_USERNAME / VITE_TURN_CREDENTIAL.
+
+const DEFAULT_STUN = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+];
+
+// OpenRelay da doi endpoint xac thuc tinh sang "staticauth.openrelay.metered.ca".
+// (Endpoint cu "openrelay.metered.ca" da ngung hoat dong -> nguyen nhan goi khac
+//  mang bi den/khong co tieng: bat tay SDP xong nhung media path khong ket noi duoc.)
+const DEFAULT_TURN = [
+    {
+        urls: "turn:staticauth.openrelay.metered.ca:80",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+    },
+    {
+        urls: "turn:staticauth.openrelay.metered.ca:443",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+    },
+    {
+        urls: "turn:staticauth.openrelay.metered.ca:443?transport=tcp",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+    },
+    {
+        urls: "turns:staticauth.openrelay.metered.ca:443?transport=tcp",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+    },
+];
+
+function buildIceServers() {
+    const env = import.meta.env || {};
+
+    // 1) Ghi de hoan toan bang JSON neu co VITE_ICE_SERVERS
+    const rawJson = env.VITE_ICE_SERVERS;
+    if (rawJson) {
+        try {
+            const parsed = JSON.parse(rawJson);
+            if (Array.isArray(parsed) && parsed.length) return parsed;
+        } catch (e) {
+            console.warn("[WebRTC] VITE_ICE_SERVERS khong phai JSON hop le, bo qua:", e);
         }
-    ],
+    }
+
+    const servers = [...DEFAULT_STUN];
+
+    // 2) TURN rieng qua bien moi truong (khuyen nghi cho production)
+    const turnUrl = env.VITE_TURN_URL;
+    if (turnUrl) {
+        const urls = turnUrl.split(",").map((u) => u.trim()).filter(Boolean);
+        servers.push({
+            urls,
+            username: env.VITE_TURN_USERNAME || "",
+            credential: env.VITE_TURN_CREDENTIAL || "",
+        });
+        return servers;
+    }
+
+    // 3) Mac dinh: kem TURN cong khai (best-effort, co the khong on dinh)
+    return [...servers, ...DEFAULT_TURN];
+}
+
+const ICE_SERVERS = {
+    iceServers: buildIceServers(),
+    iceCandidatePoolSize: 10,
 };
 
 export function useVideoCall(socket, currentUserId, currentUserName) {
     const [callState, setCallState] = useState("idle");
     const [remoteUser, setRemoteUser] = useState(null);
     const [isVideoCall, setIsVideoCall] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isCameraOff, setIsCameraOff] = useState(false);
 
     const localStreamRef = useRef(null);
     const remoteStreamRef = useRef(null);
@@ -40,6 +95,7 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
     const remoteUserRef = useRef(null);
     const pendingCandidatesRef = useRef([]);
     const pendingOfferRef = useRef(null);
+    const disconnectTimerRef = useRef(null); // dem an han khi ICE 'disconnected'
 
     // ── Theo dõi thời gian cuộc gọi ─────────────────────────────
     const callStartTimeRef = useRef(null);   // Thời điểm cuộc gọi bắt đầu (active)
@@ -99,28 +155,63 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
             }
         };
 
+        // Don tai nguyen khi ket noi bi mat that su (dung chung).
+        const teardownFromLoss = () => {
+            if (disconnectTimerRef.current) {
+                clearTimeout(disconnectTimerRef.current);
+                disconnectTimerRef.current = null;
+            }
+            if (peerRef.current) {
+                peerRef.current.oniceconnectionstatechange = null; // Tranh goi lai
+                peerRef.current.close();
+                peerRef.current = null;
+            }
+            localStreamRef.current?.getTracks().forEach((t) => t.stop());
+            localStreamRef.current = null;
+            remoteStreamRef.current = null;
+            pendingCandidatesRef.current = [];
+            pendingOfferRef.current = null;
+            callStartTimeRef.current = null;
+            callerIdRef.current = null;
+            receiverIdRef.current = null;
+            setCallState("idle");
+            setRemoteUser(null);
+        };
+
         peer.oniceconnectionstatechange = () => {
             const state = peer.iceConnectionState;
             console.log("[WebRTC] ICE state:", state);
-            // Tự động kết thúc cuộc gọi khi kết nối bị mất (bên kia đã kết thúc)
-            if (state === "disconnected" || state === "failed" || state === "closed") {
-                console.warn("[WebRTC] Connection lost → auto-ending call, state:", state);
-                // Dọn dẹp tài nguyên (chỉ khi peer chưa bị dọn)
-                if (peerRef.current) {
-                    peerRef.current.oniceconnectionstatechange = null; // Tránh gọi lại
-                    peerRef.current.close();
-                    peerRef.current = null;
+
+            // Da/ dang phuc hoi -> huy dem an han neu co
+            if (state === "connected" || state === "completed") {
+                if (disconnectTimerRef.current) {
+                    clearTimeout(disconnectTimerRef.current);
+                    disconnectTimerRef.current = null;
                 }
-                localStreamRef.current?.getTracks().forEach((t) => t.stop());
-                localStreamRef.current = null;
-                remoteStreamRef.current = null;
-                pendingCandidatesRef.current = [];
-                pendingOfferRef.current = null;
-                callStartTimeRef.current = null;
-                callerIdRef.current = null;
-                receiverIdRef.current = null;
-                setCallState("idle");
-                setRemoteUser(null);
+                return;
+            }
+
+            // "disconnected" thuong chi la gian doan tam thoi (doi mang / doi
+            // candidate moi). Cho mot khoang an han de ICE tu phuc hoi truoc khi
+            // ket thuc cuoc goi -- quan trong cho cuoc goi khac mang (4G <-> Wi-Fi).
+            if (state === "disconnected") {
+                if (disconnectTimerRef.current) return;
+                console.warn("[WebRTC] ICE disconnected -> cho phuc hoi (8s)...");
+                disconnectTimerRef.current = setTimeout(() => {
+                    disconnectTimerRef.current = null;
+                    const cur = peerRef.current;
+                    if (cur && (cur.iceConnectionState === "disconnected" || cur.iceConnectionState === "failed")) {
+                        console.warn("[WebRTC] Khong phuc hoi duoc -> ket thuc cuoc goi");
+                        teardownFromLoss();
+                    }
+                }, 8000);
+                return;
+            }
+
+            // Mat ket noi that su
+            if (state === "failed" || state === "closed") {
+                console.warn("[WebRTC] Connection lost -> auto-ending call, state:", state);
+                teardownFromLoss();
             }
         };
 
@@ -135,6 +226,10 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
 
     // ── Hàm dọn dẹp tài nguyên WebRTC (dùng chung) ─────────────
     const cleanupCall = useCallback(() => {
+        if (disconnectTimerRef.current) {
+            clearTimeout(disconnectTimerRef.current);
+            disconnectTimerRef.current = null;
+        }
         peerRef.current?.close();
         peerRef.current = null;
         localStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -378,5 +473,31 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         };
     }, [socket, currentUserId]);
 
-    return { callState, remoteUser, localVideoRef, remoteVideoRef, startCall, answerCall, endCall, rejectCall, isVideoCall };
+    // Bat/tat microphone tren local stream
+    const toggleMute = useCallback(() => {
+        const stream = localStreamRef.current;
+        if (!stream) return;
+        const enabledNow = stream.getAudioTracks().some((t) => t.enabled);
+        stream.getAudioTracks().forEach((t) => { t.enabled = !enabledNow; });
+        setIsMuted(enabledNow); // neu dang bat -> se thanh tat (muted)
+    }, []);
+
+    // Bat/tat camera tren local stream
+    const toggleCamera = useCallback(() => {
+        const stream = localStreamRef.current;
+        if (!stream) return;
+        const enabledNow = stream.getVideoTracks().some((t) => t.enabled);
+        stream.getVideoTracks().forEach((t) => { t.enabled = !enabledNow; });
+        setIsCameraOff(enabledNow);
+    }, []);
+
+    // Reset trang thai mute/camera moi khi cuoc goi ket thuc (callState ve idle)
+    useEffect(() => {
+        if (callState === "idle") {
+            setIsMuted(false);
+            setIsCameraOff(false);
+        }
+    }, [callState]);
+
+    return { callState, remoteUser, localVideoRef, remoteVideoRef, startCall, answerCall, endCall, rejectCall, isVideoCall, isMuted, isCameraOff, toggleMute, toggleCamera };
 }
