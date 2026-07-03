@@ -5,6 +5,7 @@ import { Mail, Lock, Eye, EyeClosed, ArrowRight, User, FileText, ArrowLeft } fro
 import { GoogleLogin } from '@react-oauth/google'
 import toast from 'react-hot-toast'
 import FlickerSpinner from '../components/ui/FlickerSpinner'
+import { SparklesText } from '../components/ui/SparklesText'
 import { GradientButton } from '../components/ui/GradientButton'
 
 const LoginPage = () => {
@@ -92,8 +93,7 @@ const LoginPage = () => {
         transition={{ duration: 0.6 }}
         className="flex flex-col items-center justify-center gap-4 text-white"
       >
-        <FlickerSpinner size={100} />
-        <h1 className="text-4xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-b from-white to-white/50">ChatITC</h1>
+        <SparklesText text={<span>Chat<span className="text-blue-500">ITC</span></span>} className="text-5xl md:text-6xl lg:text-7xl" sparklesCount={10} />
       </motion.div>
 
       {/* ----------- Phần bên phải: Card đăng nhập ----------- */}

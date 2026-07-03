@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus } from 'lucide-react';
 import FlickerSpinner from './ui/FlickerSpinner';
+import { SparklesText } from './ui/SparklesText';
 import { ShinyButton } from './ui/ShinyButton';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
@@ -884,8 +885,8 @@ const ChatContainer = ({ startCall }) => {
   ) : (
     /* Hiển thị màn hình chờ khi chưa chọn ai để chat */
     <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-gray-500 bg-white/5 max-md:hidden">
-      <FlickerSpinner size={64} />
-      <p className="text-lg font-medium text-white">Chat mọi lúc, mọi nơi</p>
+      <SparklesText text={<span>Chat<span className="text-blue-500">ITC</span></span>} className="text-5xl" sparklesCount={7} />
+      <p className="text-lg font-medium text-white bg-red-500 px-4 py-1.5 shadow-lg">Chat mọi lúc, mọi nơi</p>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Contexts
 import { AuthContext } from '../../context/AuthContext';
@@ -9,6 +9,7 @@ import { ChatContext } from '../../context/ChatContext';
 // Assets & UI Components
 import assets from '../assets/assets';
 import FlickerSpinner from './ui/FlickerSpinner';
+import { SparklesText } from './ui/SparklesText';
 import { User, LogOut, UserPlus, ChevronDown, ChevronRight, MessageSquareWarning, Check, X, Bell } from 'lucide-react';
 import { ExpandableTabs } from './ui/ExpandableTabs';
 import axios from 'axios';
@@ -57,7 +58,7 @@ const SideBar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showStrangers, setShowStrangers] = useState(false);
-
+  const [hoveredStranger, setHoveredStranger] = useState(null);
   // 3. --- Lọc dữ liệu & Tìm kiếm ---
 
   // Tách bạn bè và người lạ từ danh sách users
@@ -200,8 +201,7 @@ const SideBar = () => {
 
           {/* Logo & Tên ứng dụng */}
           <div className="flex items-center gap-3 font-extrabold text-xl tracking-wider text-white">
-            <FlickerSpinner size={32} />
-            <span>ChatITC</span>
+            <SparklesText text={<span>Chat<span className="text-blue-500">ITC</span></span>} className="text-2xl tracking-wider" sparklesCount={5} />
           </div>
 
           {/* Menu Expandable Tabs */}
@@ -343,7 +343,13 @@ const SideBar = () => {
             {strangersList.length > 0 && (
               <div className="mt-4 border-t border-white/10 pt-4">
                  <div onClick={() => setShowStrangers(!showStrangers)} className="relative flex items-center gap-2 cursor-pointer hover:text-cyan-400 transition-colors text-gray-300 font-semibold text-sm mb-2 w-max">
-                    {showStrangers ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    <motion.div
+                        animate={{ rotate: showStrangers ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center justify-center w-4 h-4"
+                    >
+                        <ChevronDown className="w-4 h-4" />
+                    </motion.div>
                     <MessageSquareWarning className="w-4 h-4" />
                     Tin nhắn từ người lạ ({strangersList.length})
                     
@@ -355,28 +361,68 @@ const SideBar = () => {
                     )}
                  </div>
                  
-                 {showStrangers && strangersList.map((user) => (
-                    <div
-                      key={user._id}
-                      onClick={() => {
-                        if (selectedUser?._id === user._id) setSelectedUser(null);
-                        else {
-                          setSelectedUser(user);
-                          setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
-                        }
-                      }}
-                      className={`relative flex items-center gap-3 p-3 pl-4 mt-2 rounded-xl cursor-pointer hover:bg-white/5 transition-colors ${selectedUser?._id === user._id ? 'bg-[#00cfff]/15 hover:bg-[#00cfff]/20' : ''}`}
-                    >
-                      <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-10 aspect-square rounded-full object-cover opacity-70' />
-                      <div className='flex flex-col leading-5'>
-                        <p className='text-sm font-medium'>{user.fullName}</p>
-                        <span className='text-neutral-500 text-xs'>Người lạ</span>
-                      </div>
-                      {unseenMessages && unseenMessages[user._id] > 0 && (
-                        <p className='absolute top-3 right-3 bg-red-500 text-xs rounded-full w-5 h-5 flex items-center justify-center text-white'>{unseenMessages[user._id]}</p>
-                      )}
-                    </div>
-                  ))}
+                 <AnimatePresence>
+                   {showStrangers && (
+                     <motion.div
+                       initial={{ opacity: 0, height: 0 }}
+                       animate={{ 
+                         opacity: 1, 
+                         height: "auto",
+                         transition: { type: "spring", stiffness: 400, damping: 30, mass: 1, staggerChildren: 0.05, delayChildren: 0.1 }
+                       }}
+                       exit={{ 
+                         opacity: 0, 
+                         height: 0,
+                         transition: { type: "spring", stiffness: 400, damping: 30, mass: 1 }
+                       }}
+                       className="overflow-hidden relative"
+                     >
+                        <div className="py-2 flex flex-col gap-1 relative">
+                          {strangersList.map((user) => (
+                              <motion.div
+                                key={user._id}
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                                onMouseEnter={() => setHoveredStranger(user._id)}
+                                onMouseLeave={() => setHoveredStranger(null)}
+                                onClick={() => {
+                                  if (selectedUser?._id === user._id) setSelectedUser(null);
+                                  else {
+                                    setSelectedUser(user);
+                                    setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
+                                  }
+                                }}
+                                className={`relative flex items-center gap-3 p-3 pl-4 rounded-xl cursor-pointer transition-colors z-10 ${selectedUser?._id === user._id ? 'text-white' : 'text-gray-300 hover:text-white'}`}
+                              >
+                                {/* Framer Motion LayoutId Highlight (Fluid Hover) */}
+                                {hoveredStranger === user._id && (
+                                    <motion.div
+                                        layoutId="stranger-hover"
+                                        className="absolute inset-0 bg-white/5 rounded-xl -z-10"
+                                        transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                                    />
+                                )}
+                                {/* Nền khi đang chọn */}
+                                {selectedUser?._id === user._id && (
+                                    <div className="absolute inset-0 bg-[#00cfff]/15 rounded-xl -z-10" />
+                                )}
+                                
+                                <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-10 aspect-square rounded-full object-cover opacity-80' />
+                                <div className='flex flex-col leading-5'>
+                                  <p className='text-sm font-medium'>{user.fullName}</p>
+                                  <span className='text-neutral-500 text-xs'>Người lạ</span>
+                                </div>
+                                {unseenMessages && unseenMessages[user._id] > 0 && (
+                                  <p className='absolute top-3 right-3 bg-red-500 text-xs rounded-full w-5 h-5 flex items-center justify-center text-white'>{unseenMessages[user._id]}</p>
+                                )}
+                              </motion.div>
+                          ))}
+                        </div>
+                     </motion.div>
+                   )}
+                 </AnimatePresence>
               </div>
             )}
           </>
