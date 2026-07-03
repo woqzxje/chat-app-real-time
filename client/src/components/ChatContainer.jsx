@@ -495,6 +495,11 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
         onTouchEnd={handleTouchEndOrMove}
         onTouchCancel={handleTouchEndOrMove}
       >
+        {/* Tên người gửi (chỉ hiển thị cho tin nhắn nhận trong nhóm) */}
+        {!isOwn && selectedUser?.isGroup && msg.senderInfo?.fullName && !msg.isSystemMessage && (
+          <span className="text-xs text-gray-400 mb-1 ml-1">{msg.senderInfo.fullName}</span>
+        )}
+        
         {/* Thanh Emoji nổi lên trên Mobile khi Long Press */}
         {showEmojis && !msg.isDeleted && (
           <div className="absolute bottom-full mb-2 z-50">
@@ -549,9 +554,10 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
       {/* ── Avatar và Thời gian ── */}
       <div className="text-center text-xs md:text-sm flex-shrink-0">
         <img
-          src={isOwn ? authUser?.profilePic || assets.avatar_icon : selectedUser?.profilePic || assets.avatar_icon}
+          src={isOwn ? authUser?.profilePic || assets.avatar_icon : (msg.senderInfo?.profilePic || selectedUser?.profilePic || assets.avatar_icon)}
           alt="User"
-          className="rounded-full w-9"
+          title={!isOwn ? msg.senderInfo?.fullName : authUser?.fullName}
+          className="rounded-full w-9 h-9 object-cover"
         />
         <div className="flex items-center justify-center gap-1 mt-1">
           <p className="text-gray-400 text-[10px]">{formatMessageTime(msg.createdAt)}</p>

@@ -14,9 +14,9 @@ message_router = APIRouter()
 
 # ── Các hàm hỗ trợ (Helpers) ──────────────────────────────────────────────────
 
-def _msg_dict(msg: Message) -> dict:
+def _msg_dict(msg: Message, sender: User = None) -> dict:
     """Chuyển đổi đối tượng Message (Beanie) sang dictionary."""
-    return {
+    base = {
         "_id": str(msg.id),
         "senderId": msg.senderId,
         "receiverId": msg.receiverId,
@@ -33,6 +33,12 @@ def _msg_dict(msg: Message) -> dict:
         "createdAt": msg.createdAt.isoformat(),
         "updatedAt": msg.updatedAt.isoformat(),
     }
+    if sender:
+        base["senderInfo"] = {
+            "fullName": sender.fullName,
+            "profilePic": sender.profilePic,
+        }
+    return base
 
 
 def _user_dict(user: User) -> dict:
@@ -167,7 +173,20 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
             if sender_socket_id:
                 await sio.emit("messagesSeen", {"receiverId": my_id}, to=sender_socket_id)
 
-    return {"success": True, "messages": [_msg_dict(m) for m in messages]}
+    # Fetch senders info
+    sender_ids = list(set([m.senderId for m in messages]))
+    from bson import ObjectId
+    from beanie.operators import In
+    valid_sender_ids = [ObjectId(uid) for uid in sender_ids if ObjectId.is_valid(uid)]
+    senders = await User.find(In(User.id, valid_sender_ids)).to_list() if valid_sender_ids else []
+    sender_map = {str(s.id): s for s in senders}
+
+    msgs_data = []
+    for m in messages:
+        sender = sender_map.get(m.senderId)
+        msgs_data.append(_msg_dict(m, sender))
+
+    return {"success": True, "messages": msgs_data}
 
 
 # ── PUT /api/messages/mark/{id} ──────────────────────────────────────────────
@@ -213,6 +232,8 @@ async def send_message(
         attachment=body.attachment,
     )
     await new_msg.insert()
+    
+    msg_dict_data = _msg_dict(new_msg, current_user)
 
     # GỬI TIN NHẮN REAL-TIME QUA SOCKET.IO
     from app.models import ChatGroup
@@ -224,14 +245,14 @@ async def send_message(
             if member_id != sender_id:
                 member_socket_id = user_socket_map.get(member_id)
                 if member_socket_id:
-                    await sio.emit("receiveMessage", _msg_dict(new_msg), to=member_socket_id)
+                    await sio.emit("receiveMessage", msg_dict_data, to=member_socket_id)
     else:
         # Nếu nhắn 1-1
         receiver_socket_id = user_socket_map.get(id)
         if receiver_socket_id:
-            await sio.emit("receiveMessage", _msg_dict(new_msg), to=receiver_socket_id)
+            await sio.emit("receiveMessage", msg_dict_data, to=receiver_socket_id)
 
-    return {"success": True, "newMessage": _msg_dict(new_msg)}
+    return {"success": True, "newMessage": msg_dict_data}
 
 # ── PUT /api/messages/edit/{id} ──────────────────────────────────────────────
 
@@ -266,7 +287,7 @@ async def edit_message(
     if receiver_socket_id:
         await sio.emit("messageEdited", {"msgId": id, "text": body.text}, to=receiver_socket_id)
 
-    return {"success": True, "message": _msg_dict(msg)}
+    return {"success": True, "message": _msg_dict(msg, current_user)}
 
 # ── PUT /api/messages/revoke/{id} ─────────────────────────────────────────────
 
@@ -296,7 +317,7 @@ async def revoke_message(
     if receiver_socket_id:
         await sio.emit("messageDeleted", {"msgId": id}, to=receiver_socket_id)
 
-    return {"success": True, "message": _msg_dict(msg)}
+    return {"success": True, "message": _msg_dict(msg, current_user)}
 
 # ── POST /api/messages/react/{id} ─────────────────────────────────────────────
 
@@ -343,8 +364,10 @@ async def react_message(
     receiver_socket_id = user_socket_map.get(msg.receiverId if msg.senderId == uid else msg.senderId)
     if receiver_socket_id:
         await sio.emit("messageReacted", {"msgId": id, "reactions": [r.dict() for r in reactions]}, to=receiver_socket_id)
+        
+    sender = await User.get(msg.senderId)
 
-    return {"success": True, "message": _msg_dict(msg)}
+    return {"success": True, "message": _msg_dict(msg, sender)}
 
 # ── POST /api/messages/groups/create ─────────────────────────────────────────
 
@@ -447,17 +470,7 @@ async def add_group_members(
     )
     await system_msg.insert()
     
-    msg_data = {
-        "_id": str(system_msg.id),
-        "senderId": system_msg.senderId,
-        "receiverId": system_msg.receiverId,
-        "text": system_msg.text,
-        "image": None,
-        "seen": False,
-        "isSystemMessage": True,
-        "createdAt": system_msg.createdAt.isoformat() + "Z",
-        "updatedAt": system_msg.updatedAt.isoformat() + "Z"
-    }
+    msg_data = _msg_dict(system_msg, current_user)
     
     for member_id in new_members:
         s_id = user_socket_map.get(member_id)
@@ -536,18 +549,7 @@ async def leave_group(
         )
         await system_msg.insert()
         
-        # Format tin nhắn để gửi qua socket
-        msg_data = {
-            "_id": str(system_msg.id),
-            "senderId": system_msg.senderId,
-            "receiverId": system_msg.receiverId,
-            "text": system_msg.text,
-            "image": None,
-            "seen": False,
-            "isSystemMessage": True,
-            "createdAt": system_msg.createdAt.isoformat() + "Z",
-            "updatedAt": system_msg.updatedAt.isoformat() + "Z"
-        }
+        msg_data = _msg_dict(system_msg, current_user)
         
         for member_id in new_members:
             s_id = user_socket_map.get(member_id)
@@ -728,17 +730,7 @@ async def kick_group_member(
     )
     await system_msg.insert()
     
-    msg_data = {
-        "_id": str(system_msg.id),
-        "senderId": system_msg.senderId,
-        "receiverId": system_msg.receiverId,
-        "text": system_msg.text,
-        "image": None,
-        "seen": False,
-        "isSystemMessage": True,
-        "createdAt": system_msg.createdAt.isoformat() + "Z",
-        "updatedAt": system_msg.updatedAt.isoformat() + "Z"
-    }
+    msg_data = _msg_dict(system_msg, current_user)
 
     # Bắn socket cho các thành viên còn lại
     for member_id in new_members:

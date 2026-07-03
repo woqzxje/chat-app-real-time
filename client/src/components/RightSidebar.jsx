@@ -87,6 +87,37 @@ const RightSidebar = () => {
     }
   }
 
+  const handleAddFriend = async (userId) => {
+    try {
+      const { data } = await axios.post('/api/auth/send-friend-request', { friendId: userId });
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    }
+  };
+
+  const handleKickMember = async (userId, userName) => {
+    if (window.confirm(`Bạn có chắc muốn mời ${userName} ra khỏi nhóm?`)) {
+      try {
+        const { data } = await axios.put(`/api/messages/groups/${selectedUser._id}/kick`, { userId });
+        if (data.success) {
+          toast.success(data.message);
+          setSelectedUser({ ...selectedUser, ...data.group });
+          getUsers();
+          setGroupMembers(prev => prev.filter(m => m._id !== userId));
+        } else {
+          toast.error(data.message);
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || error.message);
+      }
+    }
+  };
+
   const handleAddMember = async () => {
     if (selectedFriends.length === 0) {
       toast.error('Vui lòng chọn ít nhất 1 thành viên');
