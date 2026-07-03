@@ -23,6 +23,8 @@ def get_file_type(filename: str) -> str:
         return "image"
     if ext in ["mp4", "mov", "avi", "mkv"]:
         return "video"
+    if ext in ["mp3", "wav", "ogg", "m4a", "webm"]:
+        return "audio"
     if ext in ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"]:
         return "document"
     if ext in ["zip", "rar", "7z", "tar", "gz"]:
@@ -48,7 +50,7 @@ async def upload_file(
     file_type = get_file_type(file.filename)
     resource_type = (
         "image" if file_type == "image"
-        else "video" if file_type == "video"
+        else "video" if file_type in ["video", "audio"]
         else "raw"
     )
 
@@ -100,7 +102,7 @@ async def upload_folder(
         file_type = get_file_type(basename)
         resource_type = (
             "image" if file_type == "image"
-            else "video" if file_type == "video"
+            else "video" if file_type in ["video", "audio"]
             else "raw"
         )
 

@@ -5,10 +5,12 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus } from 'lucide-react';
+import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparklesText } from './ui/SparklesText';
 import { ShinyButton } from './ui/ShinyButton';
+import FloatingActionMenu from './ui/floating-action-menu';
+import { Paperclip, FolderPlus } from 'lucide-react';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
 
@@ -20,6 +22,7 @@ const FileIcon = ({ type }) => {
     document: '📄',
     archive: '🗜️',
     folder: '📁',
+    audio: '🎤',
     other: '📎',
   };
   return <span className="text-xl leading-none">{icons[type] || icons.other}</span>;
@@ -163,6 +166,20 @@ const AttachmentBubble = ({ attachment, onMediaLoad }) => {
           className="max-w-[280px] rounded-2xl cursor-pointer hover:opacity-90 transition-opacity mb-1"
         />
       </a>
+    );
+  }
+
+  // Nếu là audio → hiển thị audio player
+  if (file_type === 'audio') {
+    return (
+      <div className="bg-white/10 p-2 rounded-2xl mb-1 flex items-center min-w-[240px] max-w-[280px]">
+        <audio
+          src={url}
+          controls
+          onLoadedData={onMediaLoad}
+          className="w-full h-10 outline-none"
+        />
+      </div>
     );
   }
 
@@ -573,6 +590,77 @@ const ChatContainer = ({ startCall }) => {
   // Trạng thái theo dõi quá trình upload file lên server
   const [uploading, setUploading] = useState(false);
 
+  // --- Trạng thái và ref cho Ghi âm (Voice Message) ---
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const timerIntervalRef = useRef(null);
+
+  // --- Các hàm xử lý Ghi âm ---
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const file = new File([audioBlob], `voice_message_${Date.now()}.webm`, { type: 'audio/webm' });
+        
+        const fd = new FormData();
+        fd.append('file', file);
+        uploadFile(fd, '/api/files/upload');
+        
+        // Cleanup stream
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      timerIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Lỗi ghi âm:", err);
+      toast.error("Không thể truy cập Micro!");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(timerIntervalRef.current);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      // Ghi đè hàm onstop để không upload file khi bị hủy
+      mediaRecorderRef.current.onstop = () => {
+        const stream = mediaRecorderRef.current.stream;
+        stream.getTracks().forEach(track => track.stop());
+      };
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      clearInterval(timerIntervalRef.current);
+      setRecordingTime(0);
+    }
+  };
+
+  const formatRecordingTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
   // Gửi lời mời kết bạn (dành cho người lạ)
   const handleAddFriend = async () => {
     try {
@@ -823,52 +911,67 @@ const ChatContainer = ({ startCall }) => {
 
         {/* Hàng input chính */}
         <div className="flex items-center gap-4">
-          <div className="flex-1 flex items-center bg-gray-100/12 px-4 rounded-full gap-2">
-            <input
-              onChange={(e) => setInput(e.target.value)}
-              value={input}
-              onKeyDown={(e) => e.key === 'Enter' ? handleSendMessage(e) : null}
-              type="text"
-              placeholder={attachment ? 'Thêm lời nhắn (tuỳ chọn)...' : 'Nhập tin nhắn...'}
-              className="flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400 bg-transparent"
-            />
+          {isRecording ? (
+            <div className="flex-1 flex items-center bg-red-500/10 border border-red-500/30 px-5 rounded-full gap-3 h-[52px] animate-in slide-in-from-right-4 duration-300">
+              <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-red-400 font-medium flex-1">{formatRecordingTime(recordingTime)}</span>
+              <button onClick={cancelRecording} title="Hủy ghi âm" className="text-gray-400 hover:text-white p-1.5 transition-colors cursor-pointer">
+                <Trash2 className="w-5 h-5" />
+              </button>
+              <button onClick={stopRecording} title="Gửi ghi âm" className="text-red-400 hover:text-red-300 p-1.5 transition-colors cursor-pointer ml-1">
+                <Square className="w-5 h-5" fill="currentColor" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center bg-gray-100/12 px-4 rounded-full gap-2">
+              <input
+                onChange={(e) => setInput(e.target.value)}
+                value={input}
+                onKeyDown={(e) => e.key === 'Enter' ? handleSendMessage(e) : null}
+                type="text"
+                placeholder={attachment ? 'Thêm lời nhắn (tuỳ chọn)...' : 'Nhập tin nhắn...'}
+                className="flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400 bg-transparent"
+              />
 
-            {/* Nút chọn và gửi ảnh */}
-            <input onChange={handleSendImage} type="file" id="image" accept="image/png, image/jpeg" hidden />
-            <label htmlFor="image" title="Gửi ảnh" className="cursor-pointer text-gray-400 hover:text-white transition-colors mr-3 flex items-center">
-              <ImageIcon className="w-5 h-5" />
-            </label>
+              {/* Nút ghi âm */}
+              <button
+                onClick={startRecording}
+                title="Ghi âm"
+                disabled={uploading}
+                className="cursor-pointer text-gray-400 hover:text-cyan-400 transition-colors disabled:opacity-40 mr-2 flex items-center"
+              >
+                <Mic className="w-5 h-5" />
+              </button>
 
-            {/* Nút đính kèm file (pdf, docx, zip...) */}
-            <input ref={fileRef} type="file" hidden onChange={handleFileChange} />
-            <button
-              onClick={() => fileRef.current.click()}
-              title="Gửi file"
-              disabled={uploading}
-              className="text-gray-400 hover:text-white transition-colors disabled:opacity-40 mr-1"
-            >
-              {/* Icon paperclip — biểu tượng đính kèm file */}
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-              </svg>
-            </button>
+              {/* Các input file ẩn */}
+              <input onChange={handleSendImage} type="file" id="image" accept="image/png, image/jpeg" hidden />
+              <input ref={fileRef} type="file" hidden onChange={handleFileChange} />
+              <input ref={folderRef} type="file" hidden webkitdirectory="true" multiple onChange={handleFolderChange} />
 
-            {/* Nút đính kèm folder — toàn bộ folder sẽ được zip lại trước khi gửi */}
-            <input ref={folderRef} type="file" hidden webkitdirectory="true" multiple onChange={handleFolderChange} />
-            <button
-              onClick={() => folderRef.current.click()}
-              title="Gửi folder"
-              disabled={uploading}
-              className="text-gray-400 hover:text-white transition-colors disabled:opacity-40 mr-2"
-            >
-              {/* Icon folder */}
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-              </svg>
-            </button>
-          </div>
+              {/* Tích hợp FloatingActionMenu thay cho 3 nút cũ */}
+              <FloatingActionMenu
+                disabled={uploading}
+                className="mr-1"
+                options={[
+                  {
+                    label: "Hình ảnh",
+                    Icon: <ImageIcon className="w-4 h-4 text-cyan-400" />,
+                    onClick: () => document.getElementById('image').click(),
+                  },
+                  {
+                    label: "Tệp tin",
+                    Icon: <Paperclip className="w-4 h-4 text-emerald-400" />,
+                    onClick: () => fileRef.current.click(),
+                  },
+                  {
+                    label: "Thư mục",
+                    Icon: <FolderPlus className="w-4 h-4 text-orange-400" />,
+                    onClick: () => folderRef.current.click(),
+                  }
+                ]}
+              />
+            </div>
+          )}
 
           {/* Nút gửi tin nhắn — hiện spinner khi đang upload file */}
           {uploading ? (
