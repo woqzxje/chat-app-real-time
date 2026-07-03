@@ -128,14 +128,22 @@ const SideBar = () => {
       setShowRequests(true);
     });
 
-    socket.on("friendRequestAccepted", () => {
+    socket.on("friendRequestAccepted", (data) => {
       // Đối phương đã chấp nhận -> load lại danh sách chat
       getUsers();
+      // Cập nhật selectedUser nếu người được chọn trùng khớp
+      if (selectedUser && data?.newFriend?._id === selectedUser._id) {
+          setSelectedUser(prev => ({ ...prev, isFriend: true }));
+      }
     });
 
-    socket.on("unfriended", () => {
+    socket.on("unfriended", (data) => {
       // Bị đối phương hủy kết bạn -> load lại
       getUsers();
+      // Cập nhật selectedUser nếu người được chọn trùng khớp
+      if (selectedUser && data?.by === selectedUser._id) {
+          setSelectedUser(prev => ({ ...prev, isFriend: false }));
+      }
     });
 
     return () => {
@@ -143,7 +151,7 @@ const SideBar = () => {
       socket.off("friendRequestAccepted");
       socket.off("unfriended");
     };
-  }, [socket, getUsers]);
+  }, [socket, getUsers, selectedUser, setSelectedUser]);
 
   const handleAddFriend = async (friendId) => {
     try {
@@ -169,6 +177,10 @@ const SideBar = () => {
         setFriendRequests(prev => prev.filter(req => req._id !== friendId));
         // Chấp nhận xong thì reload danh sách user để họ hiện vào Bạn bè
         getUsers(); 
+        // Ẩn nút Kết bạn trong ChatContainer ngay lập tức
+        if (selectedUser && selectedUser._id === friendId) {
+             setSelectedUser(prev => ({ ...prev, isFriend: true }));
+        }
       } else {
         toast.error(data.message);
       }
