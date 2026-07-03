@@ -1,4 +1,4 @@
-﻿import os
+import os
 import jwt as pyjwt
 from datetime import datetime, timedelta, timezone
 

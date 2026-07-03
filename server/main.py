@@ -1,4 +1,4 @@
-﻿import os
+import os
 from dotenv import load_dotenv
 # Phai nap cac bien moi truong tu file .env dau tien de cac module khac co the su dung (vi du: MONGODB_URL)
 load_dotenv()

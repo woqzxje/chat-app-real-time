@@ -1,4 +1,4 @@
-﻿# server/app/routes/file_routes.py
+# server/app/routes/file_routes.py
 import os
 import uuid
 import io

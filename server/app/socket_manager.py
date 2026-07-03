@@ -1,4 +1,4 @@
-﻿import os
+import os
 import socketio
 from datetime import datetime
 
