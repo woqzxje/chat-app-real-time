@@ -923,14 +923,14 @@ const ChatContainer = ({ startCall }) => {
               </button>
             </div>
           ) : (
-            <div className="flex-1 flex items-center bg-gray-100/12 px-4 rounded-full gap-2">
+            <div className="flex-1 flex items-center bg-gray-100/12 px-4 rounded-full gap-2 min-w-0">
               <input
                 onChange={(e) => setInput(e.target.value)}
                 value={input}
                 onKeyDown={(e) => e.key === 'Enter' ? handleSendMessage(e) : null}
                 type="text"
                 placeholder={attachment ? 'Thêm lời nhắn (tuỳ chọn)...' : 'Nhập tin nhắn...'}
-                className="flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400 bg-transparent"
+                className="flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400 bg-transparent min-w-0"
               />
 
               {/* Nút ghi âm */}

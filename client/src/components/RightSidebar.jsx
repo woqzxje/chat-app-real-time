@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 
 const RightSidebar = () => {
 
-  const { selectedUser, messages } = useContext(ChatContext)
+  const { selectedUser, messages, setSelectedUser, getUsers } = useContext(ChatContext)
   const { onlineUser } = useContext(AuthContext)
   const msgImages = messages.filter(msg => msg.image).map(msg => msg.image)
 
@@ -20,7 +20,9 @@ const RightSidebar = () => {
         const { data } = await axios.post('/api/auth/unfriend', { friendId: selectedUser._id });
         if (data.success) {
           toast.success(data.message);
-          window.location.reload();
+          // Cập nhật ngay lập tức vào state, không reload lại web
+          if (setSelectedUser) setSelectedUser(prev => ({ ...prev, isFriend: false }));
+          if (getUsers) getUsers();
         } else {
           toast.error(data.message);
         }
@@ -38,10 +40,10 @@ const RightSidebar = () => {
       {/* Phần nội dung có thể cuộn */}
       <div className="flex-1 overflow-y-scroll pb-6">
         <div className='pt-16 flex flex-col items-center gap-3 text-sm font-light mx-auto'>
-          <img src={selectedUser?.profilePic || assets.avatar_icon} alt="Avatar" className='w-24 aspect-square rounded-full' />
-          <h1 className='px-10 text-3xl font-semibold mx-auto flex items-center gap-3 text-center'>
-            {onlineUser.includes(selectedUser._id) && <p className='w-3 h-3 rounded-full bg-green-500 shrink-0'></p>}
+          <img src={selectedUser?.profilePic || assets.avatar_icon} alt="Avatar" className='w-24 h-24 object-cover rounded-full shadow-lg border-2 border-white/10' />
+          <h1 className='px-4 text-3xl font-semibold mx-auto flex items-center justify-center gap-3 text-center'>
             {selectedUser?.fullName}
+            {onlineUser.includes(selectedUser._id) && <span className='w-3 h-3 rounded-full bg-green-500 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.6)]'></span>}
           </h1>
           <p className='px-10 mx-auto text-center text-base opacity-80'>{selectedUser.bio}</p>
         </div>
