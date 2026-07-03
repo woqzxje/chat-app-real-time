@@ -8,21 +8,21 @@ const ICE_SERVERS = {
         { urls: "stun:stun2.l.google.com:19302" },
         { urls: "stun:stun.cloudflare.com:3478" },
         { urls: "stun:stun.twilio.com:3478" },
-        // GHI CHÚ: Bạn cần một TURN Server thực tế để Video Call hoạt động 100% khi khác mạng.
+        // Sử dụng Public TURN Server từ OpenRelay Project cho kết nối khác mạng (NAT traversal)
         {
-            urls: "turn:myvideocallquynh.metered.live:80",
-            username: "bd487ff8e692cad2e03607db",
-            credential: "R6pum4ID8oUFmioB",
+            urls: "turn:openrelay.metered.ca:80",
+            username: "openrelayproject",
+            credential: "openrelayproject",
         },
         {
-            urls: "turn:myvideocallquynh.metered.live:443",
-            username: "bd487ff8e692cad2e03607db",
-            credential: "R6pum4ID8oUFmioB",
+            urls: "turn:openrelay.metered.ca:443",
+            username: "openrelayproject",
+            credential: "openrelayproject",
         },
         {
-            urls: "turn:myvideocallquynh.metered.live:443?transport=tcp",
-            username: "bd487ff8e692cad2e03607db",
-            credential: "R6pum4ID8oUFmioB",
+            urls: "turn:openrelay.metered.ca:443?transport=tcp",
+            username: "openrelayproject",
+            credential: "openrelayproject",
         }
     ],
 };
