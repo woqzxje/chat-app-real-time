@@ -48,12 +48,18 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
 
     useEffect(() => { remoteUserRef.current = remoteUser; }, [remoteUser]);
 
-    // Gắn remote stream vào video element khi ref sẵn sàng
+    // Gắn remote/local stream vào video element khi ref sẵn sàng
     useEffect(() => {
         if (remoteVideoRef.current && remoteStreamRef.current) {
             if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
                 remoteVideoRef.current.srcObject = remoteStreamRef.current;
-                remoteVideoRef.current.play().catch(e => console.error("Play error:", e));
+                remoteVideoRef.current.play().catch(e => console.error("Remote play error:", e));
+            }
+        }
+        if (localVideoRef.current && localStreamRef.current) {
+            if (localVideoRef.current.srcObject !== localStreamRef.current) {
+                localVideoRef.current.srcObject = localStreamRef.current;
+                localVideoRef.current.play().catch(e => console.error("Local play error:", e));
             }
         }
     });

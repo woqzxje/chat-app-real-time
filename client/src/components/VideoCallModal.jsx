@@ -84,6 +84,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                     width: isVideoCall ? '80%' : '1px',
                     height: isVideoCall ? 'auto' : '1px',
                     minHeight: isVideoCall ? 300 : 1,
+                    objectFit: "cover"
                 }}
             />
             {!isVideoCall && (
@@ -109,7 +110,8 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                     border: "2px solid white",
                     background: "#222",
                     visibility: isVideoCall ? 'visible' : 'hidden',
-                    opacity: isVideoCall ? 1 : 0
+                    opacity: isVideoCall ? 1 : 0,
+                    objectFit: "cover"
                 }}
             />
 
