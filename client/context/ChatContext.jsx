@@ -119,35 +119,32 @@ export const ChatProvider = ({ children }) => {
 
         // Khi nhận được sự kiện "receiveMessage" từ server
         socket.on("receiveMessage", (newMessage) => {
-            // Kiểm tra xem tin nhắn có thuộc cuộc trò chuyện hiện tại không
-            // (từ người đang chat HOẶC từ mình gửi cho người đang chat — ví dụ: lịch sử cuộc gọi)
-            const isFromSelected = newMessage.senderId === selectedUser?._id;
-            const isMineToSelected = newMessage.senderId === authUser?._id
-                                   && newMessage.receiverId === selectedUser?._id;
+            // Lấy ID của cuộc trò chuyện (User ID hoặc Group ID)
+            const conversationId = newMessage.receiverId === authUser?._id ? newMessage.senderId : newMessage.receiverId;
+            const isForSelected = conversationId === selectedUser?._id;
 
-            if (isFromSelected || isMineToSelected) {
+            if (isForSelected) {
                 setMessages((prev) => {
                     // Tránh trùng lặp (khi server emit cho cả 2 bên)
                     if (prev.some((m) => m._id === newMessage._id)) return prev;
                     return [...prev, newMessage];
                 });
                 
-                // Nếu tin nhắn là từ người mình đang mở chat, báo cho server là mình đã xem ngay
-                if (isFromSelected) {
+                // Nếu tin nhắn là từ người khác, báo cho server là mình đã xem ngay
+                if (newMessage.senderId !== authUser?._id) {
                     socket.emit("markMessagesSeen", { senderId: newMessage.senderId, receiverId: authUser._id })
                 }
             } else if (newMessage.senderId !== authUser?._id) {
-                // Tăng số tin nhắn chưa đọc từ người gửi khác
+                // Tăng số tin nhắn chưa đọc cho đúng Group hoặc User
                 setUnseenMessages(prev => ({
                     ...prev,
-                    [newMessage.senderId]: (prev[newMessage.senderId] || 0) + 1
+                    [conversationId]: (prev[conversationId] || 0) + 1
                 }))
             }
 
-            // Nếu người nhắn tin đến chưa có trong Sidebar, load lại danh sách
-            const otherId = newMessage.senderId === authUser?._id ? newMessage.receiverId : newMessage.senderId;
+            // Nếu Group hoặc User chưa có trong Sidebar, load lại danh sách
             setUsers(prevUsers => {
-                if (!prevUsers.find(u => u._id === otherId)) {
+                if (!prevUsers.find(u => u._id === conversationId)) {
                     setTimeout(() => getUsers(), 100);
                 }
                 return prevUsers;

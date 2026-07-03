@@ -462,7 +462,7 @@ async def add_group_members(
     for member_id in new_members:
         s_id = user_socket_map.get(member_id)
         if s_id:
-            await sio.emit("newMessage", msg_data, to=s_id)
+            await sio.emit("receiveMessage", msg_data, to=s_id)
 
     return {"success": True, "message": "Đã thêm thành viên", "group": updated_group_data}
 
@@ -552,7 +552,7 @@ async def leave_group(
         for member_id in new_members:
             s_id = user_socket_map.get(member_id)
             if s_id:
-                await sio.emit("newMessage", msg_data, to=s_id)
+                await sio.emit("receiveMessage", msg_data, to=s_id)
 
     return {"success": True, "message": "Đã rời nhóm thành công"}
 
@@ -663,12 +663,93 @@ async def get_group_members(
     members = await User.find(In(User.id, object_ids)).to_list() if object_ids else []
 
     members_data = []
+    my_friends = current_user.friends or []
     for u in members:
         members_data.append({
             "_id": str(u.id),
             "fullName": u.fullName,
             "profilePic": u.profilePic,
-            "isAdmin": str(u.id) == group.admin
+            "isAdmin": str(u.id) == group.admin,
+            "isFriend": str(u.id) in my_friends
         })
 
     return {"success": True, "members": members_data}
+
+# ── PUT /api/messages/groups/{id}/kick ───────────────────────────────────────
+
+class KickMemberBody(BaseModel):
+    userId: str
+
+@message_router.put("/groups/{id}/kick")
+async def kick_group_member(
+    id: str,
+    body: KickMemberBody,
+    current_user: User = Depends(get_current_user),
+):
+    from app.models import ChatGroup, Message
+    group = await ChatGroup.get(id)
+    if not group:
+        return {"success": False, "message": "Nhóm không tồn tại"}
+
+    my_id = str(current_user.id)
+    if group.admin != my_id:
+        return {"success": False, "message": "Chỉ quản trị viên mới có quyền mời thành viên ra khỏi nhóm"}
+
+    if body.userId not in group.members:
+        return {"success": False, "message": "Thành viên không có trong nhóm"}
+
+    if body.userId == my_id:
+        return {"success": False, "message": "Bạn không thể tự mời chính mình"}
+
+    new_members = [m for m in group.members if m != body.userId]
+    await group.set({"members": new_members})
+
+    updated_group_data = {
+        "_id": str(group.id),
+        "fullName": group.name,
+        "email": "",
+        "profilePic": group.avatar or "https://cdn-icons-png.flaticon.com/512/615/615075.png",
+        "bio": f"Nhóm có {len(new_members)} thành viên",
+        "isGroup": True,
+        "admin": group.admin,
+        "members": new_members,
+        "isFriend": True,
+    }
+
+    kicked_user = await User.get(body.userId)
+    kicked_name = kicked_user.fullName if kicked_user else "Một thành viên"
+
+    # Tạo tin nhắn hệ thống
+    system_msg = Message(
+        senderId=my_id,
+        receiverId=id,
+        text=f"{current_user.fullName} đã mời {kicked_name} ra khỏi nhóm",
+        isSystemMessage=True
+    )
+    await system_msg.insert()
+    
+    msg_data = {
+        "_id": str(system_msg.id),
+        "senderId": system_msg.senderId,
+        "receiverId": system_msg.receiverId,
+        "text": system_msg.text,
+        "image": None,
+        "seen": False,
+        "isSystemMessage": True,
+        "createdAt": system_msg.createdAt.isoformat() + "Z",
+        "updatedAt": system_msg.updatedAt.isoformat() + "Z"
+    }
+
+    # Bắn socket cho các thành viên còn lại
+    for member_id in new_members:
+        s_id = user_socket_map.get(member_id)
+        if s_id:
+            await sio.emit("userUpdated", updated_group_data, to=s_id)
+            await sio.emit("receiveMessage", msg_data, to=s_id)
+            
+    # Bắn socket cho người bị kích
+    kicked_s_id = user_socket_map.get(body.userId)
+    if kicked_s_id:
+        await sio.emit("groupRemoved", {"groupId": id}, to=kicked_s_id)
+
+    return {"success": True, "message": f"Đã mời {kicked_name} ra khỏi nhóm"}

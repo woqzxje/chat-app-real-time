@@ -210,12 +210,29 @@ const RightSidebar = () => {
             <p className='mb-3 font-semibold opacity-70'>THÀNH VIÊN ({groupMembers.length})</p>
             <div className='flex flex-col gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar'>
               {groupMembers.map(member => (
-                <div key={member._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors">
+                <div key={member._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group">
                   <div className="flex items-center gap-3">
                     <img src={member.profilePic || assets.avatar_icon} className="w-8 h-8 rounded-full object-cover" />
                     <span className="font-medium text-sm">{member.fullName}</span>
                   </div>
-                  {member.isAdmin && <Crown className="w-4 h-4 text-yellow-500" title="Trưởng nhóm" />}
+                  
+                  <div className="flex items-center gap-2">
+                    {/* Nút Kết bạn (Nếu chưa là bạn và không phải chính mình) */}
+                    {!member.isFriend && member._id !== authUser._id && (
+                      <button onClick={() => handleAddFriend(member._id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-cyan-400 hover:text-cyan-300 transition-all rounded-full hover:bg-white/10" title="Kết bạn">
+                        <UserPlus className="w-4 h-4" />
+                      </button>
+                    )}
+                    
+                    {/* Nút Mời ra khỏi nhóm (Chỉ hiển thị nếu mình là Admin và người kia không phải mình) */}
+                    {authUser._id === selectedUser.admin && member._id !== authUser._id && (
+                      <button onClick={() => handleKickMember(member._id, member.fullName)} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-300 transition-all rounded-full hover:bg-white/10" title="Mời ra khỏi nhóm">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {member.isAdmin && <Crown className="w-4 h-4 text-yellow-500" title="Trưởng nhóm" />}
+                  </div>
                 </div>
               ))}
             </div>
