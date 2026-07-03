@@ -39,13 +39,13 @@ export const AuthProvider = ({ children }) => {
             const { data } = await axios.post(`/api/auth/${state}`, credentials);
             if(data.success){
                 if(state === 'login' || state === 'signup' || state === 'google-login'){
-                    setAuthUser(data.userData);
-                    connectSocket(data.userData); // Kết nối socket ngay lập tức
-                    
-                    // Lưu token vào axios header và localStorage
+                    // Lưu token TRƯỚC khi connect socket (handshake đọc token từ localStorage)
                     axios.defaults.headers.common["token"] = data.token;
                     setToken(data.token);
                     localStorage.setItem("token", data.token)
+
+                    setAuthUser(data.userData);
+                    connectSocket(data.userData); // Kết nối socket ngay lập tức
                 }
                 toast.success(data.message)
                 return true;
@@ -86,12 +86,14 @@ export const AuthProvider = ({ children }) => {
     // Khởi tạo kết nối Socket.IO
     const connectSocket = (userData)=>{
         if(!userData || socket?.connected) return;
-        
-        // Kết nối đến backend với tham số userId trong query
+
+        // BAO MAT: gui JWT qua `auth` trong handshake de server xac thuc va suy ra userId.
+        // Khong con truyen userId qua query string (server khong con tin query nua).
+        const jwt = localStorage.getItem("token");
         const newSocket = io(backendUrl, {
-            query: {
-                userId: userData._id,
-            }
+            auth: {
+                token: jwt,
+            },
         });
         newSocket.connect();
         setSocket(newSocket);

@@ -34,33 +34,11 @@ const formatFileSize = (bytes) => {
 
 // ── Hàm tải file qua proxy backend hoặc trực tiếp (dùng chung) ────────────────
 const proxyDownload = async (fileUrl, fileName) => {
-  const toastId = toast.loading('Đang xử lý tải xuống...');
-  
-  try {
-    // 1. Dùng CORS Proxy để tải file ở Client (Mượt nhất, vượt CORS, không cần backend)
-    const corsProxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fileUrl)}`;
-    const directRes = await fetch(corsProxyUrl);
-    
-    if (directRes.ok) {
-      const blob = await directRes.blob();
-      const forceBlob = new Blob([blob], { type: 'application/octet-stream' });
-      const blobUrl = URL.createObjectURL(forceBlob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(blobUrl);
-      toast.success('Tải xuống thành công!', { id: toastId });
-      return;
-    }
-  } catch {
-    // Nếu proxy chết, tiếp tục thử qua Backend của mình
-  }
+  const toastId = toast.loading('Dang xu ly tai xuong...');
 
   try {
-    // 2. Dùng Backend Proxy (Backend tải file rồi stream cho Frontend)
+    // Tai doc quyen qua Backend Proxy cua app (da xac thuc bang token).
+    // Khong dung proxy ben thu ba (vi du allorigins.win) de tranh lo URL file rieng tu.
     const token = localStorage.getItem('token');
     const params = new URLSearchParams({ url: fileUrl, name: fileName });
     const res = await fetch(`${BACKEND_URL}/api/files/download?${params}`, {
@@ -628,10 +606,11 @@ const ChatContainer = ({ startCall }) => {
     setUploading(true);
     try {
       const token = localStorage.getItem('token');
+      // Gui header `token` dung chung toan app (khong dung Authorization: Bearer).
+      // KHONG set Content-Type thu cong: de browser tu gan boundary cho multipart/form-data.
       const res = await axios.post(`${BACKEND_URL}${endpoint}`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
+          token,
         },
       });
       setAttachment(res.data); // Lưu thông tin file đã upload để gửi kèm tin nhắn
