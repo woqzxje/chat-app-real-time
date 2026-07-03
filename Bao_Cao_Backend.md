@@ -157,3 +157,31 @@ Backend được xây dựng theo kiến trúc MVC/Controller-Service kết hợ
   - Hàm `download_folder` (Zip on-the-fly): Backend tạo 1 vùng nhớ ảo `io.BytesIO()`. Tải từng file lẻ về, nhồi trực tiếp vào nén `.zip` ngay trong RAM (không ghi ra ổ cứng server tránh rác), sau đó trả Stream `.zip` đó xuống.
 - **Công nghệ:** FastAPI StreamingResponse, httpx, zipfile, Cloudinary API.
 - *Điểm nhấn để trả lời:* "Chức năng tải folder là phần khó. Thay vì lưu tạm xuống ổ cứng server rất tốn tài nguyên, em xử lý nén file zip trực tiếp trên RAM (Memory Stream) giúp hệ thống nhẹ gọn và an toàn hơn."
+
+---
+
+## 5. Phân Chia Công Việc (Task Division)
+
+Dưới đây là bảng phân chia công việc chi tiết giữa 2 thành viên trong nhóm, được trình bày theo cấu trúc chuẩn xác của dự án:
+
+### MẠNH QUỲNH
+**Nhiệm vụ:** Quản lý vòng đời dữ liệu, kiến trúc hệ thống Backend và xử lý logic thời gian thực (Real-time).
+
+| Module đảm nhận | Chức năng |
+| :--- | :--- |
+| **`main.py` & `socket_manager.py`** | Thiết lập kiến trúc Server bất đồng bộ (FastAPI), cấu hình WebSockets và điều phối tín hiệu WebRTC (P2P). |
+| **`database.py` & `models.py`** | Thiết kế cơ sở dữ liệu NoSQL (MongoDB), tích hợp Beanie ODM, tối ưu hóa truy vấn dữ liệu bất đồng bộ. |
+| **`message_routes.py` & `user_routes.py`** | Xây dựng RESTful API bảo mật với JWT, xử lý logic chat nhóm, quản lý thành viên, và luồng kết bạn. |
+| **`file_routes.py`** | Tích hợp Cloudinary API, xây dựng luồng nén file ZIP trực tiếp trên RAM (Memory Stream) để tải thư mục. |
+
+<br/>
+
+### DUY KHÁNH
+**Nhiệm vụ:** Quản lý luồng tương tác của người dùng, dịch vụ đầu cuối và phát triển giao diện Client (Frontend).
+
+| Module đảm nhận | Chức năng |
+| :--- | :--- |
+| **`ChatContainer.jsx` & `RightSidebar.jsx`** | Phát triển giao diện nhắn tin thời gian thực, hiển thị tin nhắn đa phương tiện, xử lý giao diện nhóm chat. |
+| **`SideBar.jsx` & `AuthContext.jsx`** | Quản lý trạng thái toàn cục (Context API), tính năng tìm kiếm bạn bè, tích hợp luồng đăng nhập Google OAuth 2.0. |
+| **Logic WebRTC & `VideoCall`** | Xây dựng logic gọi Video ngang hàng (Peer-to-Peer), cấu hình STUN/TURN Server để vượt màn lọc tường lửa. |
+| **UI/UX Design & Tailwind CSS** | Thiết kế giao diện Dark Mode Glassmorphism, tối ưu hóa trải nghiệm thao tác cảm ứng (Mobile-first). |
