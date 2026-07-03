@@ -83,8 +83,25 @@ class Message(Document):
     # Cảm xúc trên tin nhắn
     reactions: List[Reaction] = Field(default_factory=list)
     
+    isSystemMessage: bool = False # Tin nhắn hệ thống (vd: người dùng đã rời nhóm)
+
     createdAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm gửi tin nhắn
     updatedAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm cập nhật (nếu có)
 
     class Settings:
         name = "messages" # Tên collection trong cơ sở dữ liệu MongoDB
+
+# Định nghĩa cấu trúc dữ liệu Nhóm Chat trong MongoDB
+class ChatGroup(Document):
+    """
+    Schema Nhóm Chat: Lưu trữ thông tin một nhóm chat gồm nhiều thành viên.
+    """
+    name: str
+    avatar: str = ""
+    admin: str # ID của người tạo/quản trị nhóm
+    members: List[str] = Field(default_factory=list) # Danh sách ID các thành viên
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "chat_groups"

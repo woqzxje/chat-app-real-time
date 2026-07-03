@@ -59,6 +59,13 @@ const SideBar = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showStrangers, setShowStrangers] = useState(false);
   const [hoveredStranger, setHoveredStranger] = useState(null);
+  
+  // State cho tính năng tạo nhóm
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [selectedFriends, setSelectedFriends] = useState([]);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+
   // 3. --- Lọc dữ liệu & Tìm kiếm ---
 
   // Tách bạn bè và người lạ từ danh sách users
@@ -203,6 +210,39 @@ const SideBar = () => {
     }
   };
 
+  const handleCreateGroup = async () => {
+    if (!groupName.trim()) {
+      toast.error('Vui lòng nhập tên nhóm');
+      return;
+    }
+    if (selectedFriends.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 thành viên');
+      return;
+    }
+
+    setIsCreatingGroup(true);
+    try {
+      const { data } = await axios.post('/api/messages/groups/create', {
+        name: groupName,
+        members: selectedFriends
+      });
+      
+      if (data.success) {
+        toast.success('Tạo nhóm thành công!');
+        setShowCreateGroupModal(false);
+        setGroupName('');
+        setSelectedFriends([]);
+        getUsers(); // Load lại sidebar
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setIsCreatingGroup(false);
+    }
+  };
+
   // 4. --- Giao diện (Render) ---
   return (
     <div className='bg-[#8185B2]/10 h-full p-6 overflow-y-scroll text-white'>
@@ -330,8 +370,17 @@ const SideBar = () => {
               </div>
             )}
 
-            <div className="text-sm text-white font-semibold mb-1 w-max">
-              <WaveText text="Bạn bè" />
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm text-white font-semibold w-max">
+                <WaveText text="Bạn bè" />
+              </div>
+              <button 
+                onClick={() => setShowCreateGroupModal(true)} 
+                title="Tạo nhóm" 
+                className="text-cyan-400 hover:text-white p-1.5 bg-cyan-400/10 hover:bg-cyan-500 rounded-full transition-colors cursor-pointer"
+              >
+                 <UserPlus className="w-4 h-4" />
+              </button>
             </div>
             {friendsList.length === 0 && <p className="text-gray-400 text-sm italic">Chưa có bạn bè nào.</p>}
             {friendsList.map((user) => (
@@ -349,7 +398,11 @@ const SideBar = () => {
                 <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
                 <div className='flex flex-col leading-6'>
                   <p className='text-base font-medium'>{user.fullName}</p>
-                  {onlineUser.includes(user._id) ? <span className='text-green-400 text-sm'>Online</span> : <span className='text-neutral-400 text-sm'>Offline</span>}
+                  {user.isGroup ? (
+                    <span className='text-neutral-400 text-sm'>{user.bio}</span>
+                  ) : (
+                    onlineUser.includes(user._id) ? <span className='text-green-400 text-sm'>Online</span> : <span className='text-neutral-400 text-sm'>Offline</span>
+                  )}
                 </div>
                 {unseenMessages && unseenMessages[user._id] > 0 && (
                   <p className='absolute top-4 right-4 bg-cyan-500 text-sm rounded-full w-6 h-6 flex items-center justify-center text-white shadow-[0_0_10px_rgba(0,207,255,0.5)]'>{unseenMessages[user._id]}</p>
@@ -445,6 +498,77 @@ const SideBar = () => {
           </>
         )}
       </div>
+      {/* MODAL TẠO NHÓM */}
+      {showCreateGroupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1e293b] w-full max-w-md p-6 rounded-2xl shadow-2xl border border-white/10 m-4 flex flex-col max-h-[80vh]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white">Tạo nhóm chat mới</h3>
+              <button onClick={() => setShowCreateGroupModal(false)} className="text-gray-400 hover:text-white transition-colors cursor-pointer p-1">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-1">Tên nhóm</label>
+              <input 
+                type="text" 
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)}
+                placeholder="Nhập tên nhóm..." 
+                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+              />
+            </div>
+            
+            <div className="mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-1">Chọn thành viên</label>
+              <div className="bg-black/20 border border-white/5 rounded-xl overflow-y-auto flex-1 max-h-60 p-2 space-y-1">
+                {friendsList.filter(f => !f.isGroup).length === 0 ? (
+                  <p className="text-gray-500 text-sm p-2 italic text-center">Bạn chưa có bạn bè nào.</p>
+                ) : (
+                  friendsList.filter(f => !f.isGroup).map(friend => (
+                    <div 
+                      key={friend._id}
+                      onClick={() => {
+                        if (selectedFriends.includes(friend._id)) {
+                          setSelectedFriends(selectedFriends.filter(id => id !== friend._id));
+                        } else {
+                          setSelectedFriends([...selectedFriends, friend._id]);
+                        }
+                      }}
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${selectedFriends.includes(friend._id) ? 'bg-cyan-500/20' : 'hover:bg-white/5'}`}
+                    >
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${selectedFriends.includes(friend._id) ? 'bg-cyan-500 border-cyan-500' : 'border-gray-500'}`}>
+                        {selectedFriends.includes(friend._id) && <Check className="w-3.5 h-3.5 text-white" />}
+                      </div>
+                      <img src={friend.profilePic || assets.avatar_icon} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                      <p className="text-sm font-medium flex-1">{friend.fullName}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-white/10 flex justify-end gap-3">
+              <button 
+                onClick={() => setShowCreateGroupModal(false)}
+                className="px-5 py-2.5 rounded-xl text-gray-300 hover:bg-white/5 font-medium transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button 
+                onClick={handleCreateGroup}
+                disabled={isCreatingGroup}
+                className="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl font-medium shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:shadow-[0_0_20px_rgba(6,182,212,0.6)] transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              >
+                {isCreatingGroup && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                Tạo nhóm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -221,21 +221,44 @@ export const ChatProvider = ({ children }) => {
             });
         });
 
-        // Server emit khi user đổi avatar/tên/bio -> cập nhật ngay, không cần reload
+        // Server emit khi user đổi avatar/tên/bio hoặc nhóm thay đổi -> cập nhật ngay
         socket.on("userUpdated", (updatedUser) => {
             // Cập nhật trong danh sách sidebar
-            setUsers((prev) =>
-                prev.map((u) => (u._id === updatedUser._id ? { ...u, ...updatedUser } : u))
-            );
+            setUsers((prev) => {
+                const exists = prev.some((u) => u._id === updatedUser._id);
+                if (exists) {
+                    return prev.map((u) => (u._id === updatedUser._id ? { ...u, ...updatedUser } : u));
+                }
+                return [...prev, updatedUser];
+            });
             // Nếu người đang chat cũng vừa thay đổi -> cập nhật luôn header/right panel
             setSelectedUser((prev) =>
                 prev && prev._id === updatedUser._id ? { ...prev, ...updatedUser } : prev
             );
         });
 
+        // Lắng nghe sự kiện rời/giải tán nhóm
+        socket.on("groupRemoved", ({ groupId }) => {
+            setUsers((prev) => prev.filter(u => u._id !== groupId));
+            setSelectedUser((prev) => prev && prev._id === groupId ? null : prev);
+        });
+
+        // Nhận thông báo khi ai đó âm thầm rời nhóm
+        socket.on("memberLeftSilently", ({ groupName, userName }) => {
+            toast(`${userName} đã âm thầm rời khỏi nhóm ${groupName}`, {
+                icon: '🤫',
+                style: {
+                    background: '#333',
+                    color: '#fff',
+                }
+            });
+        });
+
         return () => {
             socket.off("newUserRegistered");
             socket.off("userUpdated");
+            socket.off("groupRemoved");
+            socket.off("memberLeftSilently");
         };
     }, [socket, authUser]);
 

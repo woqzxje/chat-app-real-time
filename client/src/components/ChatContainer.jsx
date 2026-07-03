@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square } from 'lucide-react';
+import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparklesText } from './ui/SparklesText';
 import { ShinyButton } from './ui/ShinyButton';
@@ -872,6 +872,22 @@ const ChatContainer = ({ startCall }) => {
         onScroll={handleScroll}
       >
         {messages.map((msg, index) => (
+          // ── Tin nhắn hệ thống (Rời nhóm, ...) ──
+          msg.isSystemMessage ? (
+            <div key={index} className="flex justify-center my-2">
+              <div className="flex items-center gap-3 bg-gray-500/15 border border-gray-500/30 rounded-2xl px-4 py-3 mx-auto min-w-[220px] max-w-[300px]">
+                <span className="flex items-center justify-center p-2 rounded-full bg-gray-500/30 text-gray-300">
+                  {msg.text.includes('thêm') ? <UserPlus className="w-5 h-5" /> : <LogOut className="w-5 h-5" />}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-300">{msg.text}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {msg.createdAt && formatMessageTime(msg.createdAt)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) :
           // ── Tin nhắn lịch sử cuộc gọi → hiển thị giữa, không có avatar ──
           msg.callInfo ? (
             <div key={index} className="flex justify-center my-2">

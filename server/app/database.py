@@ -1,7 +1,7 @@
 import os
 import motor.motor_asyncio
 from beanie import init_beanie
-from app.models import User, Message
+from app.models import User, Message, ChatGroup
 
 # Lấy URL kết nối MongoDB từ biến môi trường
 MONGODB_URL = os.getenv("MONGODB_URL")
@@ -13,7 +13,7 @@ async def connect_db():
     # Chọn database có tên là "chat-app"
     db = client["chat-app"]
     
-    # Khởi tạo Beanie với các models User và Message đã định nghĩa
+    # Khởi tạo Beanie với các models User, Message và ChatGroup đã định nghĩa
     # Điều này giúp ta thao tác với MongoDB thông qua các class Python một cách dễ dàng
-    await init_beanie(database=db, document_models=[User, Message])
+    await init_beanie(database=db, document_models=[User, Message, ChatGroup])
     print("Database Connected successfully")
