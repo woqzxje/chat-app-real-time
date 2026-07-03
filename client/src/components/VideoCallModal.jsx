@@ -17,7 +17,7 @@ const formatDuration = (seconds) => {
     return `${m}:${s}`;
 };
 
-export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVideoRef, onAnswer, onEnd, onReject }) {
+export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVideoRef, onAnswer, onEnd, onReject, isVideoCall = true }) {
     const [elapsed, setElapsed] = useState(0);
 
     // ── Đếm thời gian cuộc gọi khi đang active ─────────────────
@@ -48,7 +48,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                     animation: "vcPulse 1.5s infinite",
                     display: "flex", alignItems: "center", gap: "8px"
                 }}>
-                    <Phone className="w-5 h-5" /> Đang gọi {remoteUser?.fullName || remoteUser?.name}...
+                    <Phone className="w-5 h-5" /> Đang gọi {isVideoCall ? 'video' : 'thoại'} {remoteUser?.fullName || remoteUser?.name}...
                 </p>
             )}
             {callState === "incoming" && (
@@ -57,7 +57,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                     animation: "vcPulse 1.5s infinite",
                     display: "flex", alignItems: "center", gap: "8px"
                 }}>
-                    <Video className="w-5 h-5 animate-bounce" /> {remoteUser?.name || "Ai đó"} đang gọi cho bạn...
+                    {isVideoCall ? <Video className="w-5 h-5 animate-bounce" /> : <Phone className="w-5 h-5 animate-bounce" />} {remoteUser?.name || "Ai đó"} đang gọi {isVideoCall ? 'video ' : 'thoại '}cho bạn...
                 </p>
             )}
             {callState === "active" && (
@@ -80,8 +80,18 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                     width: "80%", maxWidth: 640,
                     borderRadius: 12, background: "#111",
                     minHeight: 300,
+                    display: isVideoCall ? 'block' : 'none'
                 }}
             />
+            {!isVideoCall && (
+                 <div style={{
+                     width: 120, height: 120, borderRadius: '50%', background: '#333',
+                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                     marginBottom: 20
+                 }}>
+                     <Phone className="w-12 h-12 text-white opacity-50" />
+                 </div>
+            )}
 
             {/* ── Video bản thân (góc nhỏ) ───────────────────────────── */}
             <video
@@ -95,6 +105,7 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
                     width: 160, borderRadius: 8,
                     border: "2px solid white",
                     background: "#222",
+                    display: isVideoCall ? 'block' : 'none'
                 }}
             />
 

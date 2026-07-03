@@ -30,6 +30,7 @@ const ICE_SERVERS = {
 export function useVideoCall(socket, currentUserId, currentUserName) {
     const [callState, setCallState] = useState("idle");
     const [remoteUser, setRemoteUser] = useState(null);
+    const [isVideoCall, setIsVideoCall] = useState(true);
 
     const localStreamRef = useRef(null);
     const remoteStreamRef = useRef(null);
@@ -137,7 +138,8 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         return Math.round((Date.now() - callStartTimeRef.current) / 1000);
     }, []);
 
-    const startCall = async (targetUser) => {
+    const startCall = async (targetUser, isVideo = true) => {
+        setIsVideoCall(isVideo);
         setRemoteUser(targetUser);
         remoteUserRef.current = targetUser;
         setCallState("calling");
@@ -151,7 +153,7 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         receiverIdRef.current = targetUser._id || targetUser.id;
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
             localStreamRef.current = stream;
             if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
@@ -165,6 +167,7 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
                 to_user_id: targetId,
                 from_user_id: currentUserId,
                 caller_name: currentUserName || "Người dùng",
+                isVideo,
             });
 
             // Bước 2: Tạo và gửi SDP Offer
@@ -190,7 +193,7 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         callStartTimeRef.current = Date.now();
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
             localStreamRef.current = stream;
             if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
@@ -238,6 +241,7 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
                 receiver_id: receiverIdRef.current || targetId,
                 call_type: callType,
                 duration,
+                is_video: isVideoCall,
             });
         }
 
@@ -255,6 +259,7 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
                 to_user_id: targetId,
                 caller_id: targetId,                   // Người gọi = remote user
                 receiver_id: currentUserId,             // Người nhận = mình (đang từ chối)
+                is_video: isVideoCall,
             });
         }
 
@@ -268,8 +273,9 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
     useEffect(() => {
         if (!socket) return;
 
-        const onIncoming = ({ from_user_id, caller_name }) => {
-            console.log("[VideoCall] Incoming call from:", from_user_id, caller_name);
+        const onIncoming = ({ from_user_id, caller_name, isVideo }) => {
+            console.log("[VideoCall] Incoming call from:", from_user_id, caller_name, "isVideo:", isVideo);
+            setIsVideoCall(isVideo !== false); // default true
             // Lưu cả _id và id để đảm bảo tương thích
             setRemoteUser({ _id: from_user_id, id: from_user_id, name: caller_name });
             setCallState("incoming");
@@ -360,5 +366,5 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         };
     }, [socket, currentUserId]);
 
-    return { callState, remoteUser, localVideoRef, remoteVideoRef, startCall, answerCall, endCall, rejectCall };
+    return { callState, remoteUser, localVideoRef, remoteVideoRef, startCall, answerCall, endCall, rejectCall, isVideoCall };
 }

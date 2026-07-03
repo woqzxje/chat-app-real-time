@@ -16,7 +16,7 @@ const HomePage = () => {
   const {
     callState, remoteUser,
     localVideoRef, remoteVideoRef,
-    startCall, answerCall, endCall, rejectCall,
+    startCall, answerCall, endCall, rejectCall, isVideoCall
   } = useVideoCall(socket, authUser?._id, authUser?.fullName)
 
   return (
@@ -54,6 +54,7 @@ const HomePage = () => {
         onAnswer={answerCall}
         onEnd={endCall}
         onReject={rejectCall}
+        isVideoCall={isVideoCall}
       />
     </div>
   )

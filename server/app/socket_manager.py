@@ -98,6 +98,7 @@ async def on_video_initiate(sid, data):
         await sio.emit("video:incoming", {
             "from_user_id": data["from_user_id"],
             "caller_name": data["caller_name"],
+            "isVideo": data.get("isVideo", True),
         }, to=to_sid)
 
 
@@ -160,6 +161,7 @@ async def on_video_end(sid, data):
     receiver_id = data.get("receiver_id", "")
     call_type = data.get("call_type", "completed")
     duration = data.get("duration", 0)
+    is_video = data.get("is_video", True)
 
     if caller_id and receiver_id:
         try:
@@ -172,6 +174,7 @@ async def on_video_end(sid, data):
                     duration=duration,
                     caller_id=caller_id,
                     receiver_id=receiver_id,
+                    is_video=is_video,
                 ),
             )
             await call_msg.insert()
@@ -201,6 +204,7 @@ async def on_video_reject(sid, data):
     # Lưu lịch sử cuộc gọi bị từ chối
     caller_id = data.get("caller_id", "")
     receiver_id = data.get("receiver_id", "")
+    is_video = data.get("is_video", True)
 
     if caller_id and receiver_id:
         try:
@@ -213,6 +217,7 @@ async def on_video_reject(sid, data):
                     duration=0,
                     caller_id=caller_id,
                     receiver_id=receiver_id,
+                    is_video=is_video,
                 ),
             )
             await call_msg.insert()

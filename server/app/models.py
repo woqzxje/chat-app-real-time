@@ -33,6 +33,7 @@ class CallInfo(BaseModel):
     duration: int = 0                 # Thời lượng cuộc gọi (giây), 0 nếu missed/rejected
     caller_id: str                    # ID người gọi
     receiver_id: str                  # ID người nhận
+    is_video: bool = True             # True: Video Call, False: Voice Call
 
 
 # ── Thông tin Reaction (thả cảm xúc) ─────────────────────────

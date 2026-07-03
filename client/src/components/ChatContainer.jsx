@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical } from 'lucide-react';
+import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical } from 'lucide-react';
 import FlickerSpinner from './ui/FlickerSpinner';
 import { ShinyButton } from './ui/ShinyButton';
 
@@ -159,7 +159,7 @@ const AttachmentBubble = ({ attachment, onMediaLoad }) => {
           src={url}
           alt={file_name}
           onLoad={onMediaLoad}
-          className="max-w-[280px] rounded-2xl border border-white/10 cursor-pointer hover:opacity-90 transition-opacity mb-1"
+          className="max-w-[280px] rounded-2xl cursor-pointer hover:opacity-90 transition-opacity mb-1"
         />
       </a>
     );
@@ -172,7 +172,7 @@ const AttachmentBubble = ({ attachment, onMediaLoad }) => {
         src={url}
         controls
         onLoadedData={onMediaLoad}
-        className="max-w-[280px] sm:max-w-[320px] rounded-2xl border border-white/10 mb-1 outline-none bg-black/20"
+        className="max-w-[280px] sm:max-w-[320px] rounded-2xl mb-1 outline-none bg-black/20"
       />
     );
   }
@@ -302,13 +302,13 @@ const formatCallDuration = (seconds) => {
 
 const CallBubble = ({ callInfo, createdAt }) => {
   if (!callInfo) return null;
-  const { call_type, duration } = callInfo;
+  const { call_type, duration, is_video } = callInfo;
 
   const configs = {
     completed: {
-      icon: <Video className="w-5 h-5" />,
+      icon: is_video === false ? <Phone className="w-5 h-5" /> : <Video className="w-5 h-5" />,
       bg: 'bg-emerald-500/15 border-emerald-500/30',
-      label: 'Cuộc gọi video',
+      label: is_video === false ? 'Cuộc gọi thoại' : 'Cuộc gọi video',
       detail: formatCallDuration(duration),
       textColor: 'text-emerald-400',
     },
@@ -506,7 +506,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
             <div className="relative">
                 {msg.attachment && <AttachmentBubble attachment={msg.attachment} onMediaLoad={scrollToBottom} />}
                 {msg.image && (
-                  <img src={msg.image} alt="Sent content" onLoad={scrollToBottom} className="max-w-[320px] border border-gray-700 rounded-2xl overflow-hidden mb-1" />
+                  <img src={msg.image} alt="Sent content" onLoad={scrollToBottom} className="max-w-[320px] rounded-2xl overflow-hidden mb-1" />
                 )}
                 {msg.text && (
                   <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-1 break-all bg-cyan-500/30 text-white ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'}`}>
@@ -716,9 +716,17 @@ const ChatContainer = ({ startCall }) => {
           alt="Đóng"
           className="md:hidden w-8 cursor-pointer"
         />
+        {/* Nút gọi Thoại */}
+        <button
+          onClick={() => startCall(selectedUser, false)}
+          className="text-gray-400 hover:text-cyan-400 p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+          title="Cuộc gọi thoại"
+        >
+          <Phone className="w-6 h-6" />
+        </button>
         {/* Nút gọi Video */}
         <button
-          onClick={() => startCall(selectedUser)}
+          onClick={() => startCall(selectedUser, true)}
           className="text-gray-400 hover:text-cyan-400 p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
           title="Cuộc gọi Video"
         >
