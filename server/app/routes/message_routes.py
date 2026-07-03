@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -144,8 +144,12 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
 async def mark_message_as_seen(id: str, current_user: User = Depends(get_current_user)):
     """Đánh dấu một tin nhắn cụ thể là đã xem"""
     msg = await Message.get(id)
-    if msg:
-        await msg.set({"seen": True})
+    if not msg:
+        return {"success": False, "message": "Tin nhắn không tồn tại"}
+    # BAO MAT: chi nguoi nhan (receiverId) moi duoc danh dau tin nhan la da xem
+    if msg.receiverId != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Không có quyền thực hiện")
+    await msg.set({"seen": True})
     return {"success": True}
 
 
@@ -166,6 +170,12 @@ async def send_message(
 ):
     """Gửi tin nhắn mới cho một người dùng"""
     sender_id = str(current_user.id)
+
+    # Toan ven du lieu: yeu cau it nhat mot trong text/image/attachment
+    has_text = bool(body.text and body.text.strip())
+    if not has_text and not body.image and not body.attachment:
+        raise HTTPException(status_code=400, detail="Tin nhắn phải có nội dung (văn bản, ảnh hoặc tệp đính kèm)")
+
     image_url: Optional[str] = None
 
     # Nếu có gửi kèm ảnh, tải ảnh lên Cloudinary

@@ -1,4 +1,9 @@
-from fastapi import APIRouter, Depends
+import os
+import re
+import time
+from collections import defaultdict, deque
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 import bcrypt
@@ -10,7 +15,38 @@ from app.dependencies import get_current_user
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-GOOGLE_CLIENT_ID = "305811701965-jb4e6qmo0m3vs24llllv3455fm47b5q6.apps.googleusercontent.com"
+# Google OAuth client ID doc tu bien moi truong (khong hardcode)
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
+# ?????? Rate limiting don gian (in-memory sliding window) ??????????????????????????????????????????????????????????????????????????????
+# Chong brute-force / credential-stuffing tren cac endpoint dang nhap/dang ky.
+# Khong can them dependency ngoai; phu hop quy mo solo/nho.
+_RATE_BUCKETS: dict[str, deque] = defaultdict(deque)
+RATE_LIMIT_MAX = int(os.getenv("AUTH_RATE_LIMIT_MAX", "10"))       # so lan toi da
+RATE_LIMIT_WINDOW = int(os.getenv("AUTH_RATE_LIMIT_WINDOW", "60")) # trong bao nhieu giay
+
+
+def _client_ip(request: Request) -> str:
+    # Ton trong X-Forwarded-For khi chay sau proxy (Render/Vercel), fallback ve client truc tiep
+    fwd = request.headers.get("x-forwarded-for")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _rate_limit(key: str) -> None:
+    """Nem HTTPException 429 neu vuot nguong trong cua so thoi gian."""
+    now = time.monotonic()
+    bucket = _RATE_BUCKETS[key]
+    # Loai bo cac dau vet cu hon cua so
+    while bucket and now - bucket[0] > RATE_LIMIT_WINDOW:
+        bucket.popleft()
+    if len(bucket) >= RATE_LIMIT_MAX:
+        raise HTTPException(
+            status_code=429,
+            detail="Quá nhiều yêu cầu. Vui lòng thử lại sau ít phút.",
+        )
+    bucket.append(now)
 
 # Khởi tạo router cho các tính năng liên quan đến người dùng (Xác thực)
 user_router = APIRouter()
@@ -65,8 +101,10 @@ def _user_dict(user: User, exclude_password: bool = True) -> dict:
 # ── POST /api/auth/signup ────────────────────────────────────────────────────
 
 @user_router.post("/signup")
-async def signup(body: SignupBody):
+async def signup(body: SignupBody, request: Request):
     """Đăng ký tài khoản mới"""
+    _rate_limit(f"signup:{_client_ip(request)}")
+    _rate_limit(f"signup-email:{(body.email or '').lower()}")
     if not body.fullName or not body.email or not body.password:
         return {"success": False, "message": "Vui lòng điền đầy đủ thông tin"}
 
@@ -102,8 +140,10 @@ async def signup(body: SignupBody):
 # ── POST /api/auth/login ─────────────────────────────────────────────────────
 
 @user_router.post("/login")
-async def login(body: LoginBody):
+async def login(body: LoginBody, request: Request):
     """Đăng nhập vào hệ thống"""
+    _rate_limit(f"login:{_client_ip(request)}")
+    _rate_limit(f"login-email:{(body.email or '').lower()}")
     user = await User.find_one(User.email == body.email)
     if not user:
         return {"success": False, "message": "Thông tin đăng nhập không chính xác"}
@@ -125,7 +165,10 @@ async def login(body: LoginBody):
 # ── POST /api/auth/google-login ──────────────────────────────────────────────
 
 @user_router.post("/google-login")
-async def google_login(body: GoogleLoginBody):
+async def google_login(body: GoogleLoginBody, request: Request):
+    _rate_limit(f"google-login:{_client_ip(request)}")
+    if not GOOGLE_CLIENT_ID:
+        return {"success": False, "message": "Google login chưa được cấu hình trên máy chủ"}
     try:
         # Xác thực Token từ Google
         idinfo = id_token.verify_oauth2_token(body.credential, requests.Request(), GOOGLE_CLIENT_ID)
@@ -297,8 +340,10 @@ async def search_users(q: str = "", current_user: User = Depends(get_current_use
     if not q.strip():
         return {"success": True, "users": []}
     
+    # BAO MAT: escape ky tu dac biet cua regex de tranh regex injection / DoS
+    safe_q = re.escape(q.strip())
     users = await User.find(
-        {"fullName": {"$regex": q, "$options": "i"}, "_id": {"$ne": current_user.id}}
+        {"fullName": {"$regex": safe_q, "$options": "i"}, "_id": {"$ne": current_user.id}}
     ).to_list()
     return {"success": True, "users": [_user_dict(u) for u in users]}
 
