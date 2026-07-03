@@ -10,6 +10,7 @@ import { ChatContext } from '../../context/ChatContext';
 import assets from '../assets/assets';
 import FlickerSpinner from './ui/FlickerSpinner';
 import { SparklesText } from './ui/SparklesText';
+import { WaveText } from './ui/wave-text';
 import { User, LogOut, UserPlus, ChevronDown, ChevronRight, MessageSquareWarning, Check, X, Bell } from 'lucide-react';
 import { ExpandableTabs } from './ui/ExpandableTabs';
 import axios from 'axios';
@@ -318,7 +319,9 @@ const SideBar = () => {
               </div>
             )}
 
-            <p className="text-sm text-cyan-400 font-semibold mb-1">Bạn bè</p>
+            <div className="text-sm text-white font-semibold mb-1 w-max">
+              <WaveText text="Bạn bè" />
+            </div>
             {friendsList.length === 0 && <p className="text-gray-400 text-sm italic">Chưa có bạn bè nào.</p>}
             {friendsList.map((user) => (
               <div
@@ -354,7 +357,7 @@ const SideBar = () => {
                         <ChevronDown className="w-4 h-4" />
                     </motion.div>
                     <MessageSquareWarning className="w-4 h-4" />
-                    Tin nhắn từ người lạ ({strangersList.length})
+                    <WaveText text={`Tin nhắn từ người lạ (${strangersList.length})`} />
                     
                     {/* Hiển thị chấm đỏ cảnh báo nếu đang đóng và có tin nhắn chưa đọc */}
                     {!showStrangers && totalUnseenStrangers > 0 && (
