@@ -52,6 +52,8 @@ def _user_dict(user: User, exclude_password: bool = True) -> dict:
         "email": user.email,
         "profilePic": user.profilePic,
         "bio": user.bio,
+        "friends": user.friends or [],
+        "friendRequests": getattr(user, 'friendRequests', []),
         "createdAt": user.createdAt.isoformat(),
         "updatedAt": user.updatedAt.isoformat(),
     }
@@ -173,6 +175,132 @@ async def google_login(body: GoogleLoginBody):
 async def check_auth(current_user: User = Depends(get_current_user)):
     """Kiểm tra trạng thái đăng nhập (dùng Token gửi kèm trong header)"""
     return {"success": True, "user": _user_dict(current_user)}
+
+
+# ── FRIEND REQUESTS FLOW ─────────────────────────────────────────────────────
+
+class FriendActionBody(BaseModel):
+    friendId: str
+
+@user_router.post("/send-friend-request")
+async def send_friend_request(body: FriendActionBody, current_user: User = Depends(get_current_user)):
+    """Gửi lời mời kết bạn"""
+    target_id = body.friendId
+    if target_id == str(current_user.id):
+        return {"success": False, "message": "Không thể kết bạn với chính mình"}
+    
+    if target_id in (current_user.friends or []):
+        return {"success": False, "message": "Đã là bạn bè"}
+        
+    target_user = await User.get(target_id)
+    if not target_user:
+        return {"success": False, "message": "Người dùng không tồn tại"}
+        
+    reqs = target_user.friendRequests or []
+    if str(current_user.id) in reqs:
+        return {"success": False, "message": "Đã gửi lời mời trước đó"}
+        
+    reqs.append(str(current_user.id))
+    await target_user.set({"friendRequests": reqs})
+    
+    # Real-time event
+    from app.socket_manager import sio as _sio, user_socket_map
+    target_sid = user_socket_map.get(target_id)
+    if target_sid:
+        await _sio.emit("newFriendRequest", {"from": _user_dict(current_user)}, to=target_sid)
+        
+    return {"success": True, "message": "Đã gửi lời mời kết bạn"}
+
+@user_router.post("/accept-friend-request")
+async def accept_friend_request(body: FriendActionBody, current_user: User = Depends(get_current_user)):
+    """Chấp nhận lời mời kết bạn"""
+    req_id = body.friendId
+    reqs = current_user.friendRequests or []
+    if req_id not in reqs:
+        return {"success": False, "message": "Không tìm thấy lời mời"}
+        
+    requester = await User.get(req_id)
+    if not requester:
+        return {"success": False, "message": "Người dùng không tồn tại"}
+        
+    reqs.remove(req_id)
+    await current_user.set({"friendRequests": reqs})
+    
+    my_friends = current_user.friends or []
+    if req_id not in my_friends: my_friends.append(req_id)
+    await current_user.set({"friends": my_friends})
+    
+    their_friends = requester.friends or []
+    if str(current_user.id) not in their_friends: their_friends.append(str(current_user.id))
+    await requester.set({"friends": their_friends})
+    
+    # Real-time update
+    from app.socket_manager import sio as _sio, user_socket_map
+    req_sid = user_socket_map.get(req_id)
+    if req_sid:
+        await _sio.emit("friendRequestAccepted", {"newFriend": _user_dict(current_user)}, to=req_sid)
+    
+    return {"success": True, "message": "Đã chấp nhận kết bạn"}
+
+@user_router.post("/reject-friend-request")
+async def reject_friend_request(body: FriendActionBody, current_user: User = Depends(get_current_user)):
+    """Từ chối lời mời kết bạn"""
+    req_id = body.friendId
+    reqs = current_user.friendRequests or []
+    if req_id in reqs:
+        reqs.remove(req_id)
+        await current_user.set({"friendRequests": reqs})
+    return {"success": True, "message": "Đã từ chối lời mời"}
+
+@user_router.post("/unfriend")
+async def unfriend(body: FriendActionBody, current_user: User = Depends(get_current_user)):
+    """Hủy kết bạn"""
+    friend_id = body.friendId
+    
+    my_friends = current_user.friends or []
+    if friend_id in my_friends:
+        my_friends.remove(friend_id)
+        await current_user.set({"friends": my_friends})
+        
+    friend_user = await User.get(friend_id)
+    if friend_user:
+        their_friends = friend_user.friends or []
+        if str(current_user.id) in their_friends:
+            their_friends.remove(str(current_user.id))
+            await friend_user.set({"friends": their_friends})
+            
+    from app.socket_manager import sio as _sio, user_socket_map
+    friend_sid = user_socket_map.get(friend_id)
+    if friend_sid:
+        await _sio.emit("unfriended", {"by": str(current_user.id)}, to=friend_sid)
+        
+    return {"success": True, "message": "Đã hủy kết bạn"}
+
+@user_router.get("/friend-requests")
+async def get_friend_requests(current_user: User = Depends(get_current_user)):
+    """Lấy danh sách người đã gửi lời mời kết bạn"""
+    req_ids = current_user.friendRequests or []
+    if not req_ids:
+        return {"success": True, "requests": []}
+        
+    from bson import ObjectId
+    from beanie.operators import In
+    object_ids = [ObjectId(uid) for uid in req_ids if ObjectId.is_valid(uid)]
+    users = await User.find(In(User.id, object_ids)).to_list() if object_ids else []
+    return {"success": True, "requests": [_user_dict(u) for u in users]}
+
+# ── GET /api/auth/search ─────────────────────────────────────────────────────
+
+@user_router.get("/search")
+async def search_users(q: str = "", current_user: User = Depends(get_current_user)):
+    """Tìm kiếm người dùng theo tên"""
+    if not q.strip():
+        return {"success": True, "users": []}
+    
+    users = await User.find(
+        {"fullName": {"$regex": q, "$options": "i"}, "_id": {"$ne": current_user.id}}
+    ).to_list()
+    return {"success": True, "users": [_user_dict(u) for u in users]}
 
 
 # ── PUT /api/auth/update-profile ─────────────────────────────────────────────

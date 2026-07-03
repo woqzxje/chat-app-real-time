@@ -51,11 +51,34 @@ def _user_dict(user: User) -> dict:
 
 @message_router.get("/users")
 async def get_users_for_sidebar(current_user: User = Depends(get_current_user)):
-    """Lấy danh sách tất cả người dùng để hiển thị ở thanh bên (Sidebar)"""
+    """Lấy danh sách bạn bè và những người lạ đã nhắn tin"""
     my_id = str(current_user.id)
 
-    # Tìm tất cả người dùng ngoại trừ chính mình
-    all_users = await User.find(User.id != current_user.id).to_list()
+    # 1. Danh sách bạn bè
+    friends = current_user.friends or []
+    
+    # 2. Tìm ID những người lạ đã nhắn tin
+    messages_sent = await Message.distinct("receiverId", {"senderId": my_id})
+    messages_received = await Message.distinct("senderId", {"receiverId": my_id})
+    chatted_user_ids = set(messages_sent + messages_received)
+    chatted_user_ids.discard(my_id)
+    
+    # Gom tất cả ID cần lấy (bạn bè + người lạ)
+    strangers = [uid for uid in chatted_user_ids if uid not in friends]
+    all_user_ids = set(friends + strangers)
+    
+    from bson import ObjectId
+    object_ids = [ObjectId(uid) for uid in all_user_ids if ObjectId.is_valid(uid)]
+    
+    from beanie.operators import In
+    all_users = await User.find(In(User.id, object_ids)).to_list() if object_ids else []
+
+    # Định dạng dữ liệu kèm cờ isFriend
+    users_data = []
+    for u in all_users:
+        u_dict = _user_dict(u)
+        u_dict['isFriend'] = str(u.id) in friends
+        users_data.append(u_dict)
 
     # (Tùy chọn) Kiểm tra số tin nhắn chưa đọc từ mỗi người dùng
     unseen_messages: dict[str, int] = {}
@@ -71,7 +94,7 @@ async def get_users_for_sidebar(current_user: User = Depends(get_current_user)):
 
     return {
         "success": True,
-        "users": [_user_dict(u) for u in all_users],
+        "users": users_data,
         "unseenMessages": unseen_messages,
     }
 

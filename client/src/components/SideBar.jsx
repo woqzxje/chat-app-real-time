@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -9,8 +9,10 @@ import { ChatContext } from '../../context/ChatContext';
 // Assets & UI Components
 import assets from '../assets/assets';
 import FlickerSpinner from './ui/FlickerSpinner';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, UserPlus, ChevronDown, ChevronRight, MessageSquareWarning, Check, X, Bell } from 'lucide-react';
 import { ExpandableTabs } from './ui/ExpandableTabs';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
 /**
  * SideBar Component
@@ -34,13 +36,16 @@ const SideBar = () => {
     selectedUser,       // Đối tượng người dùng đang được chọn để chat
     setSelectedUser,    // Hàm cập nhật người dùng đang chat
     unseenMessages,     // Object lưu trữ số tin nhắn chưa đọc { userId: count }
-    setUnseenMessages   // Hàm cập nhật số tin nhắn chưa đọc
+    setUnseenMessages,  // Hàm cập nhật số tin nhắn chưa đọc
+    getUsers            // Hàm load lại danh sách users
   } = useContext(ChatContext);
 
   // Lấy dữ liệu xác thực từ AuthContext
   const {
     logout,             // Hàm đăng xuất tài khoản
-    onlineUser          // Mảng chứa ID của các người dùng đang online (realtime từ Socket)
+    onlineUser,         // Mảng chứa ID của các người dùng đang online (realtime từ Socket)
+    authUser,           // Dữ liệu người dùng hiện tại
+    socket              // Đối tượng socket
   } = useContext(AuthContext);
 
   // Hook điều hướng trang của react-router-dom
@@ -48,15 +53,142 @@ const SideBar = () => {
 
   // 2. --- Local State ---
 
-  // Lưu trữ giá trị văn bản người dùng nhập vào thanh tìm kiếm
   const [input, setInput] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showStrangers, setShowStrangers] = useState(false);
 
-  // 3. --- Lọc dữ liệu (Derived State) ---
+  // 3. --- Lọc dữ liệu & Tìm kiếm ---
 
-  // Lọc danh sách người dùng dựa theo giá trị tìm kiếm (không phân biệt hoa/thường)
-  const filteredUsers = input
-    ? users.filter((u) => u.fullName.toLowerCase().includes(input.toLowerCase()))
-    : users;
+  // Tách bạn bè và người lạ từ danh sách users
+  const friendsList = users.filter(u => u.isFriend);
+  const strangersList = users.filter(u => !u.isFriend);
+  
+  // Tính tổng số tin nhắn chưa đọc từ người lạ
+  const totalUnseenStrangers = strangersList.reduce((acc, user) => acc + (unseenMessages[user._id] || 0), 0);
+
+  // Hàm gọi API tìm kiếm
+  useEffect(() => {
+    const fetchSearch = async () => {
+      if (!input.trim()) {
+        setSearchResults([]);
+        return;
+      }
+      setIsSearching(true);
+      try {
+        const { data } = await axios.get(`/api/auth/search?q=${input}`);
+        if (data.success) {
+          setSearchResults(data.users);
+        }
+      } catch (error) {
+        console.error("Lỗi tìm kiếm:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchSearch();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [input]);
+
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [showRequests, setShowRequests] = useState(true);
+
+  // Gọi API lấy danh sách lời mời kết bạn
+  const fetchRequests = async () => {
+    try {
+      const { data } = await axios.get('/api/auth/friend-requests');
+      if (data.success) {
+        setFriendRequests(data.requests);
+      }
+    } catch (error) {
+      console.error("Lỗi lấy lời mời kết bạn:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (authUser) fetchRequests();
+  }, [authUser]);
+
+  // Lắng nghe Socket realtime cho kết bạn
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("newFriendRequest", (data) => {
+      // Nhận lời mời mới từ ai đó
+      setFriendRequests(prev => {
+        if (prev.some(req => req._id === data.from._id)) return prev;
+        return [...prev, data.from];
+      });
+      // Tự động mở mục Lời mời nếu đang đóng
+      setShowRequests(true);
+    });
+
+    socket.on("friendRequestAccepted", () => {
+      // Đối phương đã chấp nhận -> load lại danh sách chat
+      getUsers();
+    });
+
+    socket.on("unfriended", () => {
+      // Bị đối phương hủy kết bạn -> load lại
+      getUsers();
+    });
+
+    return () => {
+      socket.off("newFriendRequest");
+      socket.off("friendRequestAccepted");
+      socket.off("unfriended");
+    };
+  }, [socket, getUsers]);
+
+  const handleAddFriend = async (friendId) => {
+    try {
+      const { data } = await axios.post('/api/auth/send-friend-request', { friendId });
+      if (data.success) {
+        toast.success(data.message);
+        // Có thể update danh sách local để ẩn nút thêm bạn nếu muốn, 
+        // nhưng đơn giản nhất là xóa text tìm kiếm để xem sidebar
+        setInput('');
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    }
+  };
+
+  const handleAcceptRequest = async (friendId) => {
+    try {
+      const { data } = await axios.post('/api/auth/accept-friend-request', { friendId });
+      if (data.success) {
+        toast.success(data.message);
+        setFriendRequests(prev => prev.filter(req => req._id !== friendId));
+        // Chấp nhận xong thì reload danh sách user để họ hiện vào Bạn bè
+        getUsers(); 
+      } else {
+        toast.error(data.message);
+      }
+    } catch(err) {
+      toast.error(err.response?.data?.message || err.message);
+    }
+  };
+
+  const handleRejectRequest = async (friendId) => {
+    try {
+      const { data } = await axios.post('/api/auth/reject-friend-request', { friendId });
+      if (data.success) {
+        toast.success(data.message);
+        setFriendRequests(prev => prev.filter(req => req._id !== friendId));
+      } else {
+        toast.error(data.message);
+      }
+    } catch(err) {
+      toast.error(err.response?.data?.message || err.message);
+    }
+  };
 
   // 4. --- Giao diện (Render) ---
   return (
@@ -113,42 +245,142 @@ const SideBar = () => {
 
       {/* KHU VỰC DANH SÁCH NGƯỜI DÙNG */}
       <div className='flex flex-col gap-3'>
-        {filteredUsers.map((user) => (
-          <div
-            key={user._id}
-            onClick={() => {
-              if (selectedUser?._id === user._id) {
-                // Hủy chọn user để quay về 50/50
-                setSelectedUser(null);
-              } else {
-                // Chọn user và reset số đếm tin nhắn
-                setSelectedUser(user);
-                setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
-              }
-            }}
-            className={`relative flex items-center gap-3 p-4 pl-5 rounded-xl cursor-pointer hover:bg-white/5 transition-colors ${selectedUser?._id === user._id ? 'bg-[#00cfff]/15 hover:bg-[#00cfff]/20' : ''}`}
-          >
-            {/* Ảnh đại diện */}
-            <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
-
-            {/* Thông tin tên và trạng thái */}
-            <div className='flex flex-col leading-6'>
-              <p className='text-base font-medium'>{user.fullName}</p>
-              {
-                onlineUser.includes(user._id)
-                  ? <span className='text-green-400 text-sm'>Online</span>
-                  : <span className='text-neutral-400 text-sm'>Offline</span>
-              }
-            </div>
-
-            {/* Badge thông báo số lượng tin nhắn chưa đọc */}
-            {unseenMessages && unseenMessages[user._id] > 0 && (
-              <p className='absolute top-4 right-4 bg-cyan-500 text-sm rounded-full w-6 h-6 flex items-center justify-center text-white shadow-[0_0_10px_rgba(0,207,255,0.5)]'>
-                {unseenMessages[user._id]}
-              </p>
-            )}
+        {input.trim() !== '' ? (
+          /* TRẠNG THÁI TÌM KIẾM */
+          <div className="flex flex-col gap-3">
+             <p className="text-sm text-cyan-400 font-semibold mb-2">Kết quả tìm kiếm</p>
+             {isSearching ? (
+               <p className="text-gray-400 text-sm">Đang tìm...</p>
+             ) : searchResults.length > 0 ? (
+                searchResults.map(user => {
+                  const isAlreadyFriend = user.friends?.includes(authUser?._id) || authUser?.friends?.includes(user._id);
+                  return (
+                    <div 
+                      key={user._id} 
+                      onClick={() => {
+                        setSelectedUser({ ...user, isFriend: isAlreadyFriend });
+                        setInput('');
+                      }}
+                      className="relative flex items-center justify-between p-4 pl-5 rounded-xl bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
+                    >
+                        <div className="flex items-center gap-3">
+                          <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
+                          <div className='flex flex-col leading-6'>
+                            <p className='text-base font-medium'>{user.fullName}</p>
+                            <span className='text-neutral-400 text-sm'>Tìm thấy từ hệ thống</span>
+                          </div>
+                        </div>
+                        {!isAlreadyFriend && (
+                          <button onClick={(e) => { e.stopPropagation(); handleAddFriend(user._id); }} className="text-cyan-400 hover:text-white p-2 bg-cyan-400/10 hover:bg-cyan-500 rounded-full transition-colors" title="Thêm bạn">
+                             <UserPlus className="w-5 h-5" />
+                          </button>
+                        )}
+                    </div>
+                  )
+                })
+             ) : (
+               <p className="text-gray-400 text-sm">Không tìm thấy người dùng nào</p>
+             )}
           </div>
-        ))}
+        ) : (
+          /* TRẠNG THÁI BÌNH THƯỜNG (Danh sách Bạn bè + Người lạ + Lời mời kết bạn) */
+          <>
+            {friendRequests.length > 0 && (
+              <div className="mb-4">
+                 <div onClick={() => setShowRequests(!showRequests)} className="flex items-center gap-2 cursor-pointer hover:text-cyan-400 transition-colors text-cyan-400 font-semibold text-sm mb-2">
+                    {showRequests ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    <Bell className="w-4 h-4" />
+                    Lời mời kết bạn ({friendRequests.length})
+                 </div>
+                 
+                 {showRequests && friendRequests.map((req) => (
+                    <div key={req._id} className="relative flex items-center justify-between p-3 pl-4 mt-2 rounded-xl bg-cyan-900/20 border border-cyan-500/20">
+                      <div className="flex items-center gap-3">
+                        <img src={req?.profilePic || assets.avatar_icon} alt="Avatar" className='w-10 aspect-square rounded-full object-cover' />
+                        <div className='flex flex-col leading-5'>
+                          <p className='text-sm font-medium'>{req.fullName}</p>
+                          <span className='text-cyan-300/70 text-xs'>Muốn kết bạn</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleAcceptRequest(req._id)} className="p-1.5 bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white rounded-full transition-colors" title="Chấp nhận">
+                           <Check className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleRejectRequest(req._id)} className="p-1.5 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded-full transition-colors" title="Từ chối">
+                           <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                 ))}
+              </div>
+            )}
+
+            <p className="text-sm text-cyan-400 font-semibold mb-1">Bạn bè</p>
+            {friendsList.length === 0 && <p className="text-gray-400 text-sm italic">Chưa có bạn bè nào.</p>}
+            {friendsList.map((user) => (
+              <div
+                key={user._id}
+                onClick={() => {
+                  if (selectedUser?._id === user._id) setSelectedUser(null);
+                  else {
+                    setSelectedUser(user);
+                    setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
+                  }
+                }}
+                className={`relative flex items-center gap-3 p-4 pl-5 rounded-xl cursor-pointer hover:bg-white/5 transition-colors ${selectedUser?._id === user._id ? 'bg-[#00cfff]/15 hover:bg-[#00cfff]/20' : ''}`}
+              >
+                <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
+                <div className='flex flex-col leading-6'>
+                  <p className='text-base font-medium'>{user.fullName}</p>
+                  {onlineUser.includes(user._id) ? <span className='text-green-400 text-sm'>Online</span> : <span className='text-neutral-400 text-sm'>Offline</span>}
+                </div>
+                {unseenMessages && unseenMessages[user._id] > 0 && (
+                  <p className='absolute top-4 right-4 bg-cyan-500 text-sm rounded-full w-6 h-6 flex items-center justify-center text-white shadow-[0_0_10px_rgba(0,207,255,0.5)]'>{unseenMessages[user._id]}</p>
+                )}
+              </div>
+            ))}
+
+            {strangersList.length > 0 && (
+              <div className="mt-4 border-t border-white/10 pt-4">
+                 <div onClick={() => setShowStrangers(!showStrangers)} className="relative flex items-center gap-2 cursor-pointer hover:text-cyan-400 transition-colors text-gray-300 font-semibold text-sm mb-2 w-max">
+                    {showStrangers ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    <MessageSquareWarning className="w-4 h-4" />
+                    Tin nhắn từ người lạ ({strangersList.length})
+                    
+                    {/* Hiển thị chấm đỏ cảnh báo nếu đang đóng và có tin nhắn chưa đọc */}
+                    {!showStrangers && totalUnseenStrangers > 0 && (
+                      <span className="ml-1 bg-red-500 text-[10px] min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full text-white font-bold shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                        {totalUnseenStrangers}
+                      </span>
+                    )}
+                 </div>
+                 
+                 {showStrangers && strangersList.map((user) => (
+                    <div
+                      key={user._id}
+                      onClick={() => {
+                        if (selectedUser?._id === user._id) setSelectedUser(null);
+                        else {
+                          setSelectedUser(user);
+                          setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
+                        }
+                      }}
+                      className={`relative flex items-center gap-3 p-3 pl-4 mt-2 rounded-xl cursor-pointer hover:bg-white/5 transition-colors ${selectedUser?._id === user._id ? 'bg-[#00cfff]/15 hover:bg-[#00cfff]/20' : ''}`}
+                    >
+                      <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-10 aspect-square rounded-full object-cover opacity-70' />
+                      <div className='flex flex-col leading-5'>
+                        <p className='text-sm font-medium'>{user.fullName}</p>
+                        <span className='text-neutral-500 text-xs'>Người lạ</span>
+                      </div>
+                      {unseenMessages && unseenMessages[user._id] > 0 && (
+                        <p className='absolute top-3 right-3 bg-red-500 text-xs rounded-full w-5 h-5 flex items-center justify-center text-white'>{unseenMessages[user._id]}</p>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

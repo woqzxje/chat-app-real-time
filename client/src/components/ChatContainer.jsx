@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical } from 'lucide-react';
+import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus } from 'lucide-react';
 import FlickerSpinner from './ui/FlickerSpinner';
 import { ShinyButton } from './ui/ShinyButton';
 
@@ -572,6 +572,20 @@ const ChatContainer = ({ startCall }) => {
   // Trạng thái theo dõi quá trình upload file lên server
   const [uploading, setUploading] = useState(false);
 
+  // Gửi lời mời kết bạn (dành cho người lạ)
+  const handleAddFriend = async () => {
+    try {
+      const { data } = await axios.post('/api/auth/send-friend-request', { friendId: selectedUser._id });
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    }
+  };
+
   // Hàm xử lý gửi tin nhắn văn bản (có thể kèm file đính kèm)
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -707,6 +721,18 @@ const ChatContainer = ({ startCall }) => {
           {/* Hiển thị chấm xanh nếu người dùng này đang online */}
           {onlineUser.includes(selectedUser._id) && (
             <span className="w-3 h-3 rounded-full bg-green-500" />
+          )}
+          
+          {/* Nút Thêm Bạn (chỉ hiển thị nếu chưa phải là bạn bè) */}
+          {!selectedUser.isFriend && (
+            <button 
+              onClick={handleAddFriend}
+              className="ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-full transition-colors text-xs font-medium border border-cyan-500/20"
+              title="Thêm bạn"
+            >
+               <UserPlus className="w-3.5 h-3.5" />
+               <span className="hidden sm:inline">Kết bạn</span>
+            </button>
           )}
         </p>
         {/* Nút đóng khung chat trên thiết bị di động */}

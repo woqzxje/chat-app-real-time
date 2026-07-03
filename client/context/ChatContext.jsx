@@ -55,6 +55,14 @@ export const ChatProvider = ({ children }) => {
             if (data.success) {
                 // Cập nhật tin nhắn mới vào danh sách hiện tại
                 setMessages((prev) => [...prev, data.newMessage])
+                
+                // Cập nhật lại sidebar nếu đây là người mới chưa có trong list
+                setUsers(prev => {
+                    if (!prev.find(u => u._id === selectedUser._id)) {
+                        setTimeout(() => getUsers(), 100);
+                    }
+                    return prev;
+                });
             }
         } catch (error) {
             toast.error(error.message)
@@ -135,6 +143,15 @@ export const ChatProvider = ({ children }) => {
                     [newMessage.senderId]: (prev[newMessage.senderId] || 0) + 1
                 }))
             }
+
+            // Nếu người nhắn tin đến chưa có trong Sidebar, load lại danh sách
+            const otherId = newMessage.senderId === authUser?._id ? newMessage.receiverId : newMessage.senderId;
+            setUsers(prevUsers => {
+                if (!prevUsers.find(u => u._id === otherId)) {
+                    setTimeout(() => getUsers(), 100);
+                }
+                return prevUsers;
+            });
         });
 
         // Lắng nghe sự kiện tin nhắn bị chỉnh sửa

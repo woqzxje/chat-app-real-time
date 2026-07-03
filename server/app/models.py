@@ -53,6 +53,8 @@ class User(Document):
     password: str # Mật khẩu đã được mã hóa
     profilePic: str = "" # Đường dẫn ảnh đại diện (mặc định để trống)
     bio: Optional[str] = None # Lời giới thiệu ngắn về bản thân
+    friends: List[str] = Field(default_factory=list) # Danh sách ID bạn bè
+    friendRequests: List[str] = Field(default_factory=list) # Lời mời kết bạn đến
     createdAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm tạo tài khoản
     updatedAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm cập nhật thông tin gần nhất
 

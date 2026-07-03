@@ -2,12 +2,33 @@ import React, { useContext, useEffect, useState } from 'react'
 import assets, { imagesDummyData } from '../assets/assets'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
+import { UserMinus } from 'lucide-react'
+import axios from 'axios'
+import toast from 'react-hot-toast'
 
 const RightSidebar = () => {
 
   const { selectedUser, messages } = useContext(ChatContext)
   const { logout, onlineUser } = useContext(AuthContext)
   const [msgImages, setMsgImages] = useState([])
+
+  const isFriend = selectedUser?.isFriend;
+
+  const handleUnfriend = async () => {
+    if (window.confirm("Bạn có chắc chắn muốn hủy kết bạn?")) {
+      try {
+        const { data } = await axios.post('/api/auth/unfriend', { friendId: selectedUser._id });
+        if (data.success) {
+          toast.success(data.message);
+          window.location.reload();
+        } else {
+          toast.error(data.message);
+        }
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message);
+      }
+    }
+  }
 
   useEffect(() => {
     setMsgImages(
@@ -22,8 +43,8 @@ const RightSidebar = () => {
       <div className="flex-1 overflow-y-scroll pb-6">
         <div className='pt-16 flex flex-col items-center gap-3 text-sm font-light mx-auto'>
           <img src={selectedUser?.profilePic || assets.avatar_icon} alt="Avatar" className='w-24 aspect-square rounded-full' />
-          <h1 className='px-10 text-3xl font-semibold mx-auto flex items-center gap-3'>
-            {onlineUser.includes(selectedUser._id) && <p className='w-3 h-3 rounded-full bg-green-500'></p>}
+          <h1 className='px-10 text-3xl font-semibold mx-auto flex items-center gap-3 text-center'>
+            {onlineUser.includes(selectedUser._id) && <p className='w-3 h-3 rounded-full bg-green-500 shrink-0'></p>}
             {selectedUser?.fullName}
           </h1>
           <p className='px-10 mx-auto text-center text-base opacity-80'>{selectedUser.bio}</p>
@@ -42,6 +63,19 @@ const RightSidebar = () => {
           </div>
         </div>
       </div>
+
+      {/* Footer chứa nút Hủy Kết Bạn */}
+      {isFriend && (
+        <div className="p-4 border-t border-[#ffffff20]">
+          <button 
+            onClick={handleUnfriend} 
+            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm"
+          >
+             <UserMinus className="w-4 h-4" />
+             Hủy kết bạn
+          </button>
+        </div>
+      )}
 
     </div>
   )
