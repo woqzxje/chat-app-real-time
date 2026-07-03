@@ -54,13 +54,13 @@ Hệ thống Backend cung cấp tổng cộng **29 RESTful APIs** và **9 sự k
 - `PUT /api/messages/edit/{id}`: Chỉnh sửa tin nhắn (Dòng 199)
 - `PUT /api/messages/revoke/{id}`: Thu hồi tin nhắn (Soft delete) (Dòng 231)
 - `POST /api/messages/react/{id}`: Thả biểu tượng cảm xúc (Dòng 264)
-- `POST /api/messages/groups/create`: Tạo nhóm mới
-- `GET /api/messages/groups/{id}/members`: Lấy danh sách thành viên nhóm
-- `POST /api/messages/groups/{id}/add-members`: Thêm thành viên vào nhóm
-- `PUT /api/messages/groups/{id}/update`: Cập nhật thông tin nhóm (Tên, Avatar)
-- `PUT /api/messages/groups/{id}/kick`: Quản trị viên kích thành viên ra khỏi nhóm
-- `PUT /api/messages/groups/{id}/leave`: Tự rời khỏi nhóm
-- `DELETE /api/messages/groups/{id}`: Giải tán nhóm
+- `POST /api/messages/groups/create`: Tạo nhóm mới (Dòng 380)
+- `GET /api/messages/groups/{id}/members`: Lấy danh sách thành viên nhóm (Dòng 648)
+- `POST /api/messages/groups/{id}/add-members`: Thêm thành viên vào nhóm (Dòng 424)
+- `PUT /api/messages/groups/{id}/update`: Cập nhật thông tin nhóm (Tên, Avatar) (Dòng 594)
+- `PUT /api/messages/groups/{id}/kick`: Quản trị viên kích thành viên ra khỏi nhóm (Dòng 685)
+- `PUT /api/messages/groups/{id}/leave`: Tự rời khỏi nhóm (Dòng 484)
+- `DELETE /api/messages/groups/{id}`: Giải tán nhóm (Dòng 563)
 
 **Nhóm Files (`/api/files`) - Chứa trong file `app/routes/file_routes.py`:**
 - `POST /api/files/upload`: Upload 1 file lẻ (Dòng 38)
