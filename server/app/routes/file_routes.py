@@ -1,10 +1,16 @@
-# server/app/routes/file_routes.py
+﻿# server/app/routes/file_routes.py
+import os
+import uuid
+import io
+import re
+import zipfile
+from typing import List
+from urllib.parse import unquote, urlparse
+
+import httpx
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from typing import List
 from pydantic import BaseModel
-import uuid, httpx, zipfile, io
-from urllib.parse import unquote
 
 import cloudinary.uploader
 
@@ -15,6 +21,40 @@ router = APIRouter()
 
 MAX_FILE_SIZE = 50 * 1024 * 1024
 MAX_FOLDER_SIZE = 200 * 1024 * 1024
+
+# â”€â”€ BAO MAT (chong SSRF): chi cho phep tai file tu cac domain Cloudinary tin cay â”€â”€
+# Co the mo rong qua bien moi truong ALLOWED_DOWNLOAD_HOSTS (ngan cach dau phay).
+_DEFAULT_ALLOWED_HOSTS = "res.cloudinary.com"
+ALLOWED_DOWNLOAD_HOSTS = {
+    h.strip().lower()
+    for h in os.getenv("ALLOWED_DOWNLOAD_HOSTS", _DEFAULT_ALLOWED_HOSTS).split(",")
+    if h.strip()
+}
+
+
+def _is_allowed_url(raw_url: str) -> bool:
+    """Kiem tra URL co host nam trong allow-list Cloudinary hay khong."""
+    try:
+        parsed = urlparse(raw_url)
+    except Exception:
+        return False
+    if parsed.scheme not in ("http", "https"):
+        return False
+    host = (parsed.hostname or "").lower()
+    if not host:
+        return False
+    # Cho phep host chinh xac hoac subdomain cua host duoc phep
+    return any(host == allowed or host.endswith("." + allowed) for allowed in ALLOWED_DOWNLOAD_HOSTS)
+
+
+def _sanitize_filename(name: str) -> str:
+    """Loai bo CR/LF va dau nhay de tranh header injection trong Content-Disposition."""
+    if not name:
+        return "file"
+    # Bo ky tu xuong dong va nhay kep/nhay don, gioi han do dai
+    cleaned = re.sub(r'[\r\n"\'\\]', "", name).strip()
+    cleaned = cleaned.replace("/", "_").replace("\\", "_")
+    return cleaned[:255] or "file"
 
 
 def get_file_type(filename: str) -> str:
@@ -31,7 +71,7 @@ def get_file_type(filename: str) -> str:
 
 
 def _basename(path: str) -> str:
-    """Trích tên file từ đường dẫn (hỗ trợ cả / và \\)."""
+    """Trich ten file tu duong dan (ho tro ca / va \\)."""
     return path.replace("\\", "/").rsplit("/", 1)[-1]
 
 
@@ -43,7 +83,7 @@ async def upload_file(
     content = await file.read()
 
     if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="File quá lớn (tối đa 50MB)")
+        raise HTTPException(status_code=400, detail="File qua lon (toi da 50MB)")
 
     file_type = get_file_type(file.filename)
     resource_type = (
@@ -71,7 +111,7 @@ async def upload_file(
             "resource_type": resource_type,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload thất bại: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload that bai: {str(e)}")
 
 
 @router.post("/upload-folder")
@@ -79,7 +119,7 @@ async def upload_folder(
     files: List[UploadFile] = File(...),
     current_user: User = Depends(get_current_user),
 ):
-    """Upload từng file riêng lẻ trong folder lên Cloudinary (không nén ZIP)."""
+    """Upload tung file rieng le trong folder len Cloudinary (khong nen ZIP)."""
     uploaded_files = []
     total_size = 0
     folder_name = ""
@@ -89,9 +129,8 @@ async def upload_folder(
         total_size += len(content)
 
         if total_size > MAX_FOLDER_SIZE:
-            raise HTTPException(status_code=400, detail="Folder quá lớn (tối đa 200MB)")
+            raise HTTPException(status_code=400, detail="Folder qua lon (toi da 200MB)")
 
-        # Lấy tên folder gốc từ file đầu tiên (webkitRelativePath dạng "folder/file.txt")
         if not folder_name and f.filename:
             parts = f.filename.replace("\\", "/").split("/")
             folder_name = parts[0] if len(parts) > 1 else "folder"
@@ -116,17 +155,17 @@ async def upload_folder(
             )
             uploaded_files.append({
                 "url": result["secure_url"],
-                "file_name": f.filename,      # Đường dẫn tương đối gốc
+                "file_name": f.filename,
                 "file_type": file_type,
                 "file_size": len(content),
                 "resource_type": resource_type,
             })
         except Exception as e:
-            print(f"[upload-folder] Bỏ qua file lỗi {f.filename}: {e}")
+            print(f"[upload-folder] Bo qua file loi {f.filename}: {e}")
             continue
 
     if not uploaded_files:
-        raise HTTPException(status_code=500, detail="Không thể upload bất kỳ file nào trong folder")
+        raise HTTPException(status_code=500, detail="Khong the upload bat ky file nao trong folder")
 
     return {
         "url": uploaded_files[0]["url"],
@@ -141,49 +180,53 @@ async def upload_folder(
 
 @router.get("/download")
 async def download_file(
-    url: str = Query(..., description="URL file trên Cloudinary cần tải"),
-    name: str = Query("file", description="Tên file khi tải về"),
+    url: str = Query(..., description="URL file tren Cloudinary can tai"),
+    name: str = Query("file", description="Ten file khi tai ve"),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Proxy download: Tải file từ Cloudinary rồi stream về cho client.
-    Lý do cần proxy: Thuộc tính HTML `download` không hoạt động với cross-origin URL.
+    Proxy download: Tai file tu Cloudinary roi stream ve cho client.
+    Ly do can proxy: Thuoc tinh HTML `download` khong hoat dong voi cross-origin URL.
+    BAO MAT: chi cho phep tai tu domain Cloudinary trong allow-list (chong SSRF),
+    va bat xac thuc TLS (khong dung verify=False).
     """
+    target_url = unquote(url)
+    if not _is_allowed_url(target_url):
+        raise HTTPException(status_code=400, detail="URL khong hop le hoac khong duoc phep")
+
+    safe_name = _sanitize_filename(name)
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
-        target_url = unquote(url)
-        async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=120.0) as client:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        async with httpx.AsyncClient(follow_redirects=True, timeout=120.0) as client:
             resp = await client.get(target_url, headers=headers)
             if resp.status_code != 200:
-                raise HTTPException(status_code=502, detail="Không thể tải file từ nguồn")
+                raise HTTPException(status_code=502, detail="Khong the tai file tu nguon")
 
-            # Luôn dùng application/octet-stream để browser trigger download
-            # (đặc biệt quan trọng cho .zip, .rar, .7z... mà browser có thể
-            # cố hiển thị inline hoặc chặn)
+            # Luon dung application/octet-stream de browser trigger download
             content_type = "application/octet-stream"
 
             return StreamingResponse(
                 iter([resp.content]),
                 media_type=content_type,
                 headers={
-                    "Content-Disposition": f'attachment; filename="{name}"',
+                    "Content-Disposition": f'attachment; filename="{safe_name}"',
                     "Content-Length": str(len(resp.content)),
                     "Access-Control-Expose-Headers": "Content-Disposition",
                 },
             )
     except httpx.RequestError as e:
-        raise HTTPException(status_code=502, detail=f"Lỗi kết nối tải file: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Loi ket noi tai file: {str(e)}")
 
 
-# ── Model cho download folder ────────────────────────────────────────────────
+# â”€â”€ Model cho download folder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class FolderFileItem(BaseModel):
-    url: str        # URL Cloudinary
-    file_name: str  # Đường dẫn tương đối (ví dụ: folder/sub/file.txt)
+    url: str
+    file_name: str
 
 
 class FolderDownloadRequest(BaseModel):
-    folder_name: str              # Tên folder gốc
-    files: List[FolderFileItem]   # Danh sách file trong folder
+    folder_name: str
+    files: List[FolderFileItem]
 
 
 @router.post("/download-folder")
@@ -192,30 +235,38 @@ async def download_folder(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Tải tất cả file của folder từ Cloudinary, nén thành ZIP giữ nguyên
-    cấu trúc thư mục rồi stream về cho client.
+    Tai tat ca file cua folder tu Cloudinary, nen thanh ZIP giu nguyen
+    cau truc thu muc roi stream ve cho client.
+    BAO MAT: moi URL phai thuoc allow-list Cloudinary (chong SSRF), bat xac thuc TLS.
     """
     if not body.files:
-        raise HTTPException(status_code=400, detail="Danh sách file trống")
+        raise HTTPException(status_code=400, detail="Danh sach file trong")
+
+    # Kiem tra tat ca URL truoc khi tai
+    for item in body.files:
+        if not _is_allowed_url(unquote(item.url)):
+            raise HTTPException(status_code=400, detail="Danh sach file chua URL khong hop le")
 
     buf = io.BytesIO()
 
     try:
-        async with httpx.AsyncClient(verify=False, follow_redirects=True, timeout=120.0) as client:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=120.0) as client:
             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                 for item in body.files:
                     target_url = unquote(item.url)
                     resp = await client.get(target_url)
                     if resp.status_code != 200:
-                        print(f"[download-folder] Bỏ qua file lỗi: {item.file_name}")
+                        print(f"[download-folder] Bo qua file loi: {item.file_name}")
                         continue
-                    # Dùng đường dẫn tương đối gốc làm tên entry trong ZIP
-                    zf.writestr(item.file_name, resp.content)
+                    # Dung duong dan tuong doi goc lam ten entry trong ZIP (chong path traversal)
+                    entry_name = item.file_name.replace("\\", "/").lstrip("/")
+                    entry_name = entry_name.replace("../", "")
+                    zf.writestr(entry_name or _basename(item.file_name), resp.content)
     except httpx.RequestError as e:
-        raise HTTPException(status_code=502, detail=f"Lỗi kết nối: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Loi ket noi: {str(e)}")
 
     buf.seek(0)
-    zip_name = f"{body.folder_name}.zip"
+    zip_name = _sanitize_filename(f"{body.folder_name}.zip")
 
     return StreamingResponse(
         buf,
