@@ -104,6 +104,7 @@ Các dịch vụ và tiện ích bổ sung:
 - **Nhắn tin Thời gian thực**: Giao tiếp tốc độ ánh sáng thông qua Socket.IO. Hỗ trợ hiển thị trạng thái đang hoạt động và "Đã xem" (Read Receipts).
 - **Trải nghiệm UX Di Động**: Menu tùy chọn (3 chấm), nhấn giữ (Long-press) để thả biểu tượng cảm xúc, Layout h-[100dvh] không lỗi tràn viền trên mobile.
 - **Tính năng Trò Chuyện**: Chỉnh sửa tin nhắn (Edit), thu hồi tin nhắn (Revoke), phản hồi (Reaction).
+- **Trò Chuyện Nhóm (Group Chat)**: Hỗ trợ tạo nhóm, quản lý thành viên (thêm/kích), tùy biến giao diện nhóm. Tích hợp avatar và tên người gửi riêng biệt hiển thị mượt mà trong bong bóng chat.
 - **Gọi Video Trực Tuyến**: Thiết lập WebRTC Peer-to-Peer, hỗ trợ qua STUN/TURN Server chuyên dụng để vượt tường lửa, hiển thị bong bóng lịch sử cuộc gọi.
 - **Truyền Tệp Tin Nâng Cao**: Hỗ trợ gửi ảnh, tài liệu và đặc biệt nén toàn bộ thư mục (Zip Folder) trước khi gửi thông qua Cloudinary.
 - **Xác thực An toàn**: Đăng ký, Đăng nhập (với JWT), tích hợp Google OAuth 2.0.
@@ -189,7 +190,7 @@ pnpm run dev
 - [x] WebRTC Video Call cơ bản & TURN Server.
 - [x] Chỉnh sửa, Thu hồi, và Tương tác (Reaction) tin nhắn.
 - [x] Tối ưu hóa UI/UX trên di động (Smart Auto-Scroll, Long-press).
-- [ ] Tính năng Chat Nhóm (Group Chat).
+- [x] Tính năng Chat Nhóm (Group Chat).
 - [ ] Tính năng Cuộc Gọi Thoại (Voice Call).
 - [ ] Triển khai lên Vercel (Frontend) / Render (Backend).
 

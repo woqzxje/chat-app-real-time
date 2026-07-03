@@ -249,7 +249,7 @@ const RightSidebar = () => {
                   
                   <div className="flex items-center gap-2">
                     {/* Nút Kết bạn (Nếu chưa là bạn và không phải chính mình) */}
-                    {!member.isFriend && member._id !== authUser._id && (
+                    {!(users.find(u => u._id === member._id)?.isFriend ?? member.isFriend) && member._id !== authUser._id && (
                       <button onClick={() => handleAddFriend(member._id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-cyan-400 hover:text-cyan-300 transition-all rounded-full hover:bg-white/10" title="Kết bạn">
                         <UserPlus className="w-4 h-4" />
                       </button>

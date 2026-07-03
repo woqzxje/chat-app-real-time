@@ -54,6 +54,13 @@ Hệ thống Backend cung cấp tổng cộng **22 RESTful APIs** và **9 sự k
 - `PUT /api/messages/edit/{id}`: Chỉnh sửa tin nhắn (Dòng 199)
 - `PUT /api/messages/revoke/{id}`: Thu hồi tin nhắn (Soft delete) (Dòng 231)
 - `POST /api/messages/react/{id}`: Thả biểu tượng cảm xúc (Dòng 264)
+- `POST /api/messages/groups/create`: Tạo nhóm mới
+- `GET /api/messages/groups/{id}/members`: Lấy danh sách thành viên nhóm
+- `POST /api/messages/groups/{id}/add-members`: Thêm thành viên vào nhóm
+- `PUT /api/messages/groups/{id}/update`: Cập nhật thông tin nhóm (Tên, Avatar)
+- `PUT /api/messages/groups/{id}/kick`: Quản trị viên kích thành viên ra khỏi nhóm
+- `PUT /api/messages/groups/{id}/leave`: Tự rời khỏi nhóm
+- `DELETE /api/messages/groups/{id}`: Giải tán nhóm
 
 **Nhóm Files (`/api/files`) - Chứa trong file `app/routes/file_routes.py`:**
 - `POST /api/files/upload`: Upload 1 file lẻ (Dòng 38)
@@ -139,6 +146,7 @@ Backend được xây dựng theo kiến trúc MVC/Controller-Service kết hợ
   - Hàm `get_users_for_sidebar`: Tìm danh sách bạn bè, sau đó dùng query `distinct` trên bảng Message tìm ID người lạ đã từng nhắn tin. Ghép 2 danh sách lại và đếm tin "chưa đọc".
   - Hàm `revoke_message` (Thu hồi): Áp dụng kỹ thuật **Soft Delete** (Xóa mềm). Tức là không xóa cứng record, mà đổi cờ `isDeleted = True`, xóa nội dung văn bản `text = None`. Socket sẽ báo Client cập nhật giao diện thành "Tin nhắn đã thu hồi".
   - Hàm `react_message`: Toggle logic. Nếu user đã thả tim rồi mà bấm tiếp thì xóa biểu tượng đó đi. Nếu thả biểu tượng khác thì ghi đè biểu tượng mới vào mảng `reactions`.
+  - **Quản lý Nhóm Chat (Group Management):** Xử lý mảng `members` trong schema `ChatGroup`. Logic kích thành viên (`kick_group_member`) đảm bảo tính toàn vẹn trạng thái thông qua việc cập nhật DB, trả về thông tin nhóm mới (`updated_group_data`) để đồng bộ ngay trên Client, đồng thời phát tín hiệu cập nhật qua Socket tới các thành viên.
 - **Công nghệ:** Beanie MongoDB Queries (truy vấn nâng cao).
 
 ### 4.6. File `app/routes/file_routes.py`
