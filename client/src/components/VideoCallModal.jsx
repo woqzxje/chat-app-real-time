@@ -8,7 +8,7 @@
  *   - "active"   → chỉ hiện nút "Kết thúc"
  */
 import { useState, useEffect } from "react";
-import { Phone, PhoneOff, Video } from "lucide-react";
+import { Phone, PhoneOff, Video, Mic, MicOff, VideoOff } from "lucide-react";
 
 // ── Hàm format thời gian mm:ss ──────────────────────────────────────────────
 const formatDuration = (seconds) => {
@@ -17,7 +17,7 @@ const formatDuration = (seconds) => {
     return `${m}:${s}`;
 };
 
-export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVideoRef, onAnswer, onEnd, onReject, isVideoCall = true }) {
+export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVideoRef, onAnswer, onEnd, onReject, isVideoCall = true, isMuted = false, isCameraOff = false, onToggleMute, onToggleCamera }) {
     const [elapsed, setElapsed] = useState(0);
 
     // ── Đếm thời gian cuộc gọi khi đang active ─────────────────
@@ -117,6 +117,40 @@ export function VideoCallModal({ callState, remoteUser, localVideoRef, remoteVid
 
             {/* ── Controls — thay đổi theo trạng thái ────────────────── */}
             <div style={{ position: "absolute", bottom: 32, display: "flex", gap: 16 }}>
+
+                {/* Media controls (mute mic / tat camera) ??? hien khi dang goi hoac dang active */}
+                {(callState === "calling" || callState === "active") && (
+                    <>
+                        <button
+                            onClick={onToggleMute}
+                            title={isMuted ? "Bat micro" : "Tat micro"}
+                            style={{
+                                background: isMuted ? "#ef4444" : "rgba(255,255,255,0.15)",
+                                color: "white", width: 52, height: 52,
+                                borderRadius: "50%", border: "none",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                cursor: "pointer",
+                            }}
+                        >
+                            {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                        </button>
+                        {isVideoCall && (
+                            <button
+                                onClick={onToggleCamera}
+                                title={isCameraOff ? "Bat camera" : "Tat camera"}
+                                style={{
+                                    background: isCameraOff ? "#ef4444" : "rgba(255,255,255,0.15)",
+                                    color: "white", width: 52, height: 52,
+                                    borderRadius: "50%", border: "none",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                {isCameraOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+                            </button>
+                        )}
+                    </>
+                )}
 
                 {/* ── INCOMING: Trả lời + Từ chối ────────────────────── */}
                 {callState === "incoming" && (

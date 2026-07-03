@@ -31,6 +31,8 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
     const [callState, setCallState] = useState("idle");
     const [remoteUser, setRemoteUser] = useState(null);
     const [isVideoCall, setIsVideoCall] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isCameraOff, setIsCameraOff] = useState(false);
 
     const localStreamRef = useRef(null);
     const remoteStreamRef = useRef(null);
@@ -378,5 +380,31 @@ export function useVideoCall(socket, currentUserId, currentUserName) {
         };
     }, [socket, currentUserId]);
 
-    return { callState, remoteUser, localVideoRef, remoteVideoRef, startCall, answerCall, endCall, rejectCall, isVideoCall };
+    // Bat/tat microphone tren local stream
+    const toggleMute = useCallback(() => {
+        const stream = localStreamRef.current;
+        if (!stream) return;
+        const enabledNow = stream.getAudioTracks().some((t) => t.enabled);
+        stream.getAudioTracks().forEach((t) => { t.enabled = !enabledNow; });
+        setIsMuted(enabledNow); // neu dang bat -> se thanh tat (muted)
+    }, []);
+
+    // Bat/tat camera tren local stream
+    const toggleCamera = useCallback(() => {
+        const stream = localStreamRef.current;
+        if (!stream) return;
+        const enabledNow = stream.getVideoTracks().some((t) => t.enabled);
+        stream.getVideoTracks().forEach((t) => { t.enabled = !enabledNow; });
+        setIsCameraOff(enabledNow);
+    }, []);
+
+    // Reset trang thai mute/camera moi khi cuoc goi ket thuc (callState ve idle)
+    useEffect(() => {
+        if (callState === "idle") {
+            setIsMuted(false);
+            setIsCameraOff(false);
+        }
+    }, [callState]);
+
+    return { callState, remoteUser, localVideoRef, remoteVideoRef, startCall, answerCall, endCall, rejectCall, isVideoCall, isMuted, isCameraOff, toggleMute, toggleCamera };
 }

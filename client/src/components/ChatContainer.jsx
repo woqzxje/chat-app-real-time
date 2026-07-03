@@ -529,7 +529,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
 const ChatContainer = ({ startCall }) => {
 
   // Lấy dữ liệu tin nhắn, người dùng đang chọn và các hàm xử lý từ ChatContext
-  const { messages, selectedUser, setSelectedUser, sendMessage, getMessages, showRightSidebar, setShowRightSidebar, editMessage, revokeMessage, reactMessage } = useContext(ChatContext);
+  const { messages, selectedUser, setSelectedUser, sendMessage, getMessages, showRightSidebar, setShowRightSidebar, editMessage, revokeMessage, reactMessage, typingUsers, sendTyping, hasMoreMessages, isLoadingMore, loadMoreMessages } = useContext(ChatContext);
 
   // Lấy thông tin người dùng hiện tại và danh sách online từ AuthContext
   const { authUser, onlineUser } = useContext(AuthContext);
@@ -543,6 +543,15 @@ const ChatContainer = ({ startCall }) => {
 
   // Trạng thái lưu trữ văn bản tin nhắn đang nhập
   const [input, setInput] = useState('');
+
+  // Debounce cho typing indicator
+  const typingTimeoutRef = useRef(null);
+  const handleTyping = () => {
+    sendTyping(true);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => sendTyping(false), 1500);
+  };
+
 
   // Trạng thái lưu thông tin file đính kèm sau khi đã upload lên Cloudinary
   // Cấu trúc: { url, file_name, file_type, file_size, resource_type, file_count? }
@@ -578,6 +587,7 @@ const ChatContainer = ({ startCall }) => {
       attachment: attachment || null,
     });
 
+    sendTyping(false);
     setInput('');
     setAttachment(null); // Xoá file đính kèm sau khi gửi
   };
@@ -664,12 +674,28 @@ const ChatContainer = ({ startCall }) => {
     if (selectedUser) getMessages(selectedUser._id);
   }, [selectedUser]);
 
+  // Xin quyen hien thong bao trinh duyet (1 lan)
+  useEffect(() => {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
   // Ref để kiểm tra xem có đang ở cuối danh sách hay không
   const isNearBottomRef = useRef(true);
 
   // Theo dõi thao tác cuộn để biết người dùng có đang xem tin nhắn cũ không
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // Cuon len gan dau -> tai them tin nhan cu hon (infinite scroll)
+    if (scrollTop < 80 && hasMoreMessages && !isLoadingMore && selectedUser) {
+      const el = e.currentTarget;
+      const prevHeight = el.scrollHeight;
+      loadMoreMessages(selectedUser._id).then(() => {
+        // Giu nguyen vi tri cuon sau khi chen tin nhan cu vao dau
+        requestAnimationFrame(() => { el.scrollTop = el.scrollHeight - prevHeight; });
+      });
+    }
     // Ngưỡng 150px từ đáy được xem là "ở cuối"
     isNearBottomRef.current = scrollHeight - scrollTop - clientHeight < 150;
   };
@@ -762,6 +788,14 @@ const ChatContainer = ({ startCall }) => {
         className="flex flex-col flex-1 overflow-y-auto p-4 pb-28 gap-4 min-h-0"
         onScroll={handleScroll}
       >
+        {isLoadingMore && (
+          <div className="flex justify-center py-2">
+            <svg className="w-5 h-5 text-cyan-400 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </div>
+        )}
         {messages.map((msg, index) => (
           // ── Tin nhắn lịch sử cuộc gọi → hiển thị giữa, không có avatar ──
           msg.callInfo ? (
@@ -786,6 +820,16 @@ const ChatContainer = ({ startCall }) => {
           )
         ))}
         {/* Điểm neo để tự động cuộn xuống */}
+        {selectedUser && typingUsers && typingUsers[selectedUser._id] && (
+          <div className="flex items-center gap-2 text-gray-400 text-sm px-2">
+            <span className="flex gap-1">
+              <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </span>
+            <span>{selectedUser.fullName} dang go...</span>
+          </div>
+        )}
         <div ref={scrollEnd} />
       </div>
 
@@ -804,7 +848,7 @@ const ChatContainer = ({ startCall }) => {
         <div className="flex items-center gap-4">
           <div className="flex-1 flex items-center bg-gray-100/12 px-4 rounded-full gap-2">
             <input
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => { setInput(e.target.value); handleTyping(); }}
               value={input}
               onKeyDown={(e) => e.key === 'Enter' ? handleSendMessage(e) : null}
               type="text"
