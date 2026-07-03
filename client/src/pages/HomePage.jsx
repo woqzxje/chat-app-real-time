@@ -12,7 +12,6 @@ const HomePage = () => {
   const { selectedUser, showRightSidebar } = useContext(ChatContext)
   const { authUser, socket } = useContext(AuthContext)
 
-  // ✅ DÒNG NÀY ĐANG BỊ THIẾU — đây là nguyên nhân white screen
   const {
     callState, remoteUser,
     localVideoRef, remoteVideoRef,

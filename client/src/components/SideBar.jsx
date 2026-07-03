@@ -77,7 +77,7 @@ const SideBar = () => {
       }
       setIsSearching(true);
       try {
-        const { data } = await axios.get(`/api/auth/search?q=${input}`);
+        const { data } = await axios.get('/api/auth/search', { params: { q: input } });
         if (data.success) {
           setSearchResults(data.users);
         }
