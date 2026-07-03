@@ -201,7 +201,10 @@ const SideBar = () => {
 
           {/* Logo & Tên ứng dụng */}
           <div className="flex items-center gap-3 font-extrabold text-xl tracking-wider text-white">
-            <SparklesText text={<span>Chat<span className="text-blue-500">ITC</span></span>} className="text-2xl tracking-wider" sparklesCount={5} />
+            <SparklesText text={<>
+              <span className="bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">Chat</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">ITC</span>
+            </>} className="text-2xl tracking-wider" sparklesCount={5} />
           </div>
 
           {/* Menu Expandable Tabs */}

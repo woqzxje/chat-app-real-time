@@ -60,7 +60,7 @@ const SparklesText = ({
         {sparkles.map((sparkle) => (
           <Sparkle key={sparkle.id} {...sparkle} />
         ))}
-        <strong className="relative z-30 font-black tracking-wider drop-shadow-lg" style={textStyle || { fontFamily: '"Arial Black", Impact, sans-serif' }}>{text}</strong>
+        <strong className="relative z-30 font-black tracking-wider" style={textStyle || { fontFamily: 'Nunito, Quicksand, sans-serif' }}>{text}</strong>
       </span>
     </div>
   );

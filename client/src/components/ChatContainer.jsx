@@ -6,6 +6,7 @@ import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import FlickerSpinner from './ui/FlickerSpinner';
 import { SparklesText } from './ui/SparklesText';
 import { ShinyButton } from './ui/ShinyButton';
@@ -711,8 +712,17 @@ const ChatContainer = ({ startCall }) => {
   }, [messages]);
 
   // Nếu đã chọn người dùng để chat, hiển thị khung chat
-  return selectedUser ? (
-    <div className="flex flex-col h-full overflow-hidden relative">
+  return (
+    <AnimatePresence mode="wait">
+      {selectedUser ? (
+        <motion.div
+          key="chat-view"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3 }}
+          className="flex flex-col h-full w-full overflow-hidden relative"
+        >
 
       {/* ------------ Phần tiêu đề Chat (Header) ------------- */}
       <div className="flex items-center gap-4 py-4 mx-5 border-b border-stone-500 shrink-0">
@@ -881,13 +891,25 @@ const ChatContainer = ({ startCall }) => {
         </div>
       </div>
 
-    </div>
-  ) : (
-    /* Hiển thị màn hình chờ khi chưa chọn ai để chat */
-    <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-gray-500 bg-white/5 max-md:hidden">
-      <SparklesText text={<span>Chat<span className="text-blue-500">ITC</span></span>} className="text-5xl" sparklesCount={7} />
-      <p className="text-lg font-medium text-white bg-red-500 px-4 py-1.5 shadow-lg">Chat mọi lúc, mọi nơi</p>
-    </div>
+        </motion.div>
+      ) : (
+        /* Hiển thị màn hình chờ khi chưa chọn ai để chat */
+        <motion.div
+          key="empty-state"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          transition={{ duration: 0.3 }}
+          className="w-full h-full flex flex-col items-center justify-center gap-4 text-gray-500 bg-white/5 max-md:hidden"
+        >
+          <SparklesText text={<>
+            <span className="bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">Chat</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">ITC</span>
+          </>} className="text-5xl" sparklesCount={7} />
+          <p className="text-lg font-medium text-white bg-red-500 px-4 py-1.5 shadow-lg">Chat mọi lúc, mọi nơi</p>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

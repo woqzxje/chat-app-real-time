@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import { motion, AnimatePresence } from 'motion/react'
-import { Mail, Lock, Eye, EyeClosed, ArrowRight, User, FileText, ArrowLeft } from 'lucide-react'
+import { Mail, Lock, Eye, EyeClosed, ArrowRight, User, FileText, ArrowLeft, Check } from 'lucide-react'
 import { GoogleLogin } from '@react-oauth/google'
 import toast from 'react-hot-toast'
 import FlickerSpinner from '../components/ui/FlickerSpinner'
@@ -21,6 +21,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [focusedInput, setFocusedInput] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isAgreed, setIsAgreed] = useState(false)
 
   // Trạng thái kiểm soát việc chuyển sang bước nhập Bio khi đăng ký
   const [isDataSubmitted, setIsDataSubmitted] = useState(false);
@@ -93,7 +94,10 @@ const LoginPage = () => {
         transition={{ duration: 0.6 }}
         className="flex flex-col items-center justify-center gap-4 text-white"
       >
-        <SparklesText text={<span>Chat<span className="text-blue-500">ITC</span></span>} className="text-5xl md:text-6xl lg:text-7xl" sparklesCount={10} />
+        <SparklesText text={<>
+          <span className="bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">Chat</span>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">ITC</span>
+        </>} className="text-5xl md:text-6xl lg:text-7xl" sparklesCount={10} />
       </motion.div>
 
       {/* ----------- Phần bên phải: Card đăng nhập ----------- */}
@@ -333,13 +337,30 @@ const LoginPage = () => {
 
                 {/* Điều khoản sử dụng */}
                 <div className="flex items-center gap-2 text-xs text-white/50 pt-1">
-                  <div className="relative">
+                  <div className="relative flex items-center justify-center">
                     <input
                       id="terms"
                       type="checkbox"
                       required
-                      className="appearance-none h-4 w-4 rounded border border-white/20 bg-white/5 checked:bg-cyan-500 checked:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200 cursor-pointer"
+                      checked={isAgreed}
+                      onChange={(e) => setIsAgreed(e.target.checked)}
+                      className="peer appearance-none h-4 w-4 rounded border border-white/20 bg-white/5 checked:bg-cyan-500 checked:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200 cursor-pointer relative z-10"
                     />
+                    {/* Check icon khi được chọn */}
+                    <Check className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity duration-200 z-20" strokeWidth={4} />
+                    
+                    {/* Hiệu ứng luồng sáng phát ra (burst/ripple) */}
+                    <AnimatePresence>
+                      {isAgreed && (
+                        <motion.div
+                          initial={{ scale: 0.5, opacity: 1 }}
+                          animate={{ scale: 3.5, opacity: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.6, ease: "easeOut" }}
+                          className="absolute inset-0 rounded-full bg-cyan-400 blur-sm pointer-events-none z-0"
+                        />
+                      )}
+                    </AnimatePresence>
                   </div>
                   <label htmlFor="terms" className="cursor-pointer hover:text-white/70 transition-colors">
                     Tôi đồng ý với các điều khoản sử dụng & chính sách bảo mật.
