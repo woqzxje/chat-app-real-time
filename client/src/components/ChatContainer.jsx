@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import assets from '../assets/assets'
 import { formatMessageTime } from '../lib/utils';
 import { ChatContext } from '../../context/ChatContext';
@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import FlickerSpinner from './ui/FlickerSpinner';
 import { SparklesText } from './ui/SparklesText';
 import { ShinyButton } from './ui/ShinyButton';
 

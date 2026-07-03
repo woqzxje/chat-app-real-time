@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useOnClickOutside } from "usehooks-ts";
 import { cn } from "../../lib/utils";
 
 const buttonVariants = {

@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from 'react'
-import assets, { imagesDummyData } from '../assets/assets'
+import { useContext } from 'react'
+import assets from '../assets/assets'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
 import { UserMinus } from 'lucide-react'
@@ -9,8 +9,8 @@ import toast from 'react-hot-toast'
 const RightSidebar = () => {
 
   const { selectedUser, messages } = useContext(ChatContext)
-  const { logout, onlineUser } = useContext(AuthContext)
-  const [msgImages, setMsgImages] = useState([])
+  const { onlineUser } = useContext(AuthContext)
+  const msgImages = messages.filter(msg => msg.image).map(msg => msg.image)
 
   const isFriend = selectedUser?.isFriend;
 
@@ -30,11 +30,7 @@ const RightSidebar = () => {
     }
   }
 
-  useEffect(() => {
-    setMsgImages(
-      messages.filter(msg => msg.image).map(msg => msg.image)
-    )
-  }, [messages])
+
 
   return selectedUser && (
     <div className="bg-[#8185B2]/10 h-full text-white w-full flex flex-col">

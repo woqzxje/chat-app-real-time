@@ -1,10 +1,9 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useState } from 'react'
 import { AuthContext } from '../../context/AuthContext'
 import { motion, AnimatePresence } from 'motion/react'
 import { Mail, Lock, Eye, EyeClosed, ArrowRight, User, FileText, ArrowLeft, Check } from 'lucide-react'
 import { GoogleLogin } from '@react-oauth/google'
 import toast from 'react-hot-toast'
-import FlickerSpinner from '../components/ui/FlickerSpinner'
 import { SparklesText } from '../components/ui/SparklesText'
 import { GradientButton } from '../components/ui/GradientButton'
 

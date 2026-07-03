@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -8,7 +8,6 @@ import { ChatContext } from '../../context/ChatContext';
 
 // Assets & UI Components
 import assets from '../assets/assets';
-import FlickerSpinner from './ui/FlickerSpinner';
 import { SparklesText } from './ui/SparklesText';
 import { WaveText } from './ui/wave-text';
 import { User, LogOut, UserPlus, ChevronDown, ChevronRight, MessageSquareWarning, Check, X, Bell } from 'lucide-react';
