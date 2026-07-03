@@ -744,4 +744,4 @@ async def kick_group_member(
     if kicked_s_id:
         await sio.emit("groupRemoved", {"groupId": id}, to=kicked_s_id)
 
-    return {"success": True, "message": f"Đã mời {kicked_name} ra khỏi nhóm"}
+    return {"success": True, "message": f"Đã mời {kicked_name} ra khỏi nhóm", "group": updated_group_data}
