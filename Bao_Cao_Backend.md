@@ -29,9 +29,9 @@ Khi giảng viên yêu cầu demo, hãy thực hiện theo quy trình sau để 
 ---
 
 ## 2. Danh sách chính xác các API & Socket Events
-Hệ thống Backend cung cấp tổng cộng **22 RESTful APIs** và **9 sự kiện WebSockets (Socket.IO)** do Client gửi lên để xử lý real-time. Dưới đây là danh sách chính xác trích xuất từ mã nguồn để bạn đưa vào báo cáo:
+Hệ thống Backend cung cấp tổng cộng **29 RESTful APIs** và **9 sự kiện WebSockets (Socket.IO)** do Client gửi lên để xử lý real-time. Dưới đây là danh sách chính xác trích xuất từ mã nguồn để bạn đưa vào báo cáo:
 
-### 2.1. Nhóm REST API (22 Endpoints)
+### 2.1. Nhóm REST API (29 Endpoints)
 
 **Nhóm Auth & User (`/api/auth`) - Chứa trong file `app/routes/user_routes.py`:**
 - `POST /api/auth/signup`: Đăng ký tài khoản (Dòng 67)
