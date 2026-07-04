@@ -2,7 +2,7 @@ import { useContext, useState, useEffect, useRef } from 'react'
 import assets from '../assets/assets'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
-import { UserMinus, UserPlus, X, Check, LogOut, Trash2, Edit2, Camera, Save, Crown, FileText, Download, ChevronDown } from 'lucide-react'
+import { UserMinus, UserPlus, X, Check, LogOut, Trash2, Edit2, Camera, Save, Crown, FileText, Download, ChevronDown, Globe } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import toast from 'react-hot-toast'
@@ -19,6 +19,44 @@ const RightSidebar = () => {
     if (bytes < 1024) return bytes + ' B';
     else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     else return (bytes / 1048576).toFixed(2) + ' MB';
+  };
+
+  const FacebookIcon = ({className}) => (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6c1.05 0 2.05.2 2.05.2v2.25h-1.16c-1.14 0-1.39.71-1.39 1.35V12h2.5l-.4 3h-2.1v6.8C18.56 20.87 22 16.84 22 12z"/>
+    </svg>
+  );
+
+  const InstagramIcon = ({className}) => (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+    </svg>
+  );
+
+  const LinkedinIcon = ({className}) => (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+      <rect x="2" y="9" width="4" height="12"></rect>
+      <circle cx="4" cy="4" r="2"></circle>
+    </svg>
+  );
+
+  const TwitterIcon = ({className}) => (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  );
+
+  const getSocialIcon = (url) => {
+    if (!url) return null;
+    const lower = url.toLowerCase();
+    if (lower.includes('facebook.com')) return <FacebookIcon className="w-5 h-5" />;
+    if (lower.includes('instagram.com')) return <InstagramIcon className="w-5 h-5" />;
+    if (lower.includes('linkedin.com')) return <LinkedinIcon className="w-5 h-5" />;
+    if (lower.includes('twitter.com') || lower.includes('x.com')) return <TwitterIcon className="w-5 h-5" />;
+    return <Globe className="w-5 h-5" />;
   };
 
   const getFileIcon = (type) => {
@@ -257,7 +295,25 @@ const RightSidebar = () => {
             )}
           </div>
           
-          <p className='px-10 mx-auto text-center text-base opacity-80'>{selectedUser.bio}</p>
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+            {(selectedUser.socialLinks || []).map((link, idx) => {
+              if(!link) return null;
+              return (
+                <a 
+                  key={idx}
+                  href={link.startsWith('http') ? link : `https://${link}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-cyan-400 hover:text-cyan-300 transition-colors shadow-sm"
+                  title="Truy cập trang cá nhân"
+                >
+                  {getSocialIcon(link)}
+                </a>
+              );
+            })}
+          </div>
+
+          <p className='px-10 mx-auto text-center text-base opacity-80 mt-1'>{selectedUser.bio}</p>
         </div>
 
         <hr className="border-[#ffffff50] my-4" />

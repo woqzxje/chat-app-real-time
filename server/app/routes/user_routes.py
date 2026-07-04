@@ -37,6 +37,7 @@ class UpdateProfileBody(BaseModel):
     profilePic: Optional[str] = None
     bio: Optional[str] = None
     fullName: Optional[str] = None
+    socialLinks: Optional[list[str]] = None
 
 class GoogleLoginBody(BaseModel):
     credential: str
@@ -55,6 +56,7 @@ def _user_dict(user: User, exclude_password: bool = True) -> dict:
         "friends": user.friends or [],
         "friendRequests": getattr(user, 'friendRequests', []),
         "archivedChats": getattr(user, 'archivedChats', []),
+        "socialLinks": getattr(user, 'socialLinks', []),
         "lastSeen": user.lastSeen.isoformat() if getattr(user, 'lastSeen', None) else None,
         "createdAt": user.createdAt.isoformat(),
         "updatedAt": user.updatedAt.isoformat(),
@@ -319,6 +321,8 @@ async def update_profile(
         update_data["bio"] = body.bio
     if body.fullName is not None:
         update_data["fullName"] = body.fullName
+    if body.socialLinks is not None:
+        update_data["socialLinks"] = body.socialLinks
     if body.profilePic:
         # Nếu có gửi ảnh dạng base64, tải lên Cloudinary để lấy URL
         url = await upload_image(body.profilePic)

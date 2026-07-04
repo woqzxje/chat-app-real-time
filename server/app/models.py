@@ -58,6 +58,7 @@ class User(Document):
     createdAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm tạo tài khoản
     updatedAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm cập nhật thông tin gần nhất
     lastSeen: Optional[datetime] = None # Thời điểm truy cập cuối cùng
+    socialLinks: List[str] = Field(default_factory=list) # Danh sách liên kết mạng xã hội
     archivedChats: List[str] = Field(default_factory=list) # Danh sách ID của user/group đã bị lưu trữ (ẩn khỏi sidebar)
 
     class Settings:

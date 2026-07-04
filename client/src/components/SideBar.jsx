@@ -14,6 +14,7 @@ import { User, LogOut, UserPlus, ChevronDown, ChevronRight, MessageSquareWarning
 import { ExpandableTabs } from './ui/ExpandableTabs';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { ProfileEditModal } from './ProfileEditModal';
 
 /**
  * SideBar Component
@@ -69,6 +70,7 @@ const SideBar = () => {
 
   // State cho tính năng lưu trữ
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // 3. --- Lọc dữ liệu & Tìm kiếm ---
 
@@ -289,7 +291,7 @@ const SideBar = () => {
           {/* Menu Expandable Tabs */}
           <ExpandableTabs
             tabs={[
-              { title: "Edit Profile", icon: User, onClick: () => navigate('/profile') },
+              { title: "Edit Profile", icon: User, onClick: () => setIsProfileModalOpen(true) },
               { type: "separator" },
               { title: "Logout", icon: LogOut, onClick: () => logout() }
             ]}
@@ -674,6 +676,9 @@ const SideBar = () => {
           </div>
         </div>
       )}
+
+      {/* Profile Edit Modal */}
+      <ProfileEditModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
 
     </div>
   );
