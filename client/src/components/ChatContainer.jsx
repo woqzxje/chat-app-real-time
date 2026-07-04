@@ -549,6 +549,20 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                 )}
             </div>
         )}
+        
+        {/* Avatars những người đã xem (Nhóm chat) */}
+        {isOwn && selectedUser?.isGroup && msg.seenByUsers && msg.seenByUsers.length > 0 && (
+            <div className="flex -space-x-1 mt-1 mr-1 justify-end w-full">
+                {msg.seenByUsers.map((u, i) => (
+                    <img 
+                        key={i} 
+                        src={u.profilePic || assets.avatar_icon} 
+                        title={`Đã xem bởi ${u.fullName}`} 
+                        className="w-4 h-4 rounded-full border border-[#0f172a] object-cover relative z-10 hover:z-20 hover:scale-125 transition-transform" 
+                    />
+                ))}
+            </div>
+        )}
       </div>
 
       {/* ── Avatar và Thời gian ── */}
@@ -561,7 +575,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
         />
         <div className="flex items-center justify-center gap-1 mt-1">
           <p className="text-gray-400 text-[10px]">{formatMessageTime(msg.createdAt)}</p>
-          {isOwn && (
+          {isOwn && !selectedUser?.isGroup && (
             msg.seen ? <CheckCheck className="w-3.5 h-3.5 text-cyan-400" /> : <Check className="w-3 h-3 text-gray-500" />
           )}
         </div>

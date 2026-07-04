@@ -74,6 +74,7 @@ class Message(Document):
     attachment: Optional[FileAttachment] = None
     callInfo: Optional[CallInfo] = None  # Thông tin cuộc gọi video (nếu là tin nhắn lịch sử cuộc gọi)
     seen: bool = False  # Trạng thái đã đọc hay chưa
+    seenBy: List[str] = Field(default_factory=list) # Danh sách ID người đã xem (cho nhóm)
     
     # Các trường phục vụ chức năng Thu hồi và Chỉnh sửa
     isDeleted: bool = False

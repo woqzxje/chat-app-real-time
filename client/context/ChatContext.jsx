@@ -132,7 +132,11 @@ export const ChatProvider = ({ children }) => {
                 
                 // Nếu tin nhắn là từ người khác, báo cho server là mình đã xem ngay
                 if (newMessage.senderId !== authUser?._id) {
-                    socket.emit("markMessagesSeen", { senderId: newMessage.senderId, receiverId: authUser._id })
+                    socket.emit("markMessagesSeen", { 
+                        senderId: newMessage.senderId, 
+                        receiverId: selectedUser?.isGroup ? selectedUser._id : authUser._id,
+                        isGroup: !!selectedUser?.isGroup
+                    });
                 }
             } else if (newMessage.senderId !== authUser?._id) {
                 // Tăng số tin nhắn chưa đọc cho đúng Group hoặc User
@@ -186,6 +190,24 @@ export const ChatProvider = ({ children }) => {
                 : m
             ));
         });
+
+        // Lắng nghe sự kiện báo tin nhắn nhóm đã được xem
+        socket.on("groupMessagesSeen", ({ groupId, userId, userInfo }) => {
+            setMessages((prev) => prev.map(m => {
+                if (m.receiverId === groupId && m.senderId !== userId) {
+                    const seenBy = m.seenBy || [];
+                    const seenByUsers = m.seenByUsers || [];
+                    if (!seenBy.includes(userId)) {
+                        return {
+                            ...m,
+                            seenBy: [...seenBy, userId],
+                            seenByUsers: userInfo ? [...seenByUsers, userInfo] : seenByUsers
+                        };
+                    }
+                }
+                return m;
+            }));
+        });
     }
 
     // Ngừng lắng nghe tin nhắn (dọn dẹp bộ nhớ)
@@ -196,6 +218,7 @@ export const ChatProvider = ({ children }) => {
             socket.off("messageDeleted");
             socket.off("messageReacted");
             socket.off("messagesSeen");
+            socket.off("groupMessagesSeen");
         }
     }
 

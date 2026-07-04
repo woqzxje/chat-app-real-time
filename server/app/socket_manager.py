@@ -67,9 +67,50 @@ async def on_mark_messages_seen(sid, data):
     
     sender_id = data.get("senderId")
     receiver_id = data.get("receiverId")
+    is_group = data.get("isGroup", False)
     
-    if sender_id and receiver_id:
-        # Cập nhật database
+    user_id = next((uid for uid, s in user_socket_map.items() if s == sid), None)
+    if not user_id:
+        return
+    
+    if is_group and receiver_id:
+        # Trong nhóm chat, receiver_id chính là id của nhóm.
+        # Chúng ta cần lấy tất cả các tin nhắn gửi vào nhóm, TRỪ tin nhắn do user_id gửi
+        # và chưa có user_id trong seenBy. Beanie hiện tại chưa hỗ trợ tốt $nin trong query cơ bản
+        # nên chúng ta lấy ra rồi update.
+        group_msgs = await Message.find(
+            Message.receiverId == receiver_id,
+            Message.senderId != user_id
+        ).to_list()
+        
+        unseen_group_msgs = [m for m in group_msgs if user_id not in (getattr(m, 'seenBy', []) or [])]
+        if unseen_group_msgs:
+            for m in unseen_group_msgs:
+                seen_by = getattr(m, 'seenBy', []) or []
+                seen_by.append(user_id)
+                await m.set({"seenBy": seen_by})
+                
+            from app.models import ChatGroup
+            group = await ChatGroup.get(receiver_id)
+            if group:
+                from bson import ObjectId
+                from beanie.operators import In
+                from app.models import User
+                user_obj = await User.get(user_id)
+                user_info = {
+                    "_id": str(user_obj.id),
+                    "fullName": user_obj.fullName,
+                    "profilePic": user_obj.profilePic
+                } if user_obj else None
+                
+                for member_id in group.members:
+                    if member_id != user_id:
+                        member_sid = user_socket_map.get(member_id)
+                        if member_sid:
+                            await sio.emit("groupMessagesSeen", {"groupId": receiver_id, "userId": user_id, "userInfo": user_info}, to=member_sid)
+
+    elif sender_id and receiver_id:
+        # 1-1 chat
         await Message.find(
             Message.senderId == sender_id,
             Message.receiverId == receiver_id,

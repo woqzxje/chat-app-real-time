@@ -14,7 +14,7 @@ message_router = APIRouter()
 
 # ── Các hàm hỗ trợ (Helpers) ──────────────────────────────────────────────────
 
-def _msg_dict(msg: Message, sender: User = None) -> dict:
+def _msg_dict(msg: Message, sender: User = None, seen_by_users: list = None) -> dict:
     """Chuyển đổi đối tượng Message (Beanie) sang dictionary."""
     base = {
         "_id": str(msg.id),
@@ -25,6 +25,7 @@ def _msg_dict(msg: Message, sender: User = None) -> dict:
         "attachment": msg.attachment.dict() if msg.attachment else None,
         "callInfo": msg.callInfo.dict() if msg.callInfo else None,
         "seen": msg.seen,
+        "seenBy": getattr(msg, 'seenBy', []),
         "isDeleted": getattr(msg, 'isDeleted', False),
         "isEdited": getattr(msg, 'isEdited', False),
         "isSystemMessage": getattr(msg, 'isSystemMessage', False),
@@ -38,6 +39,8 @@ def _msg_dict(msg: Message, sender: User = None) -> dict:
             "fullName": sender.fullName,
             "profilePic": sender.profilePic,
         }
+    if seen_by_users is not None:
+        base["seenByUsers"] = seen_by_users
     return base
 
 
@@ -143,6 +146,22 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
     if group:
         # Nếu là nhóm chat, lấy tất cả tin nhắn gửi vào nhóm này
         messages = await Message.find(Message.receiverId == id).to_list()
+        
+        # Đánh dấu đã xem cho các tin nhắn trong group chưa được xem bởi my_id
+        unseen_group_msgs = [m for m in messages if m.senderId != my_id and my_id not in (getattr(m, 'seenBy', []) or [])]
+        if unseen_group_msgs:
+            for m in unseen_group_msgs:
+                seen_by = getattr(m, 'seenBy', []) or []
+                seen_by.append(my_id)
+                await m.set({"seenBy": seen_by})
+                m.seenBy = seen_by
+                
+            # Broadcast cho các thành viên trong nhóm biết mình đã xem
+            for member_id in group.members:
+                if member_id != my_id:
+                    member_socket_id = user_socket_map.get(member_id)
+                    if member_socket_id:
+                        await sio.emit("groupMessagesSeen", {"groupId": id, "userId": my_id}, to=member_socket_id)
     else:
         # Tìm các tin nhắn mà mình là người gửi và họ là người nhận HOẶC ngược lại
         messages = await Message.find(
@@ -173,18 +192,34 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
             if sender_socket_id:
                 await sio.emit("messagesSeen", {"receiverId": my_id}, to=sender_socket_id)
 
-    # Fetch senders info
+    # Fetch senders info and seenBy info
     sender_ids = list(set([m.senderId for m in messages]))
+    seen_by_ids = []
+    for m in messages:
+        if getattr(m, 'seenBy', None):
+            seen_by_ids.extend(m.seenBy)
+            
+    all_user_ids = list(set(sender_ids + seen_by_ids))
     from bson import ObjectId
     from beanie.operators import In
-    valid_sender_ids = [ObjectId(uid) for uid in sender_ids if ObjectId.is_valid(uid)]
-    senders = await User.find(In(User.id, valid_sender_ids)).to_list() if valid_sender_ids else []
-    sender_map = {str(s.id): s for s in senders}
+    valid_user_ids = [ObjectId(uid) for uid in all_user_ids if ObjectId.is_valid(uid)]
+    users = await User.find(In(User.id, valid_user_ids)).to_list() if valid_user_ids else []
+    user_map = {str(s.id): s for s in users}
 
     msgs_data = []
     for m in messages:
-        sender = sender_map.get(m.senderId)
-        msgs_data.append(_msg_dict(m, sender))
+        sender = user_map.get(m.senderId)
+        seen_by_users = []
+        if getattr(m, 'seenBy', None):
+            for uid in m.seenBy:
+                u = user_map.get(uid)
+                if u:
+                    seen_by_users.append({
+                        "_id": str(u.id),
+                        "fullName": u.fullName,
+                        "profilePic": u.profilePic
+                    })
+        msgs_data.append(_msg_dict(m, sender, seen_by_users))
 
     return {"success": True, "messages": msgs_data}
 
