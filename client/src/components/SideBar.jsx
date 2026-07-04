@@ -319,7 +319,7 @@ const SideBar = () => {
                       className="relative flex items-center justify-between p-4 pl-5 rounded-xl bg-white/5 cursor-pointer hover:bg-white/10 transition-colors"
                     >
                         <div className="flex items-center gap-3">
-                          <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
+                          <img src={user?.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
                           <div className='flex flex-col leading-6'>
                             <p className='text-base font-medium'>{user.fullName}</p>
                             <span className='text-neutral-400 text-sm'>Tìm thấy từ hệ thống</span>
@@ -351,7 +351,7 @@ const SideBar = () => {
                  {showRequests && friendRequests.map((req) => (
                     <div key={req._id} className="relative flex items-center justify-between p-3 pl-4 mt-2 rounded-xl bg-cyan-900/20 border border-cyan-500/20">
                       <div className="flex items-center gap-3">
-                        <img src={req?.profilePic || assets.avatar_icon} alt="Avatar" className='w-10 aspect-square rounded-full object-cover' />
+                        <img src={req?.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className='w-10 aspect-square rounded-full object-cover' />
                         <div className='flex flex-col leading-5'>
                           <p className='text-sm font-medium'>{req.fullName}</p>
                           <span className='text-cyan-300/70 text-xs'>Muốn kết bạn</span>
@@ -395,7 +395,7 @@ const SideBar = () => {
                 }}
                 className={`relative flex items-center gap-3 p-4 pl-5 rounded-xl cursor-pointer hover:bg-white/5 transition-colors ${selectedUser?._id === user._id ? 'bg-[#00cfff]/15 hover:bg-[#00cfff]/20' : ''}`}
               >
-                <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
+                <img src={user?.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
                 <div className='flex flex-col leading-6'>
                   <p className='text-base font-medium'>{user.fullName}</p>
                   {user.isGroup ? (
@@ -479,7 +479,7 @@ const SideBar = () => {
                                     <div className="absolute inset-0 bg-[#00cfff]/15 rounded-xl -z-10" />
                                 )}
                                 
-                                <img src={user?.profilePic || assets.avatar_icon} alt="Avatar" className='w-10 aspect-square rounded-full object-cover opacity-80' />
+                                <img src={user?.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className='w-10 aspect-square rounded-full object-cover opacity-80' />
                                 <div className='flex flex-col leading-5'>
                                   <p className='text-sm font-medium'>{user.fullName}</p>
                                   <span className='text-neutral-500 text-xs'>Người lạ</span>
@@ -541,7 +541,7 @@ const SideBar = () => {
                       <div className={`w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 ${selectedFriends.includes(friend._id) ? 'bg-cyan-500 border-cyan-500' : 'border-gray-500'}`}>
                         {selectedFriends.includes(friend._id) && <Check className="w-3.5 h-3.5 text-white" />}
                       </div>
-                      <img src={friend.profilePic || assets.avatar_icon} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                      <img src={friend.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
                       <p className="text-sm font-medium flex-1">{friend.fullName}</p>
                     </div>
                   ))

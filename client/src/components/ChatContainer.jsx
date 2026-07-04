@@ -557,6 +557,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                     <img 
                         key={i} 
                         src={u.profilePic || assets.avatar_icon} 
+                        onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }}
                         title={`Đã xem bởi ${u.fullName}`} 
                         className="w-4 h-4 rounded-full border border-[#0f172a] object-cover relative z-10 hover:z-20 hover:scale-125 transition-transform" 
                     />
@@ -569,6 +570,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
       <div className="text-center text-xs md:text-sm flex-shrink-0">
         <img
           src={isOwn ? authUser?.profilePic || assets.avatar_icon : (msg.senderInfo?.profilePic || selectedUser?.profilePic || assets.avatar_icon)}
+          onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }}
           alt="User"
           title={!isOwn ? msg.senderInfo?.fullName : authUser?.fullName}
           className="rounded-full w-9 h-9 object-cover"
@@ -833,7 +835,7 @@ const ChatContainer = ({ startCall }) => {
 
       {/* ------------ Phần tiêu đề Chat (Header) ------------- */}
       <div className="flex items-center gap-4 py-4 mx-5 border-b border-stone-500 shrink-0">
-        <img src={selectedUser.profilePic || assets.avatar_icon} alt="Avatar" className="w-12 rounded-full" />
+        <img src={selectedUser.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-12 rounded-full object-cover" />
         <p className="flex-1 text-xl md:text-2xl text-white flex items-center gap-3">
           {selectedUser.fullName}
           {/* Hiển thị chấm xanh nếu người dùng này đang online */}

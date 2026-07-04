@@ -2,7 +2,8 @@ import { useContext, useState, useEffect, useRef } from 'react'
 import assets from '../assets/assets'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
-import { UserMinus, UserPlus, X, Check, LogOut, Trash2, Edit2, Camera, Save, Crown } from 'lucide-react'
+import { UserMinus, UserPlus, X, Check, LogOut, Trash2, Edit2, Camera, Save, Crown, FileText, Download, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
@@ -11,13 +12,24 @@ const RightSidebar = () => {
   const { selectedUser, messages, setSelectedUser, getUsers, users } = useContext(ChatContext)
   const { onlineUser, authUser } = useContext(AuthContext)
   const msgImages = messages.filter(msg => msg.image).map(msg => msg.image)
+  const msgFiles = messages.filter(msg => msg.attachment).map(msg => msg.attachment)
 
+  const formatFileSize = (bytes) => {
+    if (!bytes) return 'Unknown size';
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else return (bytes / 1048576).toFixed(2) + ' MB';
+  };
   const isFriend = selectedUser?.isFriend;
   const isGroup = selectedUser?.isGroup;
   
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [isAddingMember, setIsAddingMember] = useState(false);
+
+  const [showMembers, setShowMembers] = useState(false);
+  const [showImages, setShowImages] = useState(false);
+  const [showFiles, setShowFiles] = useState(false);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -192,7 +204,7 @@ const RightSidebar = () => {
         <div className='pt-16 flex flex-col items-center gap-3 text-sm font-light mx-auto'>
           
           <div className="relative group">
-            <img src={selectedUser?.profilePic || assets.avatar_icon} alt="Avatar" className='w-24 h-24 object-cover rounded-full shadow-lg border-2 border-white/10' />
+            <img src={selectedUser?.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className='w-24 h-24 object-cover rounded-full shadow-lg border-2 border-white/10' />
             {isGroup && (
               <label className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-opacity">
                 <Camera className="w-6 h-6" />
@@ -238,47 +250,150 @@ const RightSidebar = () => {
 
         {isGroup && (
           <div className="px-5 text-sm mb-4">
-            <p className='mb-3 font-semibold opacity-70'>THÀNH VIÊN ({groupMembers.length})</p>
-            <div className='flex flex-col gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar'>
-              {groupMembers.map(member => (
-                <div key={member._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <img src={member.profilePic || assets.avatar_icon} className="w-8 h-8 rounded-full object-cover" />
-                    <span className="font-medium text-sm">{member.fullName}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {/* Nút Kết bạn (Nếu chưa là bạn và không phải chính mình) */}
-                    {!(users.find(u => u._id === member._id)?.isFriend ?? member.isFriend) && member._id !== authUser._id && (
-                      <button onClick={() => handleAddFriend(member._id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-cyan-400 hover:text-cyan-300 transition-all rounded-full hover:bg-white/10" title="Kết bạn">
-                        <UserPlus className="w-4 h-4" />
-                      </button>
-                    )}
-                    
-                    {/* Nút Mời ra khỏi nhóm (Chỉ hiển thị nếu mình là Admin và người kia không phải mình) */}
-                    {authUser._id === selectedUser.admin && member._id !== authUser._id && (
-                      <button onClick={() => handleKickMember(member._id, member.fullName)} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-300 transition-all rounded-full hover:bg-white/10" title="Mời ra khỏi nhóm">
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
+             <div onClick={() => setShowMembers(!showMembers)} className="flex items-center gap-2 cursor-pointer hover:text-cyan-400 transition-colors text-gray-300 font-semibold text-sm mb-2 w-max">
+                <motion.div
+                    animate={{ rotate: showMembers ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center justify-center w-4 h-4"
+                >
+                    <ChevronDown className="w-4 h-4" />
+                </motion.div>
+                <p className='font-semibold opacity-70 uppercase m-0'>THÀNH VIÊN ({groupMembers.length})</p>
+             </div>
+            
+            <AnimatePresence>
+              {showMembers && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ 
+                    opacity: 1, 
+                    height: "auto",
+                    transition: { type: "spring", stiffness: 400, damping: 30, mass: 1 }
+                  }}
+                  exit={{ 
+                    opacity: 0, 
+                    height: 0,
+                    transition: { type: "spring", stiffness: 400, damping: 30, mass: 1 }
+                  }}
+                  className="overflow-hidden relative"
+                >
+                  <div className='flex flex-col gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar mt-3'>
+                    {groupMembers.map(member => (
+                      <div key={member._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group">
+                        <div className="flex items-center gap-3">
+                          <img src={member.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} className="w-8 h-8 rounded-full object-cover" />
+                          <span className="font-medium text-sm">{member.fullName}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          {/* Nút Kết bạn (Nếu chưa là bạn và không phải chính mình) */}
+                          {!(users.find(u => u._id === member._id)?.isFriend ?? member.isFriend) && member._id !== authUser._id && (
+                            <button onClick={() => handleAddFriend(member._id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-cyan-400 hover:text-cyan-300 transition-all rounded-full hover:bg-white/10" title="Kết bạn">
+                              <UserPlus className="w-4 h-4" />
+                            </button>
+                          )}
+                          
+                          {/* Nút Mời ra khỏi nhóm (Chỉ hiển thị nếu mình là Admin và người kia không phải mình) */}
+                          {authUser._id === selectedUser.admin && member._id !== authUser._id && (
+                            <button onClick={() => handleKickMember(member._id, member.fullName)} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-300 transition-all rounded-full hover:bg-white/10" title="Mời ra khỏi nhóm">
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
 
-                    {member.isAdmin && <Crown className="w-4 h-4 text-yellow-500" title="Trưởng nhóm" />}
+                          {member.isAdmin && <Crown className="w-4 h-4 text-yellow-500" title="Trưởng nhóm" />}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
         <div className="px-5 text-sm">
-          <p className='mb-3 font-semibold opacity-70'>HÌNH ẢNH ĐÃ GỬI</p>
-          <div className='mt-3 max-h-48 overflow-y-scroll grid grid-cols-2 gap-4 opacity-90 custom-scrollbar'>
-            {msgImages.length > 0 ? msgImages.map((url, index) => (
-              <div key={index} onClick={() => window.open(url)} className='cursor-pointer rounded overflow-hidden hover:scale-105 transition-transform'>
-                <img src={url} alt="Media content" className='h-full w-full object-cover rounded-md' />
-              </div>
-            )) : <p className='col-span-2 text-center opacity-40'>Chưa có hình ảnh nào</p>}
-          </div>
+           <div onClick={() => setShowImages(!showImages)} className="flex items-center gap-2 cursor-pointer hover:text-cyan-400 transition-colors text-gray-300 font-semibold text-sm mb-2 w-max">
+              <motion.div
+                  animate={{ rotate: showImages ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center justify-center w-4 h-4"
+              >
+                  <ChevronDown className="w-4 h-4" />
+              </motion.div>
+              <p className='font-semibold opacity-70 uppercase m-0'>HÌNH ẢNH ĐÃ GỬI</p>
+           </div>
+          
+          <AnimatePresence>
+            {showImages && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ 
+                  opacity: 1, 
+                  height: "auto",
+                  transition: { type: "spring", stiffness: 400, damping: 30, mass: 1 }
+                }}
+                exit={{ 
+                  opacity: 0, 
+                  height: 0,
+                  transition: { type: "spring", stiffness: 400, damping: 30, mass: 1 }
+                }}
+                className="overflow-hidden relative"
+              >
+                <div className='mt-3 max-h-48 overflow-y-scroll grid grid-cols-2 gap-4 opacity-90 custom-scrollbar'>
+                  {msgImages.length > 0 ? msgImages.map((url, index) => (
+                    <div key={index} onClick={() => window.open(url)} className='cursor-pointer rounded overflow-hidden hover:scale-105 transition-transform'>
+                      <img src={url} alt="Media content" className='h-full w-full object-cover rounded-md' />
+                    </div>
+                  )) : <p className='col-span-2 text-center opacity-40'>Chưa có hình ảnh nào</p>}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="px-5 text-sm mt-4">
+           <div onClick={() => setShowFiles(!showFiles)} className="flex items-center gap-2 cursor-pointer hover:text-cyan-400 transition-colors text-gray-300 font-semibold text-sm mb-2 w-max">
+              <motion.div
+                  animate={{ rotate: showFiles ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center justify-center w-4 h-4"
+              >
+                  <ChevronDown className="w-4 h-4" />
+              </motion.div>
+              <p className='font-semibold opacity-70 uppercase m-0'>FILE ĐÃ GỬI</p>
+           </div>
+
+          <AnimatePresence>
+            {showFiles && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ 
+                  opacity: 1, 
+                  height: "auto",
+                  transition: { type: "spring", stiffness: 400, damping: 30, mass: 1 }
+                }}
+                exit={{ 
+                  opacity: 0, 
+                  height: 0,
+                  transition: { type: "spring", stiffness: 400, damping: 30, mass: 1 }
+                }}
+                className="overflow-hidden relative"
+              >
+                <div className='mt-3 max-h-48 overflow-y-scroll flex flex-col gap-2 opacity-90 custom-scrollbar'>
+                  {msgFiles.length > 0 ? msgFiles.map((file, index) => (
+                    <div key={index} onClick={() => window.open(file.url)} className='flex items-center gap-3 p-2 rounded-lg bg-black/20 hover:bg-black/40 cursor-pointer transition-colors'>
+                      <FileText className='w-8 h-8 text-cyan-400 shrink-0' />
+                      <div className='flex-1 min-w-0'>
+                        <p className='truncate text-sm font-medium'>{file.file_name || 'Tài liệu'}</p>
+                        <p className='text-xs opacity-50'>{formatFileSize(file.file_size)}</p>
+                      </div>
+                      <Download className='w-4 h-4 text-gray-400 hover:text-white shrink-0' />
+                    </div>
+                  )) : <p className='text-center opacity-40'>Chưa có file nào</p>}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -363,7 +478,7 @@ const RightSidebar = () => {
                       <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selectedFriends.includes(friend._id) ? 'bg-cyan-500 border-cyan-500' : 'border-gray-500'}`}>
                         {selectedFriends.includes(friend._id) && <Check className="w-3 h-3 text-white" />}
                       </div>
-                      <img src={friend.profilePic || assets.avatar_icon} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
+                      <img src={friend.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
                       <p className="text-sm font-medium flex-1 truncate">{friend.fullName}</p>
                     </div>
                   ))
