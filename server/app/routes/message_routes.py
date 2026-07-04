@@ -318,9 +318,18 @@ async def edit_message(
     })
     
     # Phát sự kiện qua Socket.io
-    receiver_socket_id = user_socket_map.get(msg.receiverId)
-    if receiver_socket_id:
-        await sio.emit("messageEdited", {"msgId": id, "text": body.text}, to=receiver_socket_id)
+    from app.models import ChatGroup
+    group = await ChatGroup.get(msg.receiverId)
+    if group:
+        for member_id in group.members:
+            if member_id != str(current_user.id):
+                s_id = user_socket_map.get(member_id)
+                if s_id:
+                    await sio.emit("messageEdited", {"msgId": id, "text": body.text}, to=s_id)
+    else:
+        receiver_socket_id = user_socket_map.get(msg.receiverId)
+        if receiver_socket_id:
+            await sio.emit("messageEdited", {"msgId": id, "text": body.text}, to=receiver_socket_id)
 
     return {"success": True, "message": _msg_dict(msg, current_user)}
 
@@ -348,9 +357,18 @@ async def revoke_message(
     })
     
     # Phát sự kiện qua Socket.io
-    receiver_socket_id = user_socket_map.get(msg.receiverId)
-    if receiver_socket_id:
-        await sio.emit("messageDeleted", {"msgId": id}, to=receiver_socket_id)
+    from app.models import ChatGroup
+    group = await ChatGroup.get(msg.receiverId)
+    if group:
+        for member_id in group.members:
+            if member_id != str(current_user.id):
+                s_id = user_socket_map.get(member_id)
+                if s_id:
+                    await sio.emit("messageDeleted", {"msgId": id}, to=s_id)
+    else:
+        receiver_socket_id = user_socket_map.get(msg.receiverId)
+        if receiver_socket_id:
+            await sio.emit("messageDeleted", {"msgId": id}, to=receiver_socket_id)
 
     return {"success": True, "message": _msg_dict(msg, current_user)}
 
@@ -395,10 +413,19 @@ async def react_message(
     await msg.set({"reactions": reactions})
     
     # Bắn socket cho mọi người biết
-    # Ở đây cần bắn cho cả 2 người, hoặc chỉ người kia nếu họ online
-    receiver_socket_id = user_socket_map.get(msg.receiverId if msg.senderId == uid else msg.senderId)
-    if receiver_socket_id:
-        await sio.emit("messageReacted", {"msgId": id, "reactions": [r.dict() for r in reactions]}, to=receiver_socket_id)
+    from app.models import ChatGroup
+    group = await ChatGroup.get(msg.receiverId)
+    if group:
+        for member_id in group.members:
+            if member_id != uid:
+                s_id = user_socket_map.get(member_id)
+                if s_id:
+                    await sio.emit("messageReacted", {"msgId": id, "reactions": [r.dict() for r in reactions]}, to=s_id)
+    else:
+        other_user_id = msg.receiverId if msg.senderId == uid else msg.senderId
+        receiver_socket_id = user_socket_map.get(other_user_id)
+        if receiver_socket_id:
+            await sio.emit("messageReacted", {"msgId": id, "reactions": [r.dict() for r in reactions]}, to=receiver_socket_id)
         
     sender = await User.get(msg.senderId)
 

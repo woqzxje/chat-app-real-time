@@ -722,6 +722,12 @@ const ChatContainer = ({ startCall }) => {
       return;
     }
 
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Kích thước ảnh vượt quá 10MB. Vui lòng chọn ảnh nhỏ hơn.');
+      e.target.value = '';
+      return;
+    }
+
     setTimeout(scrollToBottom, 50);
 
     // Đọc file ảnh dưới dạng base64 để gửi lên server
@@ -758,6 +764,12 @@ const ChatContainer = ({ startCall }) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Kích thước file vượt quá 10MB. Vui lòng chọn file nhỏ hơn.');
+      e.target.value = '';
+      return;
+    }
+
     // Nếu người dùng chọn ảnh qua nút file → dùng flow ảnh cũ để preview đẹp hơn
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
@@ -781,6 +793,13 @@ const ChatContainer = ({ startCall }) => {
   const handleFolderChange = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
+
+    const hasLargeFile = files.some(f => f.size > 10 * 1024 * 1024);
+    if (hasLargeFile) {
+        toast.error('Trong thư mục có chứa file vượt quá 10MB. Vui lòng kiểm tra lại.');
+        e.target.value = '';
+        return;
+    }
 
     const fd = new FormData();
     // Giữ nguyên đường dẫn tương đối (webkitRelativePath) để zip đúng cấu trúc folder
