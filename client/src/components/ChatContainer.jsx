@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square, LogOut } from 'lucide-react';
+import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square, LogOut, Share2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparklesText } from './ui/SparklesText';
 import { ShinyButton } from './ui/ShinyButton';
@@ -364,7 +364,7 @@ const CallBubble = ({ callInfo, createdAt }) => {
 };
 
 // ── Component MessageItem (Tin nhắn đơn lẻ) ──────────────────────────────────
-const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, revokeMessage, scrollToBottom }) => {
+const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, revokeMessage, scrollToBottom, onForward }) => {
   const isOwn = msg.senderId === authUser._id;
   const [showOptions, setShowOptions] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
@@ -412,7 +412,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
           </div>
 
           {/* Nút 3 chấm (Chỉ hiện trên Mobile) */}
-          {isOwn && (!msg.image && !msg.attachment || true) && (
+          {!msg.isDeleted && (
             <div className="relative md:hidden">
               <button 
                 onClick={() => setShowOptions(!showOptions)} 
@@ -424,7 +424,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
               {/* Dropdown Options */}
               {showOptions && (
                 <div className="absolute bottom-full mb-1 right-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden z-50 min-w-[140px] animate-in fade-in zoom-in-95 duration-100">
-                  {(!msg.image && !msg.attachment) && (
+                  {(isOwn && !msg.image && !msg.attachment) && (
                     <button 
                       onClick={() => {
                         setShowOptions(false);
@@ -441,14 +441,25 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                   <button 
                     onClick={() => {
                       setShowOptions(false);
-                      if(window.confirm('Bạn có chắc muốn thu hồi tin nhắn này?')) {
-                          revokeMessage(msg._id);
-                      }
+                      onForward(msg);
                     }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/10 hover:text-red-300 flex items-center gap-2 cursor-pointer"
+                    className="w-full text-left px-4 py-2.5 text-sm text-green-400 hover:bg-white/10 hover:text-green-300 flex items-center gap-2 cursor-pointer"
                   >
-                    <Trash2 className="w-4 h-4" /> Thu hồi
+                    <Share2 className="w-4 h-4" /> Chuyển tiếp
                   </button>
+                  {isOwn && (
+                    <button 
+                      onClick={() => {
+                        setShowOptions(false);
+                        if(window.confirm('Bạn có chắc muốn thu hồi tin nhắn này?')) {
+                            revokeMessage(msg._id);
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/10 hover:text-red-300 flex items-center gap-2 cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" /> Thu hồi
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -467,6 +478,17 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
               className="hidden md:block text-gray-400 hover:text-cyan-400 cursor-pointer p-1"
             >
               <Pencil className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Nút Forward (Chỉ hiện trên Desktop / Hover) */}
+          {!msg.isDeleted && (
+            <button 
+              onClick={() => onForward(msg)} 
+              title="Chuyển tiếp" 
+              className="hidden md:block text-gray-400 hover:text-green-400 cursor-pointer p-1"
+            >
+              <Share2 className="w-4 h-4" />
             </button>
           )}
           
@@ -590,7 +612,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
 const ChatContainer = ({ startCall }) => {
 
   // Lấy dữ liệu tin nhắn, người dùng đang chọn và các hàm xử lý từ ChatContext
-  const { messages, selectedUser, setSelectedUser, sendMessage, getMessages, showRightSidebar, setShowRightSidebar, editMessage, revokeMessage, reactMessage } = useContext(ChatContext);
+  const { messages, selectedUser, setSelectedUser, sendMessage, getMessages, showRightSidebar, setShowRightSidebar, editMessage, revokeMessage, reactMessage, forwardMessage, users } = useContext(ChatContext);
 
   // Lấy thông tin người dùng hiện tại và danh sách online từ AuthContext
   const { authUser, onlineUser } = useContext(AuthContext);
@@ -817,6 +839,28 @@ const ChatContainer = ({ startCall }) => {
   // Ref để kiểm tra xem có đang ở cuối danh sách hay không
   const isNearBottomRef = useRef(true);
 
+  const [selectedMessageToForward, setSelectedMessageToForward] = useState(null);
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [forwardTargets, setForwardTargets] = useState([]);
+
+  const handleForwardMessage = async () => {
+    if (forwardTargets.length === 0 || !selectedMessageToForward) return;
+    const msgData = {
+      text: selectedMessageToForward.text,
+      image: selectedMessageToForward.image,
+      attachment: selectedMessageToForward.attachment,
+    };
+    await forwardMessage(msgData, forwardTargets);
+    setShowForwardModal(false);
+    setSelectedMessageToForward(null);
+    setForwardTargets([]);
+  };
+
+  const onForward = (msg) => {
+    setSelectedMessageToForward(msg);
+    setShowForwardModal(true);
+  };
+
   // Theo dõi thao tác cuộn để biết người dùng có đang xem tin nhắn cũ không
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
@@ -948,6 +992,7 @@ const ChatContainer = ({ startCall }) => {
             editMessage={editMessage}
             revokeMessage={revokeMessage}
             scrollToBottom={scrollToBottom}
+            onForward={onForward}
           />
           )
         ))}
@@ -1068,6 +1113,57 @@ const ChatContainer = ({ startCall }) => {
           <p className="text-lg font-medium text-white bg-red-500 px-4 py-1.5 shadow-lg">Chat mọi lúc, mọi nơi</p>
         </motion.div>
       )}
+      {/* ── Forward Modal ── */}
+      <AnimatePresence>
+        {showForwardModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={(e) => { e.stopPropagation(); setShowForwardModal(false); setSelectedMessageToForward(null); setForwardTargets([]); }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#1e293b] border border-[#334155] rounded-2xl w-full max-w-md p-6 shadow-2xl flex flex-col max-h-[80vh]"
+            >
+              <h2 className="text-xl font-bold text-white mb-4">Chuyển tiếp tin nhắn</h2>
+              
+              <div className="flex-1 overflow-y-auto custom-scrollbar mb-4 flex flex-col gap-2 pr-2">
+                {users.map(u => (
+                  <div 
+                    key={u._id} 
+                    onClick={() => setForwardTargets(prev => prev.includes(u._id) ? prev.filter(id => id !== u._id) : [...prev, u._id])}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-colors ${forwardTargets.includes(u._id) ? 'bg-cyan-500/20 border border-cyan-500/50' : 'bg-[#0f172a] border border-[#334155] hover:border-cyan-500/50'}`}
+                  >
+                    <img src={u.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} className="w-10 h-10 rounded-full object-cover" />
+                    <span className="flex-1 text-sm font-medium text-white">{u.fullName}</span>
+                    {forwardTargets.includes(u._id) && <Check className="w-5 h-5 text-cyan-400" />}
+                  </div>
+                ))}
+                {users.length === 0 && <p className="text-center text-gray-400 py-4">Không có người dùng nào để chuyển tiếp.</p>}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#334155]">
+                <button 
+                  onClick={() => {
+                    setShowForwardModal(false);
+                    setSelectedMessageToForward(null);
+                    setForwardTargets([]);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer rounded-xl hover:bg-white/5"
+                >
+                  Hủy
+                </button>
+                <button 
+                  onClick={handleForwardMessage}
+                  disabled={forwardTargets.length === 0}
+                  className="px-6 py-2 bg-cyan-500 text-white rounded-xl font-medium shadow-lg shadow-cyan-500/30 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  Gửi
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </AnimatePresence>
   );
 };

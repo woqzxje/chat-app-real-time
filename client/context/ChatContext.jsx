@@ -99,6 +99,29 @@ export const ChatProvider = ({ children }) => {
         }
     }
 
+    // Hàm chuyển tiếp tin nhắn
+    const forwardMessage = async (messageData, receiverIds) => {
+        try {
+            const promises = receiverIds.map(id => axios.post(`/api/messages/send/${id}`, messageData));
+            const results = await Promise.all(promises);
+            
+            const failed = results.filter(r => !r.data.success);
+            if (failed.length > 0) {
+                toast.error(`Chuyển tiếp thất bại đến ${failed.length} liên hệ`);
+            } else {
+                toast.success('Chuyển tiếp tin nhắn thành công');
+            }
+            
+            setTimeout(() => getUsers(), 100);
+            
+            if (selectedUser && receiverIds.includes(selectedUser._id)) {
+                getMessages(selectedUser._id);
+            }
+        } catch (error) {
+            toast.error(error?.response?.data?.message || error.message)
+        }
+    }
+
     // Hàm thả cảm xúc
     const reactMessage = async (msgId, emoji) => {
         try {
@@ -303,6 +326,7 @@ export const ChatProvider = ({ children }) => {
         sendMessage,
         editMessage,
         revokeMessage,
+        forwardMessage,
         reactMessage,
         showRightSidebar,
         setShowRightSidebar,

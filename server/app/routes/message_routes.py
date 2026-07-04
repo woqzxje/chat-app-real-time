@@ -156,12 +156,19 @@ async def get_messages(id: str, current_user: User = Depends(get_current_user)):
                 await m.set({"seenBy": seen_by})
                 m.seenBy = seen_by
                 
+            # Lấy thông tin user hiện tại để gửi kèm
+            user_info = {
+                "_id": str(current_user.id),
+                "fullName": current_user.fullName,
+                "profilePic": current_user.profilePic
+            }
+                
             # Broadcast cho các thành viên trong nhóm biết mình đã xem
             for member_id in group.members:
                 if member_id != my_id:
                     member_socket_id = user_socket_map.get(member_id)
                     if member_socket_id:
-                        await sio.emit("groupMessagesSeen", {"groupId": id, "userId": my_id}, to=member_socket_id)
+                        await sio.emit("groupMessagesSeen", {"groupId": id, "userId": my_id, "userInfo": user_info}, to=member_socket_id)
     else:
         # Tìm các tin nhắn mà mình là người gửi và họ là người nhận HOẶC ngược lại
         messages = await Message.find(
