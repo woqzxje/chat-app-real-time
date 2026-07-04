@@ -52,6 +52,7 @@ def _user_dict(user: User) -> dict:
         "email": user.email,
         "profilePic": user.profilePic,
         "bio": user.bio,
+        "lastSeen": user.lastSeen.isoformat() if getattr(user, 'lastSeen', None) else None,
         "createdAt": user.createdAt.isoformat(),
         "updatedAt": user.updatedAt.isoformat(),
     }

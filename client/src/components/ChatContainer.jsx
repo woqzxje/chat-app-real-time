@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 import assets from '../assets/assets'
-import { formatMessageTime } from '../lib/utils';
+import { formatMessageTime, formatTimeAgo } from '../lib/utils';
 import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -898,26 +898,32 @@ const ChatContainer = ({ startCall }) => {
 
       {/* ------------ Phần tiêu đề Chat (Header) ------------- */}
       <div className="flex items-center gap-4 py-4 mx-5 border-b border-stone-500 shrink-0">
-        <img src={selectedUser.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-12 rounded-full object-cover" />
-        <p className="flex-1 text-xl md:text-2xl text-white flex items-center gap-3">
-          {selectedUser.fullName}
-          {/* Hiển thị chấm xanh nếu người dùng này đang online */}
-          {onlineUser.includes(selectedUser._id) && (
-            <span className="w-3 h-3 rounded-full bg-green-500" />
+        <img src={selectedUser.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-12 h-12 aspect-square rounded-full object-cover" />
+        <div className="flex-1 flex flex-col justify-center">
+          <p className="text-xl md:text-2xl text-white flex items-center gap-3">
+            {selectedUser.fullName}
+            {/* Hiển thị chấm xanh nếu người dùng này đang online */}
+            {onlineUser.includes(selectedUser._id) && (
+              <span className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+            )}
+            
+            {/* Nút Thêm Bạn (chỉ hiển thị nếu chưa phải là bạn bè) */}
+            {!selectedUser.isFriend && (
+              <button 
+                onClick={handleAddFriend}
+                className="ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-full transition-colors text-xs font-medium border border-cyan-500/20"
+                title="Thêm bạn"
+              >
+                 <UserPlus className="w-3.5 h-3.5" />
+                 <span className="hidden sm:inline">Kết bạn</span>
+              </button>
+            )}
+          </p>
+          {/* Last seen time if offline and not group */}
+          {!selectedUser.isGroup && !onlineUser.includes(selectedUser._id) && selectedUser.lastSeen && (
+            <span className="text-[13px] text-gray-400 mt-0.5 font-medium">Truy cập {formatTimeAgo(selectedUser.lastSeen)}</span>
           )}
-          
-          {/* Nút Thêm Bạn (chỉ hiển thị nếu chưa phải là bạn bè) */}
-          {!selectedUser.isFriend && (
-            <button 
-              onClick={handleAddFriend}
-              className="ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-full transition-colors text-xs font-medium border border-cyan-500/20"
-              title="Thêm bạn"
-            >
-               <UserPlus className="w-3.5 h-3.5" />
-               <span className="hidden sm:inline">Kết bạn</span>
-            </button>
-          )}
-        </p>
+        </div>
         {/* Nút đóng khung chat trên thiết bị di động */}
         <img
           onClick={() => setSelectedUser(null)}

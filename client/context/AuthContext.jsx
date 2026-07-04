@@ -100,6 +100,13 @@ export const AuthProvider = ({ children }) => {
         newSocket.on("getOnlineUsers", (userIds)=>{
             setOnlineUser(userIds);
         })
+
+        // Lắng nghe sự kiện cập nhật thông tin user (để cập nhật chính authUser)
+        newSocket.on("userUpdated", (updatedUser) => {
+            if (userData._id === updatedUser._id) {
+                setAuthUser((prev) => ({ ...prev, ...updatedUser }));
+            }
+        });
     }
 
     useEffect(()=>{
@@ -117,7 +124,8 @@ export const AuthProvider = ({ children }) => {
         socket,
         login,
         logout,
-        updateProfile
+        updateProfile,
+        setAuthUser
     }
 
     return (

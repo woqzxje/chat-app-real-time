@@ -54,6 +54,8 @@ def _user_dict(user: User, exclude_password: bool = True) -> dict:
         "bio": user.bio,
         "friends": user.friends or [],
         "friendRequests": getattr(user, 'friendRequests', []),
+        "archivedChats": getattr(user, 'archivedChats', []),
+        "lastSeen": user.lastSeen.isoformat() if getattr(user, 'lastSeen', None) else None,
         "createdAt": user.createdAt.isoformat(),
         "updatedAt": user.updatedAt.isoformat(),
     }
@@ -333,3 +335,36 @@ async def update_profile(
         await _sio.emit("userUpdated", _user_dict(current_user))
 
     return {"success": True, "user": _user_dict(current_user)}
+
+
+@user_router.post("/toggle-archive")
+async def toggle_archive(
+    data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    API thêm hoặc xóa một user/group khỏi danh sách lưu trữ.
+    Body: { targetId: "...", archive: true/false }
+    """
+    target_id = data.get("targetId")
+    archive = data.get("archive", True)
+    
+    if not target_id:
+        return JSONResponse(status_code=400, content={"success": False, "message": "Thiếu targetId"})
+        
+    archived = getattr(current_user, 'archivedChats', [])
+    if not archived:
+        archived = []
+        
+    if archive and target_id not in archived:
+        archived.append(target_id)
+    elif not archive and target_id in archived:
+        archived.remove(target_id)
+        
+    await current_user.set({"archivedChats": archived})
+    
+    # Phát sự kiện cập nhật user cho client của chính họ
+    from app.socket_manager import sio as _sio
+    await _sio.emit("userUpdated", _user_dict(current_user))
+    
+    return {"success": True, "archivedChats": archived}

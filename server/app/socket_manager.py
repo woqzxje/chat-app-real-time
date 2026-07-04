@@ -56,6 +56,31 @@ async def disconnect(sid):
         # Xóa khỏi danh sách online
         del user_socket_map[user_id]
         print(f"User Disconnected: {user_id}")
+        
+        from app.models import User
+        from datetime import datetime
+        try:
+            user = await User.get(user_id)
+            if user:
+                now = datetime.utcnow()
+                await user.set({"lastSeen": now})
+                
+                # Bắn sự kiện userUpdated để cập nhật lastSeen cho những người khác
+                user_dict = {
+                    "_id": str(user.id),
+                    "fullName": user.fullName,
+                    "email": user.email,
+                    "profilePic": user.profilePic,
+                    "bio": user.bio,
+                    "friends": user.friends or [],
+                    "friendRequests": getattr(user, 'friendRequests', []),
+                    "lastSeen": now.isoformat(),
+                    "createdAt": user.createdAt.isoformat(),
+                    "updatedAt": user.updatedAt.isoformat(),
+                }
+                await sio.emit("userUpdated", user_dict)
+        except Exception as e:
+            print(f"Lỗi cập nhật lastSeen: {e}")
 
     # Thông báo cho các client khác cập nhật lại danh sách online
     await sio.emit("getOnlineUsers", list(user_socket_map.keys()))

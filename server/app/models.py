@@ -57,6 +57,8 @@ class User(Document):
     friendRequests: List[str] = Field(default_factory=list) # Lời mời kết bạn đến
     createdAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm tạo tài khoản
     updatedAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm cập nhật thông tin gần nhất
+    lastSeen: Optional[datetime] = None # Thời điểm truy cập cuối cùng
+    archivedChats: List[str] = Field(default_factory=list) # Danh sách ID của user/group đã bị lưu trữ (ẩn khỏi sidebar)
 
     class Settings:
         name = "users" # Tên collection trong cơ sở dữ liệu MongoDB

@@ -266,6 +266,11 @@ export const ChatProvider = ({ children }) => {
 
         // Server emit khi user đổi avatar/tên/bio hoặc nhóm thay đổi -> cập nhật ngay
         socket.on("userUpdated", (updatedUser) => {
+            // Không thêm chính mình vào danh sách chat
+            if (authUser && updatedUser._id === authUser._id) {
+                return;
+            }
+            
             // Cập nhật trong danh sách sidebar
             setUsers((prev) => {
                 const exists = prev.some((u) => u._id === updatedUser._id);

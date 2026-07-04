@@ -10,7 +10,7 @@ import { ChatContext } from '../../context/ChatContext';
 import assets from '../assets/assets';
 import { SparklesText } from './ui/SparklesText';
 import { WaveText } from './ui/wave-text';
-import { User, LogOut, UserPlus, ChevronDown, ChevronRight, MessageSquareWarning, Check, X, Bell } from 'lucide-react';
+import { User, LogOut, UserPlus, ChevronDown, ChevronRight, MessageSquareWarning, Check, X, Bell, Archive, ArchiveRestore } from 'lucide-react';
 import { ExpandableTabs } from './ui/ExpandableTabs';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -46,7 +46,8 @@ const SideBar = () => {
     logout,             // Hàm đăng xuất tài khoản
     onlineUser,         // Mảng chứa ID của các người dùng đang online (realtime từ Socket)
     authUser,           // Dữ liệu người dùng hiện tại
-    socket              // Đối tượng socket
+    socket,             // Đối tượng socket
+    setAuthUser
   } = useContext(AuthContext);
 
   // Hook điều hướng trang của react-router-dom
@@ -66,11 +67,20 @@ const SideBar = () => {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
+  // State cho tính năng lưu trữ
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+
   // 3. --- Lọc dữ liệu & Tìm kiếm ---
 
-  // Tách bạn bè và người lạ từ danh sách users
-  const friendsList = users.filter(u => u.isFriend);
-  const strangersList = users.filter(u => !u.isFriend);
+  // Danh sách lưu trữ
+  const archivedIds = authUser?.archivedChats || [];
+
+  // Tách bạn bè và người lạ từ danh sách users (bỏ qua những người đã lưu trữ)
+  const friendsList = users.filter(u => u.isFriend && !archivedIds.includes(u._id));
+  const strangersList = users.filter(u => !u.isFriend && !archivedIds.includes(u._id));
+  
+  // Danh sách đã lưu trữ
+  const archivedUsersList = users.filter(u => archivedIds.includes(u._id));
   
   // Tính tổng số tin nhắn chưa đọc từ người lạ
   const totalUnseenStrangers = strangersList.reduce((acc, user) => acc + (unseenMessages[user._id] || 0), 0);
@@ -243,6 +253,23 @@ const SideBar = () => {
     }
   };
 
+  const handleToggleArchive = async (targetId, archive) => {
+    try {
+      const { data } = await axios.post('/api/auth/toggle-archive', { targetId, archive });
+      if (data.success) {
+        toast.success(archive ? 'Đã thêm vào lưu trữ' : 'Đã bỏ lưu trữ');
+        // Cập nhật state cục bộ ngay lập tức để giao diện realtime không cần chờ socket
+        if (setAuthUser) {
+          setAuthUser(prev => ({ ...prev, archivedChats: data.archivedChats }));
+        }
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    }
+  };
+
   // 4. --- Giao diện (Render) ---
   return (
     <div className='bg-[#8185B2]/10 h-full p-6 overflow-y-scroll text-white'>
@@ -374,13 +401,22 @@ const SideBar = () => {
               <div className="text-sm text-white font-semibold w-max">
                 <WaveText text="Bạn bè" />
               </div>
-              <button 
-                onClick={() => setShowCreateGroupModal(true)} 
-                title="Tạo nhóm" 
-                className="text-cyan-400 hover:text-white p-1.5 bg-cyan-400/10 hover:bg-cyan-500 rounded-full transition-colors cursor-pointer"
-              >
-                 <UserPlus className="w-4 h-4" />
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowArchiveModal(true)} 
+                  title="Kho lưu trữ" 
+                  className="text-gray-400 hover:text-cyan-400 p-1.5 hover:bg-cyan-400/10 rounded-full transition-colors cursor-pointer"
+                >
+                   <Archive className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => setShowCreateGroupModal(true)} 
+                  title="Tạo nhóm" 
+                  className="text-gray-400 hover:text-cyan-400 p-1.5 hover:bg-cyan-400/10 rounded-full transition-colors cursor-pointer"
+                >
+                   <UserPlus className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             {friendsList.length === 0 && <p className="text-gray-400 text-sm italic">Chưa có bạn bè nào.</p>}
             {friendsList.map((user) => (
@@ -393,10 +429,10 @@ const SideBar = () => {
                     setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
                   }
                 }}
-                className={`relative flex items-center gap-3 p-4 pl-5 rounded-xl cursor-pointer hover:bg-white/5 transition-colors ${selectedUser?._id === user._id ? 'bg-[#00cfff]/15 hover:bg-[#00cfff]/20' : ''}`}
+                className={`relative flex items-center gap-3 p-4 pl-5 rounded-xl cursor-pointer hover:bg-white/5 transition-colors group ${selectedUser?._id === user._id ? 'bg-[#00cfff]/15 hover:bg-[#00cfff]/20' : ''}`}
               >
                 <img src={user?.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className='w-12 aspect-square rounded-full object-cover' />
-                <div className='flex flex-col leading-6'>
+                <div className='flex flex-col leading-6 flex-1'>
                   <p className='text-base font-medium'>{user.fullName}</p>
                   {user.isGroup ? (
                     <span className='text-neutral-400 text-sm'>{user.bio}</span>
@@ -405,8 +441,15 @@ const SideBar = () => {
                   )}
                 </div>
                 {unseenMessages && unseenMessages[user._id] > 0 && (
-                  <p className='absolute top-4 right-4 bg-cyan-500 text-sm rounded-full w-6 h-6 flex items-center justify-center text-white shadow-[0_0_10px_rgba(0,207,255,0.5)]'>{unseenMessages[user._id]}</p>
+                  <p className='absolute top-4 right-12 bg-cyan-500 text-sm rounded-full w-6 h-6 flex items-center justify-center text-white shadow-[0_0_10px_rgba(0,207,255,0.5)]'>{unseenMessages[user._id]}</p>
                 )}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleToggleArchive(user._id, true); }}
+                  className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-all absolute right-2"
+                  title="Lưu trữ"
+                >
+                  <Archive className="w-4 h-4" />
+                </button>
               </div>
             ))}
 
@@ -464,7 +507,7 @@ const SideBar = () => {
                                     setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
                                   }
                                 }}
-                                className={`relative flex items-center gap-3 p-3 pl-4 rounded-xl cursor-pointer transition-colors z-10 ${selectedUser?._id === user._id ? 'text-white' : 'text-gray-300 hover:text-white'}`}
+                                className={`relative flex items-center gap-3 p-3 pl-4 rounded-xl cursor-pointer transition-colors z-10 group ${selectedUser?._id === user._id ? 'text-white' : 'text-gray-300 hover:text-white'}`}
                               >
                                 {/* Framer Motion LayoutId Highlight (Fluid Hover) */}
                                 {hoveredStranger === user._id && (
@@ -480,13 +523,20 @@ const SideBar = () => {
                                 )}
                                 
                                 <img src={user?.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className='w-10 aspect-square rounded-full object-cover opacity-80' />
-                                <div className='flex flex-col leading-5'>
+                                <div className='flex flex-col leading-5 flex-1'>
                                   <p className='text-sm font-medium'>{user.fullName}</p>
                                   <span className='text-neutral-500 text-xs'>Người lạ</span>
                                 </div>
                                 {unseenMessages && unseenMessages[user._id] > 0 && (
-                                  <p className='absolute top-3 right-3 bg-red-500 text-xs rounded-full w-5 h-5 flex items-center justify-center text-white'>{unseenMessages[user._id]}</p>
+                                  <p className='absolute top-3 right-10 bg-red-500 text-xs rounded-full w-5 h-5 flex items-center justify-center text-white'>{unseenMessages[user._id]}</p>
                                 )}
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleToggleArchive(user._id, true); }}
+                                  className="p-1.5 text-gray-400 hover:text-cyan-400 hover:bg-white/10 rounded-full opacity-0 group-hover:opacity-100 transition-all absolute right-2"
+                                  title="Lưu trữ"
+                                >
+                                  <Archive className="w-3.5 h-3.5" />
+                                </button>
                               </motion.div>
                           ))}
                         </div>
@@ -564,6 +614,62 @@ const SideBar = () => {
                 {isCreatingGroup && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 Tạo nhóm
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KHO LƯU TRỮ */}
+      {showArchiveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1e293b] w-full max-w-md p-6 rounded-2xl shadow-2xl border border-white/10 m-4 flex flex-col max-h-[80vh]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Archive className="w-5 h-5 text-cyan-400" />
+                Kho lưu trữ
+              </h3>
+              <button onClick={() => setShowArchiveModal(false)} className="text-gray-400 hover:text-white transition-colors cursor-pointer p-1">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="mb-2">
+              <div className="bg-black/20 border border-white/5 rounded-xl overflow-y-auto flex-1 max-h-80 p-2 space-y-1">
+                {archivedUsersList.length === 0 ? (
+                  <p className="text-gray-500 text-sm p-4 italic text-center">Chưa có đoạn chat nào được lưu trữ.</p>
+                ) : (
+                  archivedUsersList.map(user => (
+                    <div 
+                      key={user._id}
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setUnseenMessages(prev => ({ ...prev, [user._id]: 0 }));
+                        setShowArchiveModal(false);
+                      }}
+                      className="flex items-center gap-3 p-2 pl-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors group"
+                    >
+                      <img src={user.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                      <div className="flex-1 flex flex-col">
+                        <p className="text-sm font-medium text-white">{user.fullName}</p>
+                        <span className="text-xs text-gray-400">{user.isGroup ? 'Nhóm chat' : 'Người dùng'}</span>
+                      </div>
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          handleToggleArchive(user._id, false); 
+                          if (selectedUser?._id === user._id) {
+                            setSelectedUser(null);
+                          }
+                        }}
+                        className="p-3 text-cyan-400 hover:bg-cyan-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                        title="Bỏ lưu trữ"
+                      >
+                        <ArchiveRestore className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
