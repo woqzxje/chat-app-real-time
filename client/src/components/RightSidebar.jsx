@@ -20,6 +20,20 @@ const RightSidebar = () => {
     else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     else return (bytes / 1048576).toFixed(2) + ' MB';
   };
+
+  const getFileIcon = (type) => {
+    const icons = {
+      image: '🖼️',
+      video: '🎬',
+      document: '📄',
+      archive: '🗜️',
+      folder: '📁',
+      audio: '🎤',
+      other: '📎',
+    };
+    return icons[type] || icons.other;
+  };
+
   const isFriend = selectedUser?.isFriend;
   const isGroup = selectedUser?.isGroup;
   
@@ -382,7 +396,7 @@ const RightSidebar = () => {
                 <div className='mt-3 max-h-48 overflow-y-scroll flex flex-col gap-2 opacity-90 custom-scrollbar'>
                   {msgFiles.length > 0 ? msgFiles.map((file, index) => (
                     <div key={index} onClick={() => window.open(file.url)} className='flex items-center gap-3 p-2 rounded-lg bg-black/20 hover:bg-black/40 cursor-pointer transition-colors'>
-                      <FileText className='w-8 h-8 text-cyan-400 shrink-0' />
+                      <span className="text-2xl shrink-0 leading-none">{getFileIcon(file.file_type)}</span>
                       <div className='flex-1 min-w-0'>
                         <p className='truncate text-sm font-medium'>{file.file_name || 'Tài liệu'}</p>
                         <p className='text-xs opacity-50'>{formatFileSize(file.file_size)}</p>
