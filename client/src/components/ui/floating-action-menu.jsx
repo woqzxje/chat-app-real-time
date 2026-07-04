@@ -84,7 +84,7 @@ const FloatingActionMenu = ({
                       setIsOpen(false);
                     }}
                     size="sm"
-                    className="w-full flex items-center justify-start gap-2.5 bg-[#1e293b] hover:bg-[#334155] shadow-xl border border-white/10 rounded-xl backdrop-blur-sm cursor-pointer"
+                    className="w-full flex items-center justify-start gap-2.5 bg-[#1e293b] hover:bg-[#334155] text-gray-200 hover:text-white shadow-xl border border-white/10 rounded-xl backdrop-blur-sm cursor-pointer"
                   >
                     {option.Icon}
                     <span className="font-medium text-xs">{option.label}</span>

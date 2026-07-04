@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.models import User, Message, FileAttachment
 from app.dependencies import get_current_user
@@ -29,6 +29,7 @@ def _msg_dict(msg: Message, sender: User = None, seen_by_users: list = None) -> 
         "isDeleted": getattr(msg, 'isDeleted', False),
         "isEdited": getattr(msg, 'isEdited', False),
         "isSystemMessage": getattr(msg, 'isSystemMessage', False),
+        "is_nsfw": getattr(msg, 'is_nsfw', False),
         "editedAt": msg.editedAt.isoformat() if getattr(msg, 'editedAt', None) else None,
         "reactions": [r.dict() for r in getattr(msg, 'reactions', [])],
         "createdAt": msg.createdAt.isoformat(),
@@ -54,9 +55,11 @@ def _user_dict(user: User) -> dict:
         "bio": user.bio,
         "socialLinks": getattr(user, 'socialLinks', []),
         "friends": user.friends or [],
-        "lastSeen": user.lastSeen.isoformat() if getattr(user, 'lastSeen', None) else None,
-        "createdAt": user.createdAt.isoformat(),
-        "updatedAt": user.updatedAt.isoformat(),
+        "isAdmin": getattr(user, 'isAdmin', False),
+        "banned_until": (user.banned_until.replace(microsecond=0).isoformat() + "Z") if getattr(user, 'banned_until', None) else None,
+        "lastSeen": (user.lastSeen.replace(microsecond=0).isoformat() + "Z") if getattr(user, 'lastSeen', None) else None,
+        "createdAt": user.createdAt.replace(microsecond=0).isoformat() + "Z",
+        "updatedAt": user.updatedAt.replace(microsecond=0).isoformat() + "Z",
     }
 
 
@@ -252,6 +255,7 @@ class SendMessageBody(BaseModel):
     text: Optional[str] = None
     image: Optional[str] = None
     attachment: Optional[FileAttachment] = None
+    is_nsfw: Optional[bool] = False
 
 
 @message_router.post("/send/{id}")
@@ -263,6 +267,38 @@ async def send_message(
     """Gửi tin nhắn mới cho một người dùng"""
     sender_id = str(current_user.id)
     image_url: Optional[str] = None
+    now = datetime.utcnow()
+
+    # Kiểm tra trạng thái cấm chat
+    if getattr(current_user, 'banned_until', None) and current_user.banned_until > now:
+        return {"success": False, "message": f"Bạn đã bị cấm chat đến {current_user.banned_until.strftime('%d/%m/%Y %H:%M:%S')} do vi phạm."}
+
+    # Tính năng chống Spam: Đếm số tin nhắn trong 1 phút gần nhất
+    one_minute_ago = now - timedelta(minutes=1)
+    recent_msgs_count = await Message.find(
+        Message.senderId == sender_id,
+        Message.createdAt >= one_minute_ago
+    ).count()
+
+    if recent_msgs_count >= 15: # Giới hạn 15 tin nhắn / phút
+        ban_until = now + timedelta(minutes=5)
+        current_user.banned_until = ban_until # Cập nhật object trên RAM
+        await current_user.set({"banned_until": ban_until}) # Cập nhật vào DB
+        
+        # Thêm vào report
+        from app.models import Report
+        report = Report(reporterId="system", reportedId=sender_id, reason="Spamming messages (Rate limit exceeded)")
+        await report.insert()
+        
+        # Gửi sự kiện realtime cho user bị block
+        sender_socket = user_socket_map.get(sender_id)
+        if sender_socket:
+            await sio.emit("userBanned", {"banned_until": ban_until.isoformat() + "Z", "reason": "Spamming messages"}, to=sender_socket)
+            
+        # Thông báo cho tất cả mọi người (kể cả Admin) biết tài khoản này vừa thay đổi trạng thái (bị cấm)
+        await sio.emit("userUpdated", _user_dict(current_user))
+        
+        return {"success": False, "message": f"Bạn đã spam quá nhiều. Bị tạm cấm chat đến {ban_until.strftime('%d/%m/%Y %H:%M:%S')}"}
 
     # Nếu có gửi kèm ảnh, tải ảnh lên Cloudinary
     if body.image:
@@ -275,6 +311,7 @@ async def send_message(
         text=body.text,
         image=image_url,
         attachment=body.attachment,
+        is_nsfw=body.is_nsfw,
     )
     await new_msg.insert()
     

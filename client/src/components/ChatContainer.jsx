@@ -551,7 +551,19 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
             <div className="relative">
                 {msg.attachment && <AttachmentBubble attachment={msg.attachment} onMediaLoad={scrollToBottom} />}
                 {msg.image && (
-                  <img src={msg.image} alt="Sent content" onLoad={scrollToBottom} className="max-w-[320px] rounded-2xl overflow-hidden mb-1" />
+                  <div className="relative mb-1">
+                    <img 
+                      src={msg.image} 
+                      alt="Sent content" 
+                      onLoad={scrollToBottom} 
+                      className={`max-w-[320px] rounded-2xl overflow-hidden transition-all duration-300 ${msg.is_nsfw ? 'blur-xl hover:blur-none cursor-pointer' : ''}`} 
+                    />
+                    {msg.is_nsfw && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none hover:opacity-0 transition-opacity duration-300">
+                        <span className="bg-black/60 text-white text-xs px-2 py-1 rounded font-medium">Nhạy cảm</span>
+                      </div>
+                    )}
+                  </div>
                 )}
                 {msg.text && (
                   <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-1 break-all bg-cyan-500/30 text-white ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'}`}>
@@ -616,6 +628,7 @@ const ChatContainer = ({ startCall }) => {
 
   // Lấy thông tin người dùng hiện tại và danh sách online từ AuthContext
   const { authUser, onlineUser } = useContext(AuthContext);
+  const isBanned = authUser?.banned_until && new Date(authUser.banned_until) > new Date();
 
   // Tham chiếu đến phần tử cuối cùng của danh sách tin nhắn để tự động cuộn xuống
   const scrollEnd = useRef();
@@ -752,11 +765,17 @@ const ChatContainer = ({ startCall }) => {
 
     setTimeout(scrollToBottom, 50);
 
+    setUploading(true);
     // Đọc file ảnh dưới dạng base64 để gửi lên server
     const reader = new FileReader();
     reader.onloadend = async () => {
-      await sendMessage({ image: reader.result });
-      e.target.value = ''; // Reset input file
+      try {
+        const dataUrl = reader.result;
+        await sendMessage({ image: dataUrl, is_nsfw: false });
+      } finally {
+        setUploading(false);
+        e.target.value = ''; // Reset input file
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -794,12 +813,18 @@ const ChatContainer = ({ startCall }) => {
 
     // Nếu người dùng chọn ảnh qua nút file → dùng flow ảnh cũ để preview đẹp hơn
     if (file.type.startsWith('image/')) {
+      setUploading(true);
       const reader = new FileReader();
       reader.onloadend = async () => {
-        await sendMessage({ image: reader.result });
+        try {
+          const dataUrl = reader.result;
+          await sendMessage({ image: dataUrl, is_nsfw: false });
+        } finally {
+          setUploading(false);
+          e.target.value = '';
+        }
       };
       reader.readAsDataURL(file);
-      e.target.value = '';
       return;
     }
 
@@ -1008,97 +1033,106 @@ const ChatContainer = ({ startCall }) => {
 
       {/* ----------- Khu vực nhập tin nhắn ở dưới cùng (Bottom Area) ------------ */}
       <div className="absolute bottom-0 left-0 right-0 flex flex-col px-4 pb-4 pt-2 bg-[#0b0b17]/70">
+        {isBanned ? (
+          <div className="flex items-center justify-center p-4 bg-red-500/10 border border-red-500/30 rounded-2xl w-full text-center">
+            <p className="text-red-400 font-medium text-sm md:text-base">
+              🚫 Bạn đã bị cấm chat đến {new Date(authUser.banned_until).toLocaleString()} do vi phạm quy tắc.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Hiển thị preview file đang chờ gửi — chỉ xuất hiện khi đã chọn file */}
+            {attachment && (
+              <AttachmentPreview
+                attachment={attachment}
+                onClear={() => setAttachment(null)}
+              />
+            )}
 
-        {/* Hiển thị preview file đang chờ gửi — chỉ xuất hiện khi đã chọn file */}
-        {attachment && (
-          <AttachmentPreview
-            attachment={attachment}
-            onClear={() => setAttachment(null)}
-          />
+            {/* Hàng input chính */}
+            <div className="flex items-center gap-4">
+              {isRecording ? (
+                <div className="flex-1 flex items-center bg-red-500/10 border border-red-500/30 px-5 rounded-full gap-3 h-[52px] animate-in slide-in-from-right-4 duration-300">
+                  <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-red-400 font-medium flex-1">{formatRecordingTime(recordingTime)}</span>
+                  <button onClick={cancelRecording} title="Hủy ghi âm" className="text-gray-400 hover:text-white p-1.5 transition-colors cursor-pointer">
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                  <button onClick={stopRecording} title="Gửi ghi âm" className="text-red-400 hover:text-red-300 p-1.5 transition-colors cursor-pointer ml-1">
+                    <Square className="w-5 h-5" fill="currentColor" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center bg-gray-100/12 px-4 rounded-full gap-2 min-w-0">
+                  <input
+                    onChange={(e) => setInput(e.target.value)}
+                    value={input}
+                    onKeyDown={(e) => e.key === 'Enter' ? handleSendMessage(e) : null}
+                    type="text"
+                    placeholder={attachment ? 'Thêm lời nhắn (tuỳ chọn)...' : 'Nhập tin nhắn...'}
+                    className="flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400 bg-transparent min-w-0"
+                  />
+
+                  {/* Nút ghi âm */}
+                  <button
+                    onClick={startRecording}
+                    title="Ghi âm"
+                    disabled={uploading}
+                    className="cursor-pointer text-gray-400 hover:text-cyan-400 transition-colors disabled:opacity-40 mr-2 flex items-center"
+                  >
+                    <Mic className="w-5 h-5" />
+                  </button>
+
+                  {/* Các input file ẩn */}
+                  <input onChange={handleSendImage} type="file" id="image" accept="image/png, image/jpeg" hidden />
+                  <input ref={fileRef} type="file" hidden onChange={handleFileChange} />
+                  <input ref={folderRef} type="file" hidden webkitdirectory="true" multiple onChange={handleFolderChange} />
+
+                  {/* Tích hợp FloatingActionMenu thay cho 3 nút cũ */}
+                  <FloatingActionMenu
+                    disabled={uploading}
+                    className="mr-1"
+                    options={[
+                      {
+                        label: "Hình ảnh",
+                        Icon: <ImageIcon className="w-4 h-4" />,
+                        onClick: () => document.getElementById('image').click(),
+                      },
+                      {
+                        label: "Tệp tin",
+                        Icon: <Paperclip className="w-4 h-4" />,
+                        onClick: () => fileRef.current.click(),
+                      },
+                      {
+                        label: "Thư mục",
+                        Icon: <FolderPlus className="w-4 h-4" />,
+                        onClick: () => folderRef.current.click(),
+                      }
+                    ]}
+                  />
+                </div>
+              )}
+
+              {/* Nút gửi tin nhắn — hiện spinner khi đang upload file */}
+              {uploading ? (
+                <div className="w-9 h-9 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-cyan-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                </div>
+              ) : (
+                <ShinyButton
+                  onClick={handleSendMessage}
+                  className="w-10 h-10 shrink-0"
+                >
+                  <Send className="w-[18px] h-[18px] -ml-[2px] mt-[1px]" />
+                </ShinyButton>
+              )}
+            </div>
+          </>
         )}
-
-        {/* Hàng input chính */}
-        <div className="flex items-center gap-4">
-          {isRecording ? (
-            <div className="flex-1 flex items-center bg-red-500/10 border border-red-500/30 px-5 rounded-full gap-3 h-[52px] animate-in slide-in-from-right-4 duration-300">
-              <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-red-400 font-medium flex-1">{formatRecordingTime(recordingTime)}</span>
-              <button onClick={cancelRecording} title="Hủy ghi âm" className="text-gray-400 hover:text-white p-1.5 transition-colors cursor-pointer">
-                <Trash2 className="w-5 h-5" />
-              </button>
-              <button onClick={stopRecording} title="Gửi ghi âm" className="text-red-400 hover:text-red-300 p-1.5 transition-colors cursor-pointer ml-1">
-                <Square className="w-5 h-5" fill="currentColor" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex-1 flex items-center bg-gray-100/12 px-4 rounded-full gap-2 min-w-0">
-              <input
-                onChange={(e) => setInput(e.target.value)}
-                value={input}
-                onKeyDown={(e) => e.key === 'Enter' ? handleSendMessage(e) : null}
-                type="text"
-                placeholder={attachment ? 'Thêm lời nhắn (tuỳ chọn)...' : 'Nhập tin nhắn...'}
-                className="flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400 bg-transparent min-w-0"
-              />
-
-              {/* Nút ghi âm */}
-              <button
-                onClick={startRecording}
-                title="Ghi âm"
-                disabled={uploading}
-                className="cursor-pointer text-gray-400 hover:text-cyan-400 transition-colors disabled:opacity-40 mr-2 flex items-center"
-              >
-                <Mic className="w-5 h-5" />
-              </button>
-
-              {/* Các input file ẩn */}
-              <input onChange={handleSendImage} type="file" id="image" accept="image/png, image/jpeg" hidden />
-              <input ref={fileRef} type="file" hidden onChange={handleFileChange} />
-              <input ref={folderRef} type="file" hidden webkitdirectory="true" multiple onChange={handleFolderChange} />
-
-              {/* Tích hợp FloatingActionMenu thay cho 3 nút cũ */}
-              <FloatingActionMenu
-                disabled={uploading}
-                className="mr-1"
-                options={[
-                  {
-                    label: "Hình ảnh",
-                    Icon: <ImageIcon className="w-4 h-4" />,
-                    onClick: () => document.getElementById('image').click(),
-                  },
-                  {
-                    label: "Tệp tin",
-                    Icon: <Paperclip className="w-4 h-4" />,
-                    onClick: () => fileRef.current.click(),
-                  },
-                  {
-                    label: "Thư mục",
-                    Icon: <FolderPlus className="w-4 h-4" />,
-                    onClick: () => folderRef.current.click(),
-                  }
-                ]}
-              />
-            </div>
-          )}
-
-          {/* Nút gửi tin nhắn — hiện spinner khi đang upload file */}
-          {uploading ? (
-            <div className="w-9 h-9 flex items-center justify-center">
-              <svg className="w-5 h-5 text-cyan-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            </div>
-          ) : (
-            <ShinyButton
-              onClick={handleSendMessage}
-              className="w-10 h-10 shrink-0"
-            >
-              <Send className="w-[18px] h-[18px] -ml-[2px] mt-[1px]" />
-            </ShinyButton>
-          )}
-        </div>
       </div>
 
         </motion.div>

@@ -151,6 +151,23 @@ const RightSidebar = () => {
     }
   }
 
+  const handleUnban = async () => {
+    if (window.confirm(`Bạn có chắc chắn muốn gỡ cấm chat cho ${selectedUser.fullName}?`)) {
+      try {
+        const { data } = await axios.post(`/api/auth/unban/${selectedUser._id}`);
+        if (data.success) {
+          toast.success(data.message);
+          setSelectedUser(prev => ({ ...prev, banned_until: null }));
+          getUsers();
+        } else {
+          toast.error(data.message);
+        }
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message);
+      }
+    }
+  };
+
   const handleAddFriend = async (userId) => {
     try {
       const { data } = await axios.post('/api/auth/send-friend-request', { friendId: userId });
@@ -468,6 +485,18 @@ const RightSidebar = () => {
       </div>
 
       {/* Footer chứa các nút chức năng */}
+      <div className="flex flex-col">
+        {selectedUser?.banned_until && new Date(selectedUser.banned_until) > new Date() && (
+          <div className="p-4 border-t border-[#ffffff20] bg-red-500/5">
+            <button 
+              onClick={handleUnban} 
+              className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
+            >
+               <Check className="w-4 h-4" />
+               Gỡ cấm chat
+            </button>
+          </div>
+        )}
       {isGroup ? (
         <div className="p-4 border-t border-[#ffffff20] flex flex-col gap-2">
           <button 
@@ -515,6 +544,7 @@ const RightSidebar = () => {
           </button>
         </div>
       ) : null}
+      </div>
 
       {/* MODAL THÊM THÀNH VIÊN */}
       {showAddMemberModal && (

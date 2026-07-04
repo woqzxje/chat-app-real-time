@@ -60,6 +60,8 @@ class User(Document):
     lastSeen: Optional[datetime] = None # Thời điểm truy cập cuối cùng
     socialLinks: List[str] = Field(default_factory=list) # Danh sách liên kết mạng xã hội
     archivedChats: List[str] = Field(default_factory=list) # Danh sách ID của user/group đã bị lưu trữ (ẩn khỏi sidebar)
+    banned_until: Optional[datetime] = None # Thời gian kết thúc cấm chat (nếu có)
+    isAdmin: bool = False # Quyền quản trị viên
 
     class Settings:
         name = "users" # Tên collection trong cơ sở dữ liệu MongoDB
@@ -88,6 +90,7 @@ class Message(Document):
     reactions: List[Reaction] = Field(default_factory=list)
     
     isSystemMessage: bool = False # Tin nhắn hệ thống (vd: người dùng đã rời nhóm)
+    is_nsfw: bool = False # Cờ đánh dấu ảnh nhạy cảm
 
     createdAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm gửi tin nhắn
     updatedAt: datetime = Field(default_factory=datetime.utcnow) # Thời điểm cập nhật (nếu có)
@@ -109,3 +112,17 @@ class ChatGroup(Document):
 
     class Settings:
         name = "chat_groups"
+
+
+# Định nghĩa Report
+class Report(Document):
+    """
+    Schema Report: Lưu trữ thông tin report (ví dụ spam) để admin xử lý.
+    """
+    reporterId: str
+    reportedId: str
+    reason: str
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "reports"

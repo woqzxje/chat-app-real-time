@@ -57,9 +57,11 @@ def _user_dict(user: User, exclude_password: bool = True) -> dict:
         "friendRequests": getattr(user, 'friendRequests', []),
         "archivedChats": getattr(user, 'archivedChats', []),
         "socialLinks": getattr(user, 'socialLinks', []),
-        "lastSeen": user.lastSeen.isoformat() if getattr(user, 'lastSeen', None) else None,
-        "createdAt": user.createdAt.isoformat(),
-        "updatedAt": user.updatedAt.isoformat(),
+        "isAdmin": getattr(user, 'isAdmin', False),
+        "banned_until": (user.banned_until.replace(microsecond=0).isoformat() + "Z") if getattr(user, 'banned_until', None) else None,
+        "lastSeen": (user.lastSeen.replace(microsecond=0).isoformat() + "Z") if getattr(user, 'lastSeen', None) else None,
+        "createdAt": user.createdAt.replace(microsecond=0).isoformat() + "Z",
+        "updatedAt": user.updatedAt.replace(microsecond=0).isoformat() + "Z",
     }
     if not exclude_password:
         data["password"] = user.password
@@ -86,6 +88,7 @@ async def signup(body: SignupBody):
         email=body.email,
         password=hashed,
         bio=body.bio or "",
+        isAdmin=(body.email == "quynh0369505599@gmail.com")
     )
     await new_user.insert()
 
@@ -115,6 +118,11 @@ async def login(body: LoginBody):
     # Kiểm tra mật khẩu có khớp không
     if not bcrypt.checkpw(body.password.encode(), user.password.encode()):
         return {"success": False, "message": "Thông tin đăng nhập không chính xác"}
+
+    # Auto grant admin if it's the designated admin email
+    if user.email == "quynh0369505599@gmail.com" and not user.isAdmin:
+        await user.set({"isAdmin": True})
+        user.isAdmin = True
 
     # Tạo Token sau khi đăng nhập thành công
     token = generate_token(str(user.id))
@@ -149,12 +157,17 @@ async def google_login(body: GoogleLoginBody):
                 password="",  # Không dùng password
                 profilePic=picture,
                 bio="Đăng nhập bằng Google",
+                isAdmin=(email == "quynh0369505599@gmail.com")
             )
             await user.insert()
             
             # Thông báo real-time có user mới
             from app.socket_manager import sio as _sio
             await _sio.emit("newUserRegistered", _user_dict(user))
+        else:
+            if user.email == "quynh0369505599@gmail.com" and not user.isAdmin:
+                await user.set({"isAdmin": True})
+                user.isAdmin = True
 
         # Cấp token cho user
         token = generate_token(str(user.id))
@@ -178,6 +191,11 @@ async def google_login(body: GoogleLoginBody):
 @user_router.get("/check")
 async def check_auth(current_user: User = Depends(get_current_user)):
     """Kiểm tra trạng thái đăng nhập (dùng Token gửi kèm trong header)"""
+    # Auto grant admin if it's the designated admin email
+    if current_user.email == "quynh0369505599@gmail.com" and not getattr(current_user, 'isAdmin', False):
+        await current_user.set({"isAdmin": True})
+        current_user.isAdmin = True
+        
     return {"success": True, "user": _user_dict(current_user)}
 
 
@@ -372,3 +390,30 @@ async def toggle_archive(
     await _sio.emit("userUpdated", _user_dict(current_user))
     
     return {"success": True, "archivedChats": archived}
+
+# ── POST /api/auth/unban/{user_id} ───────────────────────────────────────────
+
+@user_router.post("/unban/{user_id}")
+async def unban_user(user_id: str, current_user: User = Depends(get_current_user)):
+    """Gỡ cấm chat cho người dùng"""
+    from bson import ObjectId
+    if not ObjectId.is_valid(user_id):
+        return {"success": False, "message": "ID không hợp lệ"}
+        
+    target_user = await User.get(ObjectId(user_id))
+    if not target_user:
+        return {"success": False, "message": "Người dùng không tồn tại"}
+        
+    await target_user.set({"banned_until": None})
+    target_user.banned_until = None
+    
+    # Real-time event tới user được gỡ ban
+    from app.socket_manager import sio as _sio, user_socket_map
+    target_sid = user_socket_map.get(user_id)
+    if target_sid:
+        await _sio.emit("userBanned", {"banned_until": None, "reason": "Bạn đã được Admin gỡ cấm chat"}, to=target_sid)
+        
+    # Cập nhật thông tin cho mọi người (bao gồm trạng thái ban)
+    await _sio.emit("userUpdated", _user_dict(target_user))
+    
+    return {"success": True, "message": f"Đã gỡ cấm chat cho {target_user.fullName}"}

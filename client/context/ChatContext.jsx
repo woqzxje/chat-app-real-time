@@ -15,7 +15,7 @@ export const ChatProvider = ({ children }) => {
     const [isMessagesLoading, setIsMessagesLoading] = useState(false);
     const [showRightSidebar, setShowRightSidebar] = useState(false); // Trạng thái mở/đóng RightSidebar
 
-    const { socket, authUser } = useContext(AuthContext)
+    const { socket, authUser, setAuthUser } = useContext(AuthContext)
 
     // Lấy danh sách người dùng từ backend
     const getUsers = async () => {
@@ -63,9 +63,11 @@ export const ChatProvider = ({ children }) => {
                     }
                     return prev;
                 });
+            } else {
+                toast.error(data.message)
             }
         } catch (error) {
-            toast.error(error.message)
+            toast.error(error?.response?.data?.message || error.message)
         }
     }
 
@@ -302,11 +304,24 @@ export const ChatProvider = ({ children }) => {
             });
         });
 
+        // Xử lý sự kiện cấm chat realtime
+        socket.on("userBanned", ({ banned_until, reason }) => {
+            if (!banned_until) {
+                toast.success(`TIN VUI: Bạn đã được gỡ cấm chat!`);
+            } else {
+                toast.error(`CẢNH BÁO: Bạn đã bị cấm chat đến ${new Date(banned_until).toLocaleString()} do: ${reason}`, { duration: 10000 });
+            }
+            if (setAuthUser) {
+                setAuthUser((prev) => ({ ...prev, banned_until }));
+            }
+        });
+
         return () => {
             socket.off("newUserRegistered");
             socket.off("userUpdated");
             socket.off("groupRemoved");
             socket.off("memberLeftSilently");
+            socket.off("userBanned");
         };
     }, [socket, authUser]);
 
