@@ -18,9 +18,13 @@ async def upload_image(data_uri: str) -> str:
     Trả về: URL an toàn (secure_url) của ảnh sau khi đã tải lên thành công.
     """
     import asyncio
+    from fastapi import HTTPException
     loop = asyncio.get_event_loop()
-    # Vì thư viện cloudinary chưa hỗ trợ async gốc, chúng ta dùng run_in_executor để chạy nó trong một luồng riêng
-    result = await loop.run_in_executor(
-        None, lambda: cloudinary.uploader.upload(data_uri)
-    )
-    return result["secure_url"]
+    try:
+        # Vì thư viện cloudinary chưa hỗ trợ async gốc, chúng ta dùng run_in_executor để chạy nó trong một luồng riêng
+        result = await loop.run_in_executor(
+            None, lambda: cloudinary.uploader.upload(data_uri)
+        )
+        return result["secure_url"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi Cloudinary: Vui lòng kiểm tra biến môi trường hoặc tài khoản. Chi tiết: {str(e)}")

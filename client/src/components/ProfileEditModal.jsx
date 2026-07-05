@@ -71,7 +71,7 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
     
   const currentImage = previewUrl || authUser?.profilePic || "https://originui.com/avatar-72-01.jpg";
 
-  // Reset states khi modal bật lên
+  // Reset states khi modal bật lên (chỉ chạy khi 'open' chuyển từ false sang true)
   useEffect(() => {
     if (open && authUser) {
       setName(authUser.fullName || "");
@@ -80,7 +80,8 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
       setCharacterCount((authUser.bio || "").length);
       handleRemove(); // Reset ảnh xem trước
     }
-  }, [open, authUser, setValue, setCharacterCount, handleRemove]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,7 +97,36 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
         
         const base64Image = await new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              const MAX_WIDTH = 500;
+              const MAX_HEIGHT = 500;
+              let width = img.width;
+              let height = img.height;
+
+              if (width > height) {
+                if (width > MAX_WIDTH) {
+                  height *= MAX_WIDTH / width;
+                  width = MAX_WIDTH;
+                }
+              } else {
+                if (height > MAX_HEIGHT) {
+                  width *= MAX_HEIGHT / height;
+                  height = MAX_HEIGHT;
+                }
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL(file.type || "image/jpeg", 0.7)); // Nén 70%
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+          };
           reader.onerror = reject;
           reader.readAsDataURL(file);
         });
