@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square, LogOut, Share2, X } from 'lucide-react';
+import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square, LogOut, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparklesText } from './ui/SparklesText';
 import { ShinyButton } from './ui/ShinyButton';
@@ -805,6 +805,7 @@ const ChatContainer = ({ startCall }) => {
       });
       await sendMessage({ image: dataUrl, is_nsfw: false });
     } catch (err) {
+      console.error(err);
       toast.error("Không thể đọc hoặc gửi ảnh");
     } finally {
       setUploading(false);
@@ -891,6 +892,7 @@ const ChatContainer = ({ startCall }) => {
   // Lấy danh sách tin nhắn
   useEffect(() => {
     if (selectedUser) getMessages(selectedUser._id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedUser]);
 
   // Ref để kiểm tra xem có đang ở cuối danh sách hay không

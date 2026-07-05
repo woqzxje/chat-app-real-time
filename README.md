@@ -4,7 +4,7 @@
     <img src="client/public/logo.jpg" alt="Logo" width="120" height="120" style="border-radius: 20px;">
   </a>
 
-  <h1 align="center">ChatApp (Realtime MERN Chat App)</h1>
+  <h1 align="center">ChatApp (Realtime React & FastAPI Chat App)</h1>
 
   <p align="center">
     Một siêu ứng dụng nhắn tin thời gian thực đa nền tảng, thiết kế theo phong cách Glassmorphism tuyệt đẹp, tích hợp cuộc gọi Video ngang hàng (P2P), truyền tệp đa phương tiện, và hệ thống thao tác cảm ứng tối ưu.
@@ -25,7 +25,8 @@
   <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
   <img src="https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
   <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS" />
-  <img src="https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white" alt="NodeJS" />
+  <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/Socket.io-010101?&style=for-the-badge&logo=Socket.io&logoColor=white" alt="Socket.io" />
   <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white" alt="WebRTC" />
   <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" />
@@ -81,32 +82,37 @@
 
 Ứng dụng được phân tách thành hai kiến trúc độc lập Client (Frontend) và Server (Backend):
 
+### Frontend
 * ![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB) **React 18**
 * ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=flat&logo=vite&logoColor=white) **Vite** (Build Tool)
 * ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white) **Tailwind CSS 4** (UI Styling)
 * ![Framer](https://img.shields.io/badge/Framer_Motion-black?style=flat&logo=framer&logoColor=blue) **Framer Motion & GSAP** (Animations)
-* ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=flat&logo=node.js&logoColor=white) **Node.js & Express**
-* ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=flat&logo=mongodb&logoColor=white) **MongoDB & Mongoose**
-* ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=flat&logo=socket.io&badgeColor=010101) **Socket.IO** (Real-time Messaging & Relay)
-* ![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=flat&logo=webrtc&logoColor=white) **WebRTC (Simple-Peer)** (P2P Video Call)
+
+### Backend
+* ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) **Python 3**
+* ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi&logoColor=white) **FastAPI**
+* ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=flat&logo=mongodb&logoColor=white) **MongoDB, Motor & Beanie** (ODM)
+
+### Realtime & Services
+* ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=flat&logo=socket.io&badgeColor=010101) **Socket.IO** (Real-time Messaging qua python-socketio)
+* ![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=flat&logo=webrtc&logoColor=white) **WebRTC** (P2P Video Call)
 
 Các dịch vụ và tiện ích bổ sung:
-* **Metered.ca:** Cung cấp hệ thống máy chủ **STUN/TURN Server** chất lượng cao, giúp định tuyến hình ảnh, vượt màng lọc NAT/Tường lửa để thiết lập Video Call (WebRTC) thành công ở mọi loại mạng (4G, Wifi công cộng).
-* **Cloudinary:** Dịch vụ lưu trữ đám mây (CDN) để tải lên, lưu trữ và nén ảnh, tệp tin, tập tin Zip tốc độ cao.
-* **Google OAuth 2.0:** Giao thức xác thực an toàn thông qua thư viện `google-auth-library` và `@react-oauth/google`.
-* **JWT (JSON Web Tokens):** Quản lý phiên đăng nhập và bảo mật các API thông qua HttpOnly Cookie.
-* **Lucide-React:** Bộ thư viện Icon SVG gọn nhẹ và tinh tế.
+* **Metered.ca:** Cung cấp hệ thống máy chủ **STUN/TURN Server** chất lượng cao, giúp định tuyến hình ảnh, vượt màng lọc NAT/Tường lửa để thiết lập Video Call (WebRTC) thành công.
+* **Cloudinary:** Dịch vụ lưu trữ đám mây (CDN) để tải lên, lưu trữ và nén ảnh, tệp tin, tập tin Zip.
+* **Google OAuth 2.0:** Giao thức xác thực an toàn.
+* **JWT (JSON Web Tokens):** Quản lý phiên đăng nhập và bảo mật các API.
 
 ---
 
 ## Key Features (Tính Năng Chính)
 
 - **Nhắn tin Thời gian thực**: Giao tiếp tốc độ ánh sáng thông qua Socket.IO. Hỗ trợ hiển thị trạng thái đang hoạt động và "Đã xem" (Read Receipts).
-- **Trải nghiệm UX Di Động**: Menu tùy chọn (3 chấm), nhấn giữ (Long-press) để thả biểu tượng cảm xúc, Layout h-[100dvh] không lỗi tràn viền trên mobile.
+- **Trải nghiệm UX Di Động**: Menu tùy chọn (3 chấm), nhấn giữ (Long-press) để thả biểu tượng cảm xúc, Layout không lỗi tràn viền trên mobile.
 - **Tính năng Trò Chuyện**: Chỉnh sửa tin nhắn (Edit), thu hồi tin nhắn (Revoke), phản hồi (Reaction).
-- **Trò Chuyện Nhóm (Group Chat)**: Hỗ trợ tạo nhóm, quản lý thành viên (thêm/kích), tùy biến giao diện nhóm. Tích hợp avatar và tên người gửi riêng biệt hiển thị mượt mà trong bong bóng chat.
-- **Gọi Video Trực Tuyến**: Thiết lập WebRTC Peer-to-Peer, hỗ trợ qua STUN/TURN Server chuyên dụng để vượt tường lửa, hiển thị bong bóng lịch sử cuộc gọi.
-- **Truyền Tệp Tin Nâng Cao**: Hỗ trợ gửi ảnh, tài liệu và đặc biệt nén toàn bộ thư mục (Zip Folder) trước khi gửi thông qua Cloudinary.
+- **Trò Chuyện Nhóm (Group Chat)**: Hỗ trợ tạo nhóm, quản lý thành viên (thêm/kích), tùy biến giao diện nhóm.
+- **Gọi Video Trực Tuyến**: Thiết lập WebRTC Peer-to-Peer, hỗ trợ qua STUN/TURN Server.
+- **Truyền Tệp Tin Nâng Cao**: Hỗ trợ gửi ảnh, tài liệu và đặc biệt nén toàn bộ thư mục (Zip Folder) trực tiếp trên RAM máy chủ thông qua Cloudinary.
 - **Xác thực An toàn**: Đăng ký, Đăng nhập (với JWT), tích hợp Google OAuth 2.0.
 
 ---
@@ -117,11 +123,9 @@ Làm theo các bước dưới đây để sao chép (clone) dự án và chạy
 
 ### Prerequisites
 Hãy đảm bảo bạn đã cài đặt các công cụ sau:
-* Node.js (phiên bản >= 18.x)
-* pnpm (Trình quản lý package được khuyên dùng cho Frontend)
-  ```sh
-  npm install -g pnpm
-  ```
+* Node.js (phiên bản >= 18.x) và pnpm
+* Python (phiên bản >= 3.9)
+* Git
 
 ### Installation
 
@@ -134,12 +138,12 @@ Hãy đảm bảo bạn đã cài đặt các công cụ sau:
 2. **Cài đặt & Cấu hình Server (Backend)**
    ```sh
    cd server
-   npm install
+   pip install -r requirements.txt
    ```
    Tạo file `.env` trong thư mục `server`:
    ```env
    PORT=5001
-   MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/chat_db
+   MONGODB_URL=mongodb+srv://<username>:<password>@cluster.mongodb.net/chat_db
    JWT_SECRET=your_super_secret_key
    CLOUDINARY_CLOUD_NAME=your_cloud_name
    CLOUDINARY_API_KEY=your_api_key
@@ -169,10 +173,9 @@ Hãy đảm bảo bạn đã cài đặt các công cụ sau:
 **Khởi chạy Server:**
 ```sh
 cd server
-npm run dev
-# Hoặc nếu dùng script Python có sẵn:
-py run.py
+python run.py
 ```
+*(Bạn cũng có thể chạy `npm run dev` nếu có môi trường pnpm/npm hỗ trợ wrapper kịch bản cho py run.py)*
 
 **Khởi chạy Client:**
 ```sh

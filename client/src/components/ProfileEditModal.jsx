@@ -17,7 +17,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { ImagePlus, X, Loader2, Link, Plus, Trash2 } from "lucide-react";
 import { useId, useState, useContext, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { AuthContext } from "../../context/AuthContext";
 import toast from "react-hot-toast";
 

@@ -2,7 +2,7 @@ import { useContext, useState, useEffect, useRef } from 'react'
 import assets from '../assets/assets'
 import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
-import { UserMinus, UserPlus, X, Check, LogOut, Trash2, Edit2, Camera, Save, Crown, FileText, Download, ChevronDown, Globe } from 'lucide-react'
+import { UserMinus, UserPlus, X, Check, LogOut, Trash2, Edit2, Camera, Save, Crown, Download, ChevronDown, Globe } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import toast from 'react-hot-toast'
@@ -88,13 +88,6 @@ const RightSidebar = () => {
   const [groupMembers, setGroupMembers] = useState([]);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    if (isGroup && selectedUser) {
-      setNewGroupName(selectedUser.fullName);
-      fetchGroupMembers();
-    }
-  }, [selectedUser]);
-
   const fetchGroupMembers = async () => {
     try {
       const { data } = await axios.get(`/api/messages/groups/${selectedUser._id}/members`);
@@ -105,6 +98,14 @@ const RightSidebar = () => {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    if (isGroup && selectedUser) {
+      setNewGroupName(selectedUser.fullName);
+      fetchGroupMembers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUser]);
 
   const handleUpdateGroup = async (updateData) => {
     try {
