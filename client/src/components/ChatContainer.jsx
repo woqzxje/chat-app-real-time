@@ -227,7 +227,7 @@ const AttachmentBubble = ({ attachment, onMediaLoad }) => {
             onClick={handleDownloadAll}
             disabled={downloading}
             title="Tải toàn bộ folder"
-            className="flex-shrink-0 p-1.5 rounded-lg bg-cyan-500/30 hover:bg-cyan-500/50 text-white transition-colors disabled:opacity-40 cursor-pointer"
+            className="flex-shrink-0 p-1.5 rounded-lg bg-orange-500/30 hover:bg-orange-500/50 dark:bg-cyan-500/30 dark:hover:bg-cyan-500/50 text-white transition-colors disabled:opacity-40 cursor-pointer"
           >
             {downloading ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -292,7 +292,7 @@ const AttachmentBubble = ({ attachment, onMediaLoad }) => {
 
 // ── Hiển thị preview file đang chờ gửi (phía trên ô nhập) ───────────────────
 const AttachmentPreview = ({ attachment, onClear }) => (
-  <div className="flex items-center gap-2 bg-cyan-500/20 border border-cyan-400/30 rounded-2xl px-3 py-2 mb-2">
+  <div className="flex items-center gap-2 bg-orange-500/20 border border-orange-400/30 dark:bg-cyan-500/20 dark:border-cyan-400/30 rounded-2xl px-3 py-2 mb-2">
     <FileIcon type={attachment.file_type} />
     <div className="flex-1 min-w-0">
       <p className="text-xs font-medium text-white truncate">{attachment.file_name}</p>
@@ -475,7 +475,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                 }
               }} 
               title="Chỉnh sửa" 
-              className="hidden md:block text-gray-400 hover:text-cyan-400 cursor-pointer p-1"
+              className="hidden md:block text-gray-400 hover:text-orange-500 dark:hover:text-cyan-400 cursor-pointer p-1"
             >
               <Pencil className="w-4 h-4" />
             </button>
@@ -519,7 +519,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
       >
         {/* Tên người gửi (chỉ hiển thị cho tin nhắn nhận trong nhóm) */}
         {!isOwn && selectedUser?.isGroup && msg.senderInfo?.fullName && !msg.isSystemMessage && (
-          <span className="text-xs text-gray-400 mb-1 ml-1">{msg.senderInfo.fullName}</span>
+          <span className="text-xs text-slate-500 dark:text-gray-400 mb-1 ml-1">{msg.senderInfo.fullName}</span>
         )}
         
         {/* Thanh Emoji nổi lên trên Mobile khi Long Press */}
@@ -546,7 +546,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
         )}
         
         {msg.isDeleted ? (
-            <p className="px-4 py-3 text-sm italic text-gray-500 bg-white/5 rounded-2xl mb-1 border border-white/10">Tin nhắn đã bị thu hồi</p>
+            <p className="px-4 py-3 text-sm italic text-slate-500 dark:text-gray-500 bg-black/5 dark:bg-white/5 rounded-2xl mb-1 border border-slate-300 dark:border-white/10">Tin nhắn đã bị thu hồi</p>
         ) : (
             <div className="relative">
                 {msg.attachment && <AttachmentBubble attachment={msg.attachment} onMediaLoad={scrollToBottom} />}
@@ -566,17 +566,17 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                   </div>
                 )}
                 {msg.text && (
-                  <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-1 break-all bg-cyan-500/30 text-white ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+                  <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-1 break-all bg-orange-500/30 dark:bg-cyan-500/30 text-slate-900 dark:text-white ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'}`}>
                     {msg.text}
-                    {msg.isEdited && <span className="block text-[10px] text-white/50 text-right mt-1">(Đã chỉnh sửa)</span>}
+                    {msg.isEdited && <span className="block text-[10px] text-slate-600 dark:text-white/50 text-right mt-1">(Đã chỉnh sửa)</span>}
                   </p>
                 )}
                 {/* Reactions Bubble */}
                 {msg.reactions && msg.reactions.length > 0 && (
-                    <div className={`absolute -bottom-2 flex bg-[#1e293b] rounded-full px-1.5 py-0.5 shadow-md border border-white/10 gap-1 z-10 text-[10px] ${isOwn ? 'right-2' : 'left-2'}`}>
+                    <div className={`absolute -bottom-2 flex bg-white dark:bg-[#1e293b] rounded-full px-1.5 py-0.5 shadow-md border border-slate-200 dark:border-white/10 gap-1 z-10 text-[10px] ${isOwn ? 'right-2' : 'left-2'}`}>
                         {Object.entries(msg.reactions.reduce((acc, r) => { acc[r.emoji] = (acc[r.emoji] || 0) + 1; return acc; }, {})).map(([emoji, count]) => (
                             <span key={emoji} className="flex items-center gap-0.5 cursor-pointer" onClick={() => reactMessage(msg._id, emoji)} title="Bấm để thả/hủy cảm xúc này">
-                                {emoji} {count > 1 && <span className="text-gray-300 font-semibold">{count}</span>}
+                                {emoji} {count > 1 && <span className="text-slate-700 dark:text-gray-300 font-semibold">{count}</span>}
                             </span>
                         ))}
                     </div>
@@ -612,7 +612,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
         <div className="flex items-center justify-center gap-1 mt-1">
           <p className="text-gray-400 text-[10px]">{formatMessageTime(msg.createdAt)}</p>
           {isOwn && !selectedUser?.isGroup && (
-            msg.seen ? <CheckCheck className="w-3.5 h-3.5 text-cyan-400" /> : <Check className="w-3 h-3 text-gray-500" />
+            msg.seen ? <CheckCheck className="w-3.5 h-3.5 text-orange-500 dark:text-cyan-400" /> : <Check className="w-3 h-3 text-gray-500" />
           )}
         </div>
       </div>
@@ -918,14 +918,14 @@ const ChatContainer = ({ startCall }) => {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
-          className="flex flex-col h-full w-full overflow-hidden relative"
+          className="flex flex-col flex-1 w-full overflow-hidden relative"
         >
 
       {/* ------------ Phần tiêu đề Chat (Header) ------------- */}
       <div className="flex items-center gap-4 py-4 mx-5 border-b border-stone-500 shrink-0">
         <img src={selectedUser.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-12 h-12 aspect-square rounded-full object-cover" />
         <div className="flex-1 flex flex-col justify-center">
-          <p className="text-xl md:text-2xl text-white flex items-center gap-3">
+          <p className="text-xl md:text-2xl text-slate-900 dark:text-white flex items-center gap-3">
             {selectedUser.fullName}
             {/* Hiển thị chấm xanh nếu người dùng này đang online */}
             {onlineUser.includes(selectedUser._id) && (
@@ -936,7 +936,7 @@ const ChatContainer = ({ startCall }) => {
             {!selectedUser.isFriend && (
               <button 
                 onClick={handleAddFriend}
-                className="ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-full transition-colors text-xs font-medium border border-cyan-500/20"
+                className="ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 text-orange-500 hover:bg-orange-500 border-orange-500/20 dark:bg-cyan-500/10 dark:text-cyan-500 dark:hover:bg-cyan-500 hover:text-white dark:hover:text-white rounded-full transition-colors text-xs font-medium border dark:border-cyan-500/20"
                 title="Thêm bạn"
               >
                  <UserPlus className="w-3.5 h-3.5" />
@@ -946,7 +946,7 @@ const ChatContainer = ({ startCall }) => {
           </p>
           {/* Last seen time if offline and not group */}
           {!selectedUser.isGroup && !onlineUser.includes(selectedUser._id) && selectedUser.lastSeen && (
-            <span className="text-[13px] text-gray-400 mt-0.5 font-medium">Truy cập {formatTimeAgo(selectedUser.lastSeen)}</span>
+            <span className="text-[13px] text-gray-500 dark:text-gray-400 mt-0.5 font-medium">Truy cập {formatTimeAgo(selectedUser.lastSeen)}</span>
           )}
         </div>
         {/* Nút đóng khung chat trên thiết bị di động */}
@@ -959,7 +959,7 @@ const ChatContainer = ({ startCall }) => {
         {/* Nút gọi Thoại */}
         <button
           onClick={() => startCall(selectedUser, false)}
-          className="text-gray-400 hover:text-cyan-400 p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+          className="text-slate-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-cyan-400 p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-white/5 transition-colors cursor-pointer"
           title="Cuộc gọi thoại"
         >
           <Phone className="w-6 h-6" />
@@ -967,7 +967,7 @@ const ChatContainer = ({ startCall }) => {
         {/* Nút gọi Video */}
         <button
           onClick={() => startCall(selectedUser, true)}
-          className="text-gray-400 hover:text-cyan-400 p-2 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+          className="text-slate-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-cyan-400 p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-white/5 transition-colors cursor-pointer"
           title="Cuộc gọi Video"
         >
           <Video className="w-6 h-6" />
@@ -975,7 +975,7 @@ const ChatContainer = ({ startCall }) => {
         {/* Nút bật tắt Sidebar Phải */}
         <button
           onClick={() => setShowRightSidebar(prev => !prev)}
-          className={`hidden md:flex p-2 rounded-lg transition-colors cursor-pointer ${showRightSidebar ? 'bg-cyan-500/20 text-cyan-400' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+          className={`hidden md:flex p-2 rounded-lg transition-colors cursor-pointer ${showRightSidebar ? 'bg-orange-100 text-orange-600 dark:bg-cyan-500/20 dark:text-cyan-400' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5'}`}
           title="Thông tin chi tiết"
         >
           <PanelRight className="w-6 h-6" />
@@ -1032,7 +1032,7 @@ const ChatContainer = ({ startCall }) => {
       </div>
 
       {/* ----------- Khu vực nhập tin nhắn ở dưới cùng (Bottom Area) ------------ */}
-      <div className="absolute bottom-0 left-0 right-0 flex flex-col px-4 pb-4 pt-2 bg-[#0b0b17]/70">
+      <div className="absolute bottom-0 left-0 right-0 flex flex-col px-4 pb-4 pt-2 bg-transparent">
         {isBanned ? (
           <div className="flex items-center justify-center p-4 bg-red-500/10 border border-red-500/30 rounded-2xl w-full text-center">
             <p className="text-red-400 font-medium text-sm md:text-base">
@@ -1055,22 +1055,22 @@ const ChatContainer = ({ startCall }) => {
                 <div className="flex-1 flex items-center bg-red-500/10 border border-red-500/30 px-5 rounded-full gap-3 h-[52px] animate-in slide-in-from-right-4 duration-300">
                   <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                   <span className="text-red-400 font-medium flex-1">{formatRecordingTime(recordingTime)}</span>
-                  <button onClick={cancelRecording} title="Hủy ghi âm" className="text-gray-400 hover:text-white p-1.5 transition-colors cursor-pointer">
+                  <button onClick={cancelRecording} title="Hủy ghi âm" className="text-gray-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white p-1.5 transition-colors cursor-pointer">
                     <Trash2 className="w-5 h-5" />
                   </button>
-                  <button onClick={stopRecording} title="Gửi ghi âm" className="text-red-400 hover:text-red-300 p-1.5 transition-colors cursor-pointer ml-1">
+                  <button onClick={stopRecording} title="Gửi ghi âm" className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 p-1.5 transition-colors cursor-pointer ml-1">
                     <Square className="w-5 h-5" fill="currentColor" />
                   </button>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center bg-gray-100/12 px-4 rounded-full gap-2 min-w-0">
+                <div className="flex-1 flex items-center bg-slate-200/50 dark:bg-gray-100/12 px-4 rounded-full gap-2 min-w-0">
                   <input
                     onChange={(e) => setInput(e.target.value)}
                     value={input}
                     onKeyDown={(e) => e.key === 'Enter' ? handleSendMessage(e) : null}
                     type="text"
                     placeholder={attachment ? 'Thêm lời nhắn (tuỳ chọn)...' : 'Nhập tin nhắn...'}
-                    className="flex-1 text-base p-4 border-none rounded-full outline-none text-white placeholder-gray-400 bg-transparent min-w-0"
+                    className="flex-1 text-base p-4 border-none rounded-full outline-none text-slate-900 placeholder-slate-500 dark:text-white dark:placeholder-gray-400 bg-transparent min-w-0"
                   />
 
                   {/* Nút ghi âm */}
@@ -1078,7 +1078,7 @@ const ChatContainer = ({ startCall }) => {
                     onClick={startRecording}
                     title="Ghi âm"
                     disabled={uploading}
-                    className="cursor-pointer text-gray-400 hover:text-cyan-400 transition-colors disabled:opacity-40 mr-2 flex items-center"
+                    className="cursor-pointer text-slate-500 hover:text-orange-500 dark:text-gray-400 dark:hover:text-cyan-400 transition-colors disabled:opacity-40 mr-2 flex items-center"
                   >
                     <Mic className="w-5 h-5" />
                   </button>
@@ -1116,7 +1116,7 @@ const ChatContainer = ({ startCall }) => {
               {/* Nút gửi tin nhắn — hiện spinner khi đang upload file */}
               {uploading ? (
                 <div className="w-9 h-9 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-cyan-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-orange-500 dark:text-cyan-400 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor"
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -1144,11 +1144,11 @@ const ChatContainer = ({ startCall }) => {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           transition={{ duration: 0.3 }}
-          className="w-full h-full flex flex-col items-center justify-center gap-4 text-gray-500 bg-white/5 max-md:hidden"
+          className="w-full flex-1 flex flex-col items-center justify-center gap-4 text-gray-500 bg-white/5 max-md:hidden"
         >
           <SparklesText text={<>
-            <span className="bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">Chat</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">ITC</span>
+            <span className="transition-all duration-700 ease-in-out bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-700 dark:from-white dark:to-gray-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">Chat</span>
+            <span className="transition-all duration-700 ease-in-out bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 dark:from-cyan-400 dark:to-blue-500 drop-shadow-[0_0_20px_rgba(249,115,22,0.8)] dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">ITC</span>
           </>} className="text-5xl" sparklesCount={7} />
           <p className="text-lg font-medium text-white bg-red-500 px-4 py-1.5 shadow-lg">Chat mọi lúc, mọi nơi</p>
         </motion.div>
@@ -1171,11 +1171,11 @@ const ChatContainer = ({ startCall }) => {
                   <div 
                     key={u._id} 
                     onClick={() => setForwardTargets(prev => prev.includes(u._id) ? prev.filter(id => id !== u._id) : [...prev, u._id])}
-                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-colors ${forwardTargets.includes(u._id) ? 'bg-cyan-500/20 border border-cyan-500/50' : 'bg-[#0f172a] border border-[#334155] hover:border-cyan-500/50'}`}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-colors ${forwardTargets.includes(u._id) ? 'bg-orange-500/20 border border-orange-500/50 dark:bg-cyan-500/20 dark:border-cyan-500/50' : 'bg-[#0f172a] border border-[#334155] hover:border-orange-500/50 dark:hover:border-cyan-500/50'}`}
                   >
                     <img src={u.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} className="w-10 h-10 rounded-full object-cover" />
                     <span className="flex-1 text-sm font-medium text-white">{u.fullName}</span>
-                    {forwardTargets.includes(u._id) && <Check className="w-5 h-5 text-cyan-400" />}
+                    {forwardTargets.includes(u._id) && <Check className="w-5 h-5 text-orange-500 dark:text-cyan-400" />}
                   </div>
                 ))}
                 {users.length === 0 && <p className="text-center text-gray-400 py-4">Không có người dùng nào để chuyển tiếp.</p>}
@@ -1195,7 +1195,7 @@ const ChatContainer = ({ startCall }) => {
                 <button 
                   onClick={handleForwardMessage}
                   disabled={forwardTargets.length === 0}
-                  className="px-6 py-2 bg-cyan-500 text-white rounded-xl font-medium shadow-lg shadow-cyan-500/30 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  className="px-6 py-2 bg-orange-500 dark:bg-cyan-500 text-white rounded-xl font-medium shadow-lg shadow-orange-500/30 dark:shadow-cyan-500/30 hover:bg-orange-400 dark:hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   Gửi
                 </button>

@@ -266,14 +266,14 @@ const RightSidebar = () => {
   const friendsList = users.filter(u => u.isFriend && !u.isGroup && !(selectedUser?.members || []).includes(u._id));
 
   return selectedUser && (
-    <div className="bg-[#8185B2]/10 h-full text-white w-full flex flex-col relative">
+    <div className="bg-white/80 dark:bg-[#8185B2]/10 backdrop-blur-md flex-1 text-slate-900 dark:text-white w-full flex flex-col relative">
       
       {/* Phần nội dung có thể cuộn */}
       <div className="flex-1 overflow-y-scroll pb-6">
         <div className='pt-16 flex flex-col items-center gap-3 text-sm font-light mx-auto'>
           
           <div className="relative group">
-            <img src={selectedUser?.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className='w-24 h-24 object-cover rounded-full shadow-lg border-2 border-white/10' />
+            <img src={selectedUser?.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className='w-24 h-24 object-cover rounded-full shadow-lg border-2 border-slate-200 dark:border-white/10' />
             {isGroup && (
               <label className="absolute inset-0 flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-opacity">
                 <Camera className="w-6 h-6" />
@@ -289,13 +289,13 @@ const RightSidebar = () => {
                   type="text" 
                   value={newGroupName} 
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  className="bg-black/30 border border-white/20 rounded-md px-2 py-1 text-xl font-semibold outline-none focus:border-cyan-500 w-48 text-center"
+                  className="bg-white/50 dark:bg-black/30 border border-slate-300 dark:border-white/20 rounded-md px-2 py-1 text-xl font-semibold outline-none focus:border-orange-500 dark:focus:border-cyan-500 w-48 text-center text-slate-900 dark:text-white"
                   autoFocus
                 />
-                <button onClick={() => handleUpdateGroup({ name: newGroupName })} className="p-1.5 bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white rounded-md transition-colors">
+                <button onClick={() => handleUpdateGroup({ name: newGroupName })} className="p-1.5 bg-green-500/20 text-green-500 dark:text-green-400 hover:bg-green-500 hover:text-white rounded-md transition-colors">
                   <Save className="w-4 h-4" />
                 </button>
-                <button onClick={() => { setIsEditingName(false); setNewGroupName(selectedUser.fullName); }} className="p-1.5 bg-gray-500/20 text-gray-400 hover:bg-gray-500 hover:text-white rounded-md transition-colors">
+                <button onClick={() => { setIsEditingName(false); setNewGroupName(selectedUser.fullName); }} className="p-1.5 bg-gray-200 dark:bg-gray-500/20 text-slate-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-500 hover:text-slate-900 dark:hover:text-white rounded-md transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -304,7 +304,7 @@ const RightSidebar = () => {
                 {selectedUser?.fullName}
                 {!isGroup && onlineUser.includes(selectedUser._id) && <span className='w-3 h-3 rounded-full bg-green-500 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.6)]'></span>}
                 {isGroup && (
-                  <button onClick={() => setIsEditingName(true)} className="text-gray-400 hover:text-cyan-400 transition-colors p-1">
+                  <button onClick={() => setIsEditingName(true)} className="text-slate-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-cyan-400 transition-colors p-1">
                     <Edit2 className="w-4 h-4" />
                   </button>
                 )}
@@ -321,7 +321,7 @@ const RightSidebar = () => {
                   href={link.startsWith('http') ? link : `https://${link}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-cyan-400 hover:text-cyan-300 transition-colors shadow-sm"
+                  className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-orange-600 hover:text-orange-700 dark:text-cyan-400 dark:hover:text-cyan-300 transition-colors shadow-sm"
                   title="Truy cập trang cá nhân"
                 >
                   {getSocialIcon(link)}
@@ -333,11 +333,11 @@ const RightSidebar = () => {
           <p className='px-10 mx-auto text-center text-base opacity-80 mt-1'>{selectedUser.bio}</p>
         </div>
 
-        <hr className="border-[#ffffff50] my-4" />
+        <hr className="border-slate-300 dark:border-[#ffffff50] my-4" />
 
         {isGroup && (
           <div className="px-5 text-sm mb-4">
-             <div onClick={() => setShowMembers(!showMembers)} className="flex items-center gap-2 cursor-pointer hover:text-cyan-400 transition-colors text-gray-300 font-semibold text-sm mb-2 w-max">
+             <div onClick={() => setShowMembers(!showMembers)} className="flex items-center gap-2 cursor-pointer hover:text-orange-500 dark:hover:text-cyan-400 transition-colors text-slate-700 dark:text-gray-300 font-semibold text-sm mb-2 w-max">
                 <motion.div
                     animate={{ rotate: showMembers ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
@@ -345,7 +345,7 @@ const RightSidebar = () => {
                 >
                     <ChevronDown className="w-4 h-4" />
                 </motion.div>
-                <p className='font-semibold opacity-70 uppercase m-0'>THÀNH VIÊN ({groupMembers.length})</p>
+                <p className='font-semibold text-slate-500 dark:text-gray-300 dark:opacity-70 uppercase m-0'>THÀNH VIÊN ({groupMembers.length})</p>
              </div>
             
             <AnimatePresence>
@@ -366,23 +366,23 @@ const RightSidebar = () => {
                 >
                   <div className='flex flex-col gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar mt-3'>
                     {groupMembers.map(member => (
-                      <div key={member._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors group">
+                      <div key={member._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group">
                         <div className="flex items-center gap-3">
                           <img src={member.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} className="w-8 h-8 rounded-full object-cover" />
-                          <span className="font-medium text-sm">{member.fullName}</span>
+                          <span className="font-medium text-sm text-slate-900 dark:text-white">{member.fullName}</span>
                         </div>
                         
                         <div className="flex items-center gap-2">
                           {/* Nút Kết bạn (Nếu chưa là bạn và không phải chính mình) */}
                           {!(users.find(u => u._id === member._id)?.isFriend ?? member.isFriend) && member._id !== authUser._id && (
-                            <button onClick={() => handleAddFriend(member._id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-cyan-400 hover:text-cyan-300 transition-all rounded-full hover:bg-white/10" title="Kết bạn">
+                            <button onClick={() => handleAddFriend(member._id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-orange-600 hover:text-orange-500 dark:text-cyan-400 dark:hover:text-cyan-300 transition-all rounded-full hover:bg-slate-300 dark:hover:bg-white/10" title="Kết bạn">
                               <UserPlus className="w-4 h-4" />
                             </button>
                           )}
                           
                           {/* Nút Mời ra khỏi nhóm (Chỉ hiển thị nếu mình là Admin và người kia không phải mình) */}
                           {authUser._id === selectedUser.admin && member._id !== authUser._id && (
-                            <button onClick={() => handleKickMember(member._id, member.fullName)} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-300 transition-all rounded-full hover:bg-white/10" title="Mời ra khỏi nhóm">
+                            <button onClick={() => handleKickMember(member._id, member.fullName)} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300 transition-all rounded-full hover:bg-slate-300 dark:hover:bg-white/10" title="Mời ra khỏi nhóm">
                               <X className="w-4 h-4" />
                             </button>
                           )}
@@ -399,7 +399,7 @@ const RightSidebar = () => {
         )}
 
         <div className="px-5 text-sm">
-           <div onClick={() => setShowImages(!showImages)} className="flex items-center gap-2 cursor-pointer hover:text-cyan-400 transition-colors text-gray-300 font-semibold text-sm mb-2 w-max">
+           <div onClick={() => setShowImages(!showImages)} className="flex items-center gap-2 cursor-pointer hover:text-orange-600 transition-colors text-slate-700 dark:hover:text-cyan-400 dark:text-gray-300 font-semibold text-sm mb-2 w-max">
               <motion.div
                   animate={{ rotate: showImages ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
@@ -407,7 +407,7 @@ const RightSidebar = () => {
               >
                   <ChevronDown className="w-4 h-4" />
               </motion.div>
-              <p className='font-semibold opacity-70 uppercase m-0'>HÌNH ẢNH ĐÃ GỬI</p>
+              <p className='font-semibold text-slate-500 dark:text-white dark:opacity-70 uppercase m-0'>HÌNH ẢNH ĐÃ GỬI</p>
            </div>
           
           <AnimatePresence>
@@ -431,7 +431,7 @@ const RightSidebar = () => {
                     <div key={index} onClick={() => window.open(url)} className='cursor-pointer rounded overflow-hidden hover:scale-105 transition-transform'>
                       <img src={url} alt="Media content" className='h-full w-full object-cover rounded-md' />
                     </div>
-                  )) : <p className='col-span-2 text-center opacity-40'>Chưa có hình ảnh nào</p>}
+                  )) : <p className='col-span-2 text-center text-slate-400 dark:text-white dark:opacity-40'>Chưa có hình ảnh nào</p>}
                 </div>
               </motion.div>
             )}
@@ -439,7 +439,7 @@ const RightSidebar = () => {
         </div>
 
         <div className="px-5 text-sm mt-4">
-           <div onClick={() => setShowFiles(!showFiles)} className="flex items-center gap-2 cursor-pointer hover:text-cyan-400 transition-colors text-gray-300 font-semibold text-sm mb-2 w-max">
+           <div onClick={() => setShowFiles(!showFiles)} className="flex items-center gap-2 cursor-pointer hover:text-orange-600 transition-colors text-slate-700 dark:hover:text-cyan-400 dark:text-gray-300 font-semibold text-sm mb-2 w-max">
               <motion.div
                   animate={{ rotate: showFiles ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
@@ -447,7 +447,7 @@ const RightSidebar = () => {
               >
                   <ChevronDown className="w-4 h-4" />
               </motion.div>
-              <p className='font-semibold opacity-70 uppercase m-0'>FILE ĐÃ GỬI</p>
+              <p className='font-semibold text-slate-500 dark:text-white dark:opacity-70 uppercase m-0'>FILE ĐÃ GỬI</p>
            </div>
 
           <AnimatePresence>
@@ -501,7 +501,7 @@ const RightSidebar = () => {
         <div className="p-4 border-t border-[#ffffff20] flex flex-col gap-2">
           <button 
             onClick={() => setShowAddMemberModal(true)} 
-            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
+            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-orange-500/10 dark:bg-cyan-500/10 text-orange-600 dark:text-cyan-400 hover:bg-orange-500 dark:hover:bg-cyan-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
           >
              <UserPlus className="w-4 h-4" />
              Thêm thành viên
@@ -509,7 +509,7 @@ const RightSidebar = () => {
           
           <button 
             onClick={() => handleLeaveGroup(false)} 
-            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
+            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
           >
              <LogOut className="w-4 h-4" />
              Rời nhóm
@@ -517,7 +517,7 @@ const RightSidebar = () => {
 
           <button 
             onClick={() => handleLeaveGroup(true)} 
-            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-gray-500/10 text-gray-400 hover:bg-gray-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
+            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-gray-500/10 text-gray-600 dark:text-gray-400 hover:bg-gray-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
           >
              <LogOut className="w-4 h-4" />
              Rời đi trong im lặng
@@ -526,7 +526,7 @@ const RightSidebar = () => {
           {selectedUser.admin === authUser?._id && (
             <button 
               onClick={handleDisbandGroup} 
-              className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
+              className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
             >
                <Trash2 className="w-4 h-4" />
                Giải tán nhóm
@@ -537,7 +537,7 @@ const RightSidebar = () => {
         <div className="p-4 border-t border-[#ffffff20]">
           <button 
             onClick={handleUnfriend} 
-            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
+            className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-colors text-sm font-medium shadow-sm cursor-pointer"
           >
              <UserMinus className="w-4 h-4" />
              Hủy kết bạn
@@ -573,9 +573,9 @@ const RightSidebar = () => {
                           setSelectedFriends([...selectedFriends, friend._id]);
                         }
                       }}
-                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${selectedFriends.includes(friend._id) ? 'bg-cyan-500/20' : 'hover:bg-white/5'}`}
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${selectedFriends.includes(friend._id) ? 'bg-orange-500/20 dark:bg-cyan-500/20' : 'hover:bg-white/5'}`}
                     >
-                      <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selectedFriends.includes(friend._id) ? 'bg-cyan-500 border-cyan-500' : 'border-gray-500'}`}>
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selectedFriends.includes(friend._id) ? 'bg-orange-500 border-orange-500 dark:bg-cyan-500 dark:border-cyan-500' : 'border-gray-500'}`}>
                         {selectedFriends.includes(friend._id) && <Check className="w-3 h-3 text-white" />}
                       </div>
                       <img src={friend.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
@@ -596,7 +596,7 @@ const RightSidebar = () => {
               <button 
                 onClick={handleAddMember}
                 disabled={isAddingMember}
-                className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-white rounded-xl font-medium shadow-[0_0_10px_rgba(6,182,212,0.4)] transition-all disabled:opacity-50 flex items-center gap-2 text-sm cursor-pointer"
+                className="px-4 py-2 bg-orange-500 hover:bg-orange-400 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white rounded-xl font-medium shadow-[0_0_10px_rgba(249,115,22,0.4)] dark:shadow-[0_0_10px_rgba(6,182,212,0.4)] transition-all disabled:opacity-50 flex items-center gap-2 text-sm cursor-pointer"
               >
                 {isAddingMember && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 Thêm

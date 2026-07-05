@@ -94,8 +94,8 @@ const LoginPage = () => {
         className="flex flex-col items-center justify-center gap-4 text-white"
       >
         <SparklesText text={<>
-          <span className="bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">Chat</span>
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">ITC</span>
+          <span className="transition-all duration-700 ease-in-out bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-700 dark:from-white dark:to-gray-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">Chat</span>
+          <span className="transition-all duration-700 ease-in-out bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-500 dark:from-cyan-400 dark:to-blue-500 drop-shadow-[0_0_20px_rgba(249,115,22,0.8)] dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">ITC</span>
         </>} className="text-5xl md:text-6xl lg:text-7xl" sparklesCount={10} />
       </motion.div>
 
@@ -121,7 +121,10 @@ const LoginPage = () => {
                 boxShadow: [
                   "0 0 10px 2px rgba(0,207,255,0.05)",
                   "0 0 20px 5px rgba(0,207,255,0.1)",
-                  "0 0 10px 2px rgba(0,207,255,0.05)"
+                  "0 0 10px 2px rgba(0,207,255,0.05)",
+                  "0 0 10px 2px rgba(249,115,22,0.15), 0 0 10px 2px rgba(6,182,212,0.05)",
+                  "0 0 20px 5px rgba(249,115,22,0.25), 0 0 20px 5px rgba(6,182,212,0.1)",
+                  "0 0 10px 2px rgba(249,115,22,0.15), 0 0 10px 2px rgba(6,182,212,0.05)"
                 ],
                 opacity: [0.2, 0.4, 0.2]
               }}
@@ -130,48 +133,28 @@ const LoginPage = () => {
 
             {/* Traveling light beam effect */}
             <div className="absolute -inset-[1px] rounded-2xl overflow-hidden pointer-events-none">
-              {/* Top beam */}
-              <motion.div
-                className="absolute top-0 left-0 h-[3px] w-[60%]"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }}
-                animate={{ left: ["-60%", "100%"] }}
-                transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }}
-              />
-              {/* Right beam */}
-              <motion.div
-                className="absolute top-0 right-0 h-[60%] w-[3px]"
-                style={{ background: 'linear-gradient(180deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }}
-                animate={{ top: ["-60%", "100%"] }}
-                transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 0.75 }}
-              />
-              {/* Bottom beam */}
-              <motion.div
-                className="absolute bottom-0 right-0 h-[3px] w-[60%]"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }}
-                animate={{ right: ["-60%", "100%"] }}
-                transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 1.5 }}
-              />
-              {/* Left beam */}
-              <motion.div
-                className="absolute bottom-0 left-0 h-[60%] w-[3px]"
-                style={{ background: 'linear-gradient(180deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }}
-                animate={{ bottom: ["-60%", "100%"] }}
-                transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 2.25 }}
-              />
+              <motion.div className="absolute top-0 left-0 h-[3px] w-[60%] bg-gradient-to-r from-transparent via-orange-500 dark:via-cyan-400 to-transparent blur-[1px]"
+                animate={{ left: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }} />
+              <motion.div className="absolute top-0 right-0 h-[60%] w-[3px] bg-gradient-to-b from-transparent via-orange-500 dark:via-cyan-400 to-transparent blur-[1px]"
+                animate={{ top: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 0.75 }} />
+              <motion.div className="absolute bottom-0 right-0 h-[3px] w-[60%] bg-gradient-to-l from-transparent via-orange-500 dark:via-cyan-400 to-transparent blur-[1px]"
+                animate={{ right: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 1.5 }} />
+              <motion.div className="absolute bottom-0 left-0 h-[60%] w-[3px] bg-gradient-to-t from-transparent via-orange-500 dark:via-cyan-400 to-transparent blur-[1px]"
+                animate={{ bottom: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 2.25 }} />
 
               {/* Corner glow spots */}
-              <motion.div className="absolute top-0 left-0 h-[6px] w-[6px] rounded-full bg-cyan-400/60 blur-[2px]"
+              <motion.div className="absolute top-0 left-0 h-[6px] w-[6px] rounded-full bg-orange-400/60 dark:bg-cyan-400/60 blur-[2px]"
                 animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2, repeat: Infinity, repeatType: "mirror" }} />
-              <motion.div className="absolute top-0 right-0 h-[8px] w-[8px] rounded-full bg-cyan-400/70 blur-[3px]"
+              <motion.div className="absolute top-0 right-0 h-[8px] w-[8px] rounded-full bg-orange-400/70 dark:bg-cyan-400/70 blur-[3px]"
                 animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.4, repeat: Infinity, repeatType: "mirror", delay: 0.5 }} />
-              <motion.div className="absolute bottom-0 right-0 h-[8px] w-[8px] rounded-full bg-cyan-400/70 blur-[3px]"
+              <motion.div className="absolute bottom-0 right-0 h-[8px] w-[8px] rounded-full bg-orange-400/70 dark:bg-cyan-400/70 blur-[3px]"
                 animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.2, repeat: Infinity, repeatType: "mirror", delay: 1 }} />
-              <motion.div className="absolute bottom-0 left-0 h-[6px] w-[6px] rounded-full bg-cyan-400/60 blur-[2px]"
+              <motion.div className="absolute bottom-0 left-0 h-[6px] w-[6px] rounded-full bg-orange-400/60 dark:bg-cyan-400/60 blur-[2px]"
                 animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.3, repeat: Infinity, repeatType: "mirror", delay: 1.5 }} />
             </div>
 
             {/* Card border glow on hover */}
-            <div className="absolute -inset-[0.5px] rounded-2xl bg-gradient-to-r from-cyan-500/5 via-cyan-400/10 to-cyan-500/5 opacity-0 group-hover:opacity-70 transition-opacity duration-500" />
+            <div className="absolute -inset-[0.5px] rounded-2xl bg-gradient-to-r from-orange-500/5 via-orange-400/10 to-orange-500/5 dark:from-cyan-500/5 dark:via-cyan-400/10 dark:to-cyan-500/5 opacity-0 group-hover:opacity-70 transition-opacity duration-500" />
 
             {/* ═══════════ Glass card background ═══════════ */}
             <div className="relative bg-black/40 backdrop-blur-xl rounded-2xl p-6 border border-white/[0.08] shadow-2xl overflow-hidden">
@@ -234,7 +217,7 @@ const LoginPage = () => {
                           transition={{ type: "spring", stiffness: 400, damping: 25 }}
                         >
                           <div className="relative flex items-center overflow-hidden rounded-lg">
-                            <User className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "name" ? 'text-cyan-400' : 'text-white/40'}`} />
+                            <User className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "name" ? 'text-orange-500 dark:text-cyan-400' : 'text-white/40'}`} />
                             <input
                               onChange={(e) => setFullName(e.target.value)}
                               value={fullName}
@@ -256,7 +239,7 @@ const LoginPage = () => {
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
                       >
                         <div className="relative flex items-center overflow-hidden rounded-lg">
-                          <Mail className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "email" ? 'text-cyan-400' : 'text-white/40'}`} />
+                          <Mail className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "email" ? 'text-orange-500 dark:text-cyan-400' : 'text-white/40'}`} />
                           <input
                             onChange={(e) => setEmail(e.target.value)}
                             value={email}
@@ -277,7 +260,7 @@ const LoginPage = () => {
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
                       >
                         <div className="relative flex items-center overflow-hidden rounded-lg">
-                          <Lock className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "password" ? 'text-cyan-400' : 'text-white/40'}`} />
+                          <Lock className={`absolute left-3 w-4 h-4 transition-all duration-300 ${focusedInput === "password" ? 'text-orange-500 dark:text-cyan-400' : 'text-white/40'}`} />
                           <input
                             onChange={(e) => setPassword(e.target.value)}
                             value={password}
@@ -317,7 +300,7 @@ const LoginPage = () => {
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
                       >
                         <div className="relative flex items-start overflow-hidden rounded-lg">
-                          <FileText className={`absolute left-3 top-3 w-4 h-4 transition-all duration-300 ${focusedInput === "bio" ? 'text-cyan-400' : 'text-white/40'}`} />
+                          <FileText className={`absolute left-3 top-3 w-4 h-4 transition-all duration-300 ${focusedInput === "bio" ? 'text-orange-500 dark:text-cyan-400' : 'text-white/40'}`} />
                           <textarea
                             onChange={(e) => setBio(e.target.value)}
                             value={bio}
@@ -343,7 +326,7 @@ const LoginPage = () => {
                       required
                       checked={isAgreed}
                       onChange={(e) => setIsAgreed(e.target.checked)}
-                      className="peer appearance-none h-4 w-4 rounded border border-white/20 bg-white/5 checked:bg-cyan-500 checked:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-400/30 transition-all duration-200 cursor-pointer relative z-10"
+                      className="peer appearance-none h-4 w-4 rounded border border-white/20 bg-white/5 checked:bg-orange-500 checked:border-orange-500 dark:checked:bg-cyan-500 dark:checked:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-orange-400/30 dark:focus:ring-cyan-400/30 transition-all duration-200 cursor-pointer relative z-10"
                     />
                     {/* Check icon khi được chọn */}
                     <Check className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity duration-200 z-20" strokeWidth={4} />
@@ -356,7 +339,7 @@ const LoginPage = () => {
                           animate={{ scale: 3.5, opacity: 0 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.6, ease: "easeOut" }}
-                          className="absolute inset-0 rounded-full bg-cyan-400 blur-sm pointer-events-none z-0"
+                          className="absolute inset-0 rounded-full bg-orange-500 dark:bg-cyan-400 blur-sm pointer-events-none z-0"
                         />
                       )}
                     </AnimatePresence>
@@ -419,10 +402,10 @@ const LoginPage = () => {
                         onClick={() => { setCurrState("Login"); setIsDataSubmitted(false) }}
                         className="relative inline-block group/link cursor-pointer"
                       >
-                        <span className="relative z-10 text-cyan-400 group-hover/link:text-cyan-300 transition-colors duration-300 font-medium">
+                        <span className="relative z-10 text-orange-600 dark:text-cyan-400 group-hover/link:text-orange-500 dark:group-hover/link:text-cyan-300 transition-colors duration-300 font-medium">
                           Đăng nhập tại đây
                         </span>
-                        <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-cyan-400 group-hover/link:w-full transition-all duration-300" />
+                        <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-orange-500 dark:bg-cyan-400 group-hover/link:w-full transition-all duration-300" />
                       </span>
                     </>
                   ) : (
@@ -431,10 +414,10 @@ const LoginPage = () => {
                         onClick={() => setCurrState("Sign up")}
                         className="relative inline-block group/link cursor-pointer"
                       >
-                        <span className="relative z-10 text-cyan-400 group-hover/link:text-cyan-300 transition-colors duration-300 font-medium">
+                        <span className="relative z-10 text-orange-600 dark:text-cyan-400 group-hover/link:text-orange-500 dark:group-hover/link:text-cyan-300 transition-colors duration-300 font-medium">
                           Nhấn vào đây để tạo
                         </span>
-                        <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-cyan-400 group-hover/link:w-full transition-all duration-300" />
+                        <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-orange-500 dark:bg-cyan-400 group-hover/link:w-full transition-all duration-300" />
                       </span>
                     </>
                   )}

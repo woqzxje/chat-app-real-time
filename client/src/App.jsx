@@ -5,15 +5,18 @@ import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
 import { Toaster } from "react-hot-toast"
 import { AuthContext } from '../context/AuthContext'
-import { DarkGradientBg } from './components/ui/elegant-dark-pattern'
+import { ThemeContext } from '../context/ThemeContext'
+import { StaticAuroraBackground } from './components/ui/static-aurora-background'
+import { ThemeToggle } from './components/ThemeToggle'
 
 const App = () => {
   // Lấy thông tin người dùng đã đăng nhập từ AuthContext
   const { authUser } = useContext(AuthContext)
+  const { theme } = useContext(ThemeContext)
 
   return (
-    // Đặt background cho toàn bộ ứng dụng
-    <DarkGradientBg className="h-[100dvh] w-full overflow-hidden">
+    <StaticAuroraBackground theme={theme} className="w-full overflow-hidden">
+      <ThemeToggle />
       {/* Component hiển thị các thông báo (toast) */}
       <Toaster />
 
@@ -27,7 +30,8 @@ const App = () => {
         {/* Trang cá nhân chỉ dành cho người đã đăng nhập */}
         <Route path="/profile" element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
       </Routes>
-    </DarkGradientBg>
+
+    </StaticAuroraBackground>
   )
 }
 

@@ -28,18 +28,18 @@ const transition = { delay: 0.05, type: "spring", bounce: 0, duration: 0.5 };
 export function ExpandableTabs({
   tabs,
   className,
-  activeColor = "text-cyan-400",
+  activeColor = "text-orange-600 dark:text-cyan-400",
 }) {
   const [hovered, setHovered] = React.useState(null);
 
   const Separator = () => (
-    <div className="mx-1 h-[18px] w-[1px] bg-white/20" aria-hidden="true" />
+    <div className="mx-1 h-[18px] w-[1px] bg-slate-300 dark:bg-white/20" aria-hidden="true" />
   );
 
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-1 rounded-2xl border border-white/5 bg-[#0e2230]/30 backdrop-blur-xl p-1 shadow-sm",
+        "flex flex-wrap items-center gap-1 rounded-2xl border border-slate-200 dark:border-white/5 bg-white/60 dark:bg-[#0e2230]/30 backdrop-blur-xl p-1 shadow-sm",
         className
       )}
     >
@@ -63,8 +63,8 @@ export function ExpandableTabs({
             className={cn(
               "relative flex items-center rounded-xl px-3 py-1.5 text-xs font-medium transition-colors duration-300",
               hovered === index
-                ? cn("bg-white/10", activeColor)
-                : "text-gray-400 hover:bg-white/5 hover:text-white"
+                ? cn("bg-slate-200/50 dark:bg-white/10", activeColor)
+                : "text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
             )}
           >
             <Icon size={18} />

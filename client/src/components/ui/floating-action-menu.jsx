@@ -35,7 +35,7 @@ const FloatingActionMenu = ({
       <button
         onClick={toggleMenu}
         disabled={disabled}
-        className="w-8 h-8 rounded-full bg-gray-100/10 hover:bg-white/20 text-gray-300 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+        className="w-8 h-8 rounded-full bg-slate-400/20 hover:bg-slate-400/30 dark:bg-gray-100/10 dark:hover:bg-white/20 text-slate-600 hover:text-slate-800 dark:text-gray-300 dark:hover:text-white flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
       >
         <motion.div
           animate={{ rotate: isOpen ? 45 : 0 }}

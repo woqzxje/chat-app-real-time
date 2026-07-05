@@ -46,7 +46,7 @@ const ProfilePage = () => {
         
         <form onSubmit={handleSubmit} className='flex flex-col gap-5 p-10 flex-1 relative'>
           <div className="flex items-center gap-4">
-            <button type="button" onClick={() => navigate('/')} className="p-2 -ml-2 rounded-full hover:bg-white/10 hover:text-cyan-400 transition-all cursor-pointer" title="Quay lại">
+            <button type="button" onClick={() => navigate('/')} className="p-2 -ml-2 rounded-full hover:bg-white/10 hover:text-orange-500 dark:hover:text-cyan-400 transition-all cursor-pointer" title="Quay lại">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h3 className="text-lg font-medium">Chi tiết hồ sơ</h3>
@@ -61,13 +61,13 @@ const ProfilePage = () => {
 
           {/* Nhập Họ và tên */}
           <input onChange={(e)=>setName(e.target.value)} value={name}
-          type="text" required placeholder='Tên của bạn' className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500' />
+          type="text" required placeholder='Tên của bạn' className='p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-cyan-500' />
           
           {/* Nhập Lời giới thiệu */}
-          <textarea onChange={(e)=>setBio(e.target.value)} value={bio} placeholder="Viết giới thiệu về bạn" required className="p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500" rows={4}></textarea>
+          <textarea onChange={(e)=>setBio(e.target.value)} value={bio} placeholder="Viết giới thiệu về bạn" required className="p-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-cyan-500" rows={4}></textarea>
 
           {/* Nút lưu thay đổi */}
-          <button type="submit" className="bg-linear-to-r from-cyan-500 to-teal-600 text-white p-2 rounded-full text-lg cursor-pointer">Lưu hồ sơ</button>
+          <button type="submit" className="bg-linear-to-r from-orange-500 to-red-500 dark:from-cyan-500 dark:to-teal-600 text-white p-2 rounded-full text-lg cursor-pointer">Lưu hồ sơ</button>
         </form>
 
         {/* Hiển thị ảnh đại diện hiện tại bên cạnh form */}

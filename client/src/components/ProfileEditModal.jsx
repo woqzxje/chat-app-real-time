@@ -141,31 +141,31 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
 
             {/* Traveling light beam effect */}
             <div className="absolute -inset-[1px] rounded-2xl overflow-hidden pointer-events-none">
-              <motion.div className="absolute top-0 left-0 h-[3px] w-[60%]" style={{ background: 'linear-gradient(90deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }} animate={{ left: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }} />
-              <motion.div className="absolute top-0 right-0 h-[60%] w-[3px]" style={{ background: 'linear-gradient(180deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }} animate={{ top: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 0.75 }} />
-              <motion.div className="absolute bottom-0 right-0 h-[3px] w-[60%]" style={{ background: 'linear-gradient(90deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }} animate={{ right: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 1.5 }} />
-              <motion.div className="absolute bottom-0 left-0 h-[60%] w-[3px]" style={{ background: 'linear-gradient(180deg, transparent, rgba(0,207,255,0.9), transparent)', filter: 'blur(1px)' }} animate={{ bottom: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 2.25 }} />
+              <motion.div className="absolute top-0 left-0 h-[3px] w-[60%] bg-gradient-to-r from-transparent via-orange-500 dark:via-cyan-400 to-transparent blur-[1px]" animate={{ left: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }} />
+              <motion.div className="absolute top-0 right-0 h-[60%] w-[3px] bg-gradient-to-b from-transparent via-orange-500 dark:via-cyan-400 to-transparent blur-[1px]" animate={{ top: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 0.75 }} />
+              <motion.div className="absolute bottom-0 right-0 h-[3px] w-[60%] bg-gradient-to-l from-transparent via-orange-500 dark:via-cyan-400 to-transparent blur-[1px]" animate={{ right: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 1.5 }} />
+              <motion.div className="absolute bottom-0 left-0 h-[60%] w-[3px] bg-gradient-to-t from-transparent via-orange-500 dark:via-cyan-400 to-transparent blur-[1px]" animate={{ bottom: ["-60%", "100%"] }} transition={{ duration: 3, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5, delay: 2.25 }} />
               
-              <motion.div className="absolute top-0 left-0 h-[6px] w-[6px] rounded-full bg-cyan-400/60 blur-[2px]" animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2, repeat: Infinity, repeatType: "mirror" }} />
-              <motion.div className="absolute top-0 right-0 h-[8px] w-[8px] rounded-full bg-cyan-400/70 blur-[3px]" animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.4, repeat: Infinity, repeatType: "mirror", delay: 0.5 }} />
-              <motion.div className="absolute bottom-0 right-0 h-[8px] w-[8px] rounded-full bg-cyan-400/70 blur-[3px]" animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.2, repeat: Infinity, repeatType: "mirror", delay: 1 }} />
-              <motion.div className="absolute bottom-0 left-0 h-[6px] w-[6px] rounded-full bg-cyan-400/60 blur-[2px]" animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.3, repeat: Infinity, repeatType: "mirror", delay: 1.5 }} />
+              <motion.div className="absolute top-0 left-0 h-[6px] w-[6px] rounded-full bg-orange-400/60 dark:bg-cyan-400/60 blur-[2px]" animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2, repeat: Infinity, repeatType: "mirror" }} />
+              <motion.div className="absolute top-0 right-0 h-[8px] w-[8px] rounded-full bg-orange-400/70 dark:bg-cyan-400/70 blur-[3px]" animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.4, repeat: Infinity, repeatType: "mirror", delay: 0.5 }} />
+              <motion.div className="absolute bottom-0 right-0 h-[8px] w-[8px] rounded-full bg-orange-400/70 dark:bg-cyan-400/70 blur-[3px]" animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.2, repeat: Infinity, repeatType: "mirror", delay: 1 }} />
+              <motion.div className="absolute bottom-0 left-0 h-[6px] w-[6px] rounded-full bg-orange-400/60 dark:bg-cyan-400/60 blur-[2px]" animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.3, repeat: Infinity, repeatType: "mirror", delay: 1.5 }} />
             </div>
 
             {/* Card border glow on hover */}
-            <div className="absolute -inset-[0.5px] rounded-2xl bg-gradient-to-r from-cyan-500/5 via-cyan-400/10 to-cyan-500/5 opacity-0 group-hover:opacity-70 transition-opacity duration-500" />
+            <div className="absolute -inset-[0.5px] rounded-2xl bg-gradient-to-r from-orange-500/5 via-orange-400/10 to-orange-500/5 dark:from-cyan-500/5 dark:via-cyan-400/10 dark:to-cyan-500/5 opacity-0 group-hover:opacity-70 transition-opacity duration-500" />
 
             {/* Glass card background */}
-            <div className="relative bg-black/40 backdrop-blur-xl rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden flex flex-col gap-0">
+            <div className="relative bg-white/90 dark:bg-black/40 backdrop-blur-xl rounded-2xl border border-slate-200 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col gap-0">
               {/* Subtle card inner pattern */}
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(135deg, white 0.5px, transparent 0.5px), linear-gradient(45deg, white 0.5px, transparent 0.5px)', backgroundSize: '30px 30px' }} />
+              <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.03] opacity-[0.1] pointer-events-none" style={{ backgroundImage: 'linear-gradient(135deg, currentColor 0.5px, transparent 0.5px), linear-gradient(45deg, currentColor 0.5px, transparent 0.5px)', backgroundSize: '30px 30px' }} />
 
               <DialogHeader className="contents space-y-0 text-left relative z-10">
-                <div className="flex items-center justify-between border-b border-white/[0.08] px-6 py-4">
-                  <DialogTitle className="text-base text-[#00cfff]">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] px-6 py-4">
+                  <DialogTitle className="text-base text-orange-600 dark:text-[#00cfff]">
                     Chỉnh sửa hồ sơ
                   </DialogTitle>
-                  <DialogClose className="text-white/40 hover:text-white transition-colors">
+                  <DialogClose className="text-slate-500 hover:text-slate-800 dark:text-white/40 dark:hover:text-white transition-colors">
                     <X className="w-5 h-5" />
                   </DialogClose>
                 </div>
@@ -175,7 +175,7 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
         </DialogDescription>
         <div className="overflow-y-auto">
           <div className="pt-8 px-6 pb-2">
-            <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/40 shadow-lg shadow-cyan-500/10">
+            <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 shadow-lg shadow-orange-500/10 dark:shadow-cyan-500/10">
               <img
                 src={currentImage}
                 className="h-full w-full object-cover"
@@ -186,7 +186,7 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
               />
               <button
                 type="button"
-                className="absolute flex size-8 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white outline-offset-2 transition-colors hover:bg-black/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#00cfff]"
+                className="absolute flex size-8 cursor-pointer items-center justify-center rounded-full bg-black/40 dark:bg-black/60 text-white outline-offset-2 transition-colors hover:bg-black/60 dark:hover:bg-black/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-500 dark:focus-visible:outline-[#00cfff]"
                 onClick={handleThumbnailClick}
                 aria-label="Change profile picture"
               >
@@ -206,7 +206,7 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
           <div className="px-6 pb-6 pt-4">
             <form id="profile-form" onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor={`${id}-fullname`} className="text-gray-300">Họ và tên</Label>
+                <Label htmlFor={`${id}-fullname`} className="text-slate-700 dark:text-gray-300">Họ và tên</Label>
                 <Input
                   id={`${id}-fullname`}
                   placeholder="Tên của bạn"
@@ -214,13 +214,14 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
                   onChange={(e) => setName(e.target.value)}
                   type="text"
                   required
+                  className="bg-slate-50 dark:bg-black/20 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-gray-300">Liên kết mạng xã hội (Website)</Label>
-                  <button type="button" onClick={() => setSocialLinks([...socialLinks, ""])} className="text-cyan-400 hover:text-cyan-300 transition-colors p-1 flex items-center justify-center bg-cyan-500/10 rounded-full">
+                  <Label className="text-slate-700 dark:text-gray-300">Liên kết mạng xã hội (Website)</Label>
+                  <button type="button" onClick={() => setSocialLinks([...socialLinks, ""])} className="text-orange-600 hover:text-orange-500 dark:text-cyan-400 dark:hover:text-cyan-300 transition-colors p-1 flex items-center justify-center bg-orange-500/10 dark:bg-cyan-500/10 rounded-full">
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
@@ -228,11 +229,11 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
                 {socialLinks.map((link, index) => (
                   <div key={index} className="relative flex items-center gap-2">
                     <div className="relative flex-1 flex items-center">
-                      <span className="absolute left-3 text-cyan-400">
+                      <span className="absolute left-3 text-orange-500 dark:text-cyan-400">
                         <Link className="w-4 h-4" />
                       </span>
                       <Input
-                        placeholder="instagram.com/yourprofile"
+                        placeholder="https://example.com/yourprofile"
                         value={link}
                         onChange={(e) => {
                           const newLinks = [...socialLinks];
@@ -240,11 +241,11 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
                           setSocialLinks(newLinks);
                         }}
                         type="text"
-                        className="pl-10"
+                        className="pl-10 bg-slate-50 dark:bg-black/20 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30"
                       />
                     </div>
                     {socialLinks.length > 1 && (
-                      <button type="button" onClick={() => setSocialLinks(socialLinks.filter((_, i) => i !== index))} className="text-red-400 hover:text-red-300 transition-colors p-2.5 bg-red-500/10 hover:bg-red-500/20 rounded-lg">
+                      <button type="button" onClick={() => setSocialLinks(socialLinks.filter((_, i) => i !== index))} className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors p-2.5 bg-red-500/10 hover:bg-red-500/20 rounded-lg">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
@@ -253,7 +254,7 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor={`${id}-bio`} className="text-gray-300">Lời giới thiệu</Label>
+                <Label htmlFor={`${id}-bio`} className="text-slate-700 dark:text-gray-300">Lời giới thiệu</Label>
                 <Textarea
                   id={`${id}-bio`}
                   placeholder="Viết một vài dòng về bản thân..."
@@ -261,27 +262,27 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
                   maxLength={maxLength}
                   onChange={handleChange}
                   aria-describedby={`${id}-description`}
-                  className="resize-none"
+                  className="resize-none bg-slate-50 dark:bg-black/20 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white"
                 />
                 <p
                   id={`${id}-description`}
-                  className="mt-2 text-right text-xs text-gray-400"
+                  className="mt-2 text-right text-xs text-slate-500 dark:text-gray-400"
                   role="status"
                   aria-live="polite"
                 >
-                  Còn lại <span className="tabular-nums font-medium text-cyan-400">{limit - characterCount}</span> ký tự
+                  Còn lại <span className="tabular-nums font-medium text-orange-600 dark:text-cyan-400">{limit - characterCount}</span> ký tự
                 </p>
               </div>
             </form>
           </div>
         </div>
-        <DialogFooter className="border-t border-white/[0.08] px-6 py-4 relative z-10">
+        <DialogFooter className="border-t border-slate-200 dark:border-white/[0.08] px-6 py-4 relative z-10 bg-slate-50/50 dark:bg-transparent">
           <DialogClose asChild>
-            <Button type="button" variant="outline" className="border-white/10 hover:bg-white/5 bg-transparent shadow-none text-white">
+            <Button type="button" variant="outline" className="border-slate-300 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/5 bg-white dark:bg-transparent shadow-sm dark:shadow-none text-slate-700 dark:text-white">
               Hủy
             </Button>
           </DialogClose>
-          <GradientButton type="submit" form="profile-form" disabled={isLoading} className="h-9 px-6 min-w-0 rounded-lg text-sm shadow-[0_0_15px_rgba(0,207,255,0.2)]">
+          <GradientButton type="submit" form="profile-form" disabled={isLoading} className="h-9 px-6 min-w-0 rounded-lg text-sm shadow-[0_0_15px_rgba(249,115,22,0.2)] dark:shadow-[0_0_15px_rgba(0,207,255,0.2)]">
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Lưu thay đổi
           </GradientButton>

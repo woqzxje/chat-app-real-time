@@ -20,27 +20,29 @@ const HomePage = () => {
   } = useVideoCall(socket, authUser?._id, authUser?.fullName)
 
   return (
-    <div className='w-full h-full overflow-hidden bg-black/10 flex'>
+    <div className='fixed inset-0 overflow-hidden bg-black/10 flex items-stretch'>
 
       {/* Cột 1: Left Sidebar */}
       <div
-        className={`h-full flex-shrink-0 overflow-hidden transition-all duration-500 ease-in-out ${selectedUser ? "w-0 md:w-[30%] xl:w-[25%]" : "w-full md:w-1/2"}`}
+        className={`h-full flex flex-col flex-shrink-0 overflow-hidden transition-all duration-500 ease-in-out relative ${selectedUser ? "w-0 md:w-[30%] xl:w-[25%]" : "w-full md:w-1/2"}`}
       >
-        <div className="w-[100vw] md:w-full h-full">
+        <div className="absolute inset-0 flex flex-col">
           <Sidebar />
         </div>
       </div>
 
       {/* Cột 2: Chat Container */}
-      <div className='h-full flex-1 min-w-0 transition-all duration-500 ease-in-out relative'>
-        <ChatContainer startCall={startCall} />
+      <div className='h-full flex-1 flex flex-col min-w-0 transition-all duration-500 ease-in-out relative'>
+        <div className="absolute inset-0 flex flex-col">
+          <ChatContainer startCall={startCall} />
+        </div>
       </div>
 
       {/* Cột 3: Right Sidebar (Push effect - Animated Width) */}
       <div
-        className={`h-full flex-shrink-0 overflow-hidden transition-all duration-500 ease-in-out border-white/5 ${selectedUser && showRightSidebar ? "w-full md:w-[300px] xl:w-[350px] border-l" : "w-0 border-l-0"}`}
+        className={`h-full flex flex-col flex-shrink-0 overflow-hidden transition-all duration-500 ease-in-out border-white/5 relative ${selectedUser && showRightSidebar ? "w-full md:w-[300px] xl:w-[350px] border-l" : "w-0 border-l-0"}`}
       >
-        <div className="w-[100vw] md:w-[300px] xl:w-[350px] h-full">
+        <div className="absolute inset-0 flex flex-col">
           {/* Luôn render component để giữ trạng thái, nhưng bị ẩn đi bởi width 0 của cha */}
           <RightSidebar />
         </div>

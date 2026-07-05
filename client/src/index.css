@@ -2,6 +2,8 @@
 
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 html,
 body,
 #root {
@@ -138,6 +140,13 @@ input:-webkit-autofill:active{
 
 @layer components {
   .gradient-button {
+    --color-1: #000;
+    --color-2: #431407;
+    --color-3: #9a3412;
+    --color-4: #ea580c;
+    --color-5: #f97316;
+    --border-color-1: hsla(24, 75%, 60%, 0.2);
+    --border-color-2: hsla(24, 75%, 40%, 0.75);
     position: relative;
     appearance: none;
     cursor: pointer;
@@ -169,6 +178,16 @@ input:-webkit-autofill:active{
       --stop-5 0.5s;
   }
 
+  .dark .gradient-button {
+    --color-1: #000;
+    --color-2: #001f24;
+    --color-3: #003e4a;
+    --color-4: #0d9488;
+    --color-5: #06b6d4;
+    --border-color-1: hsla(190, 75%, 60%, 0.2);
+    --border-color-2: hsla(190, 75%, 40%, 0.75);
+  }
+
   .gradient-button::before {
     content: '';
     position: absolute;
@@ -190,14 +209,14 @@ input:-webkit-autofill:active{
     --pos-y: 91.51%;
     --spread-x: 120.24%;
     --spread-y: 103.18%;
-    --color-1: #22d3ee;
-    --color-2: #14b8a6;
-    --color-3: #0f766e;
-    --color-4: #042f2e;
+    --color-1: #fdba74;
+    --color-2: #fb923c;
+    --color-3: #ea580c;
+    --color-4: #9a3412;
     --color-5: #000;
     --border-angle: 190deg;
-    --border-color-1: hsla(190, 78%, 90%, 0.1);
-    --border-color-2: hsla(190, 75%, 90%, 0.6);
+    --border-color-1: hsla(24, 78%, 90%, 0.1);
+    --border-color-2: hsla(24, 75%, 90%, 0.6);
     --stop-1: 0%;
     --stop-2: 8.8%;
     --stop-3: 21.44%;
@@ -205,12 +224,31 @@ input:-webkit-autofill:active{
     --stop-5: 85.76%;
   }
 
+  .dark .gradient-button:hover {
+    --color-1: #22d3ee;
+    --color-2: #14b8a6;
+    --color-3: #0f766e;
+    --color-4: #042f2e;
+    --color-5: #000;
+    --border-color-1: hsla(190, 78%, 90%, 0.1);
+    --border-color-2: hsla(190, 75%, 90%, 0.6);
+  }
+
   .gradient-button-variant {
+    --color-1: #220500;
+    --color-2: #431407;
+    --color-3: #ea580c;
+    --color-4: #ffedd5;
+    --border-angle: 200deg;
+    --border-color-1: hsla(24, 75%, 90%, 0.6);
+    --border-color-2: hsla(24, 50%, 90%, 0.15);
+  }
+
+  .dark .gradient-button-variant {
     --color-1: #000022;
     --color-2: #082f49;
     --color-3: #0d9488;
     --color-4: #ccfbf1;
-    --border-angle: 200deg;
     --border-color-1: hsla(190, 75%, 90%, 0.6);
     --border-color-2: hsla(190, 50%, 90%, 0.15);
   }
@@ -220,10 +258,10 @@ input:-webkit-autofill:active{
     --pos-y: 95.51%;
     --spread-x: 110.24%;
     --spread-y: 110.2%;
-    --color-1: #000020;
-    --color-2: #ccfbf1;
-    --color-3: #0d9488;
-    --color-4: #082f49;
+    --color-1: #200000;
+    --color-2: #ffedd5;
+    --color-3: #ea580c;
+    --color-4: #431407;
     --color-5: #000;
     --stop-1: 0%;
     --stop-2: 10%;
@@ -231,6 +269,16 @@ input:-webkit-autofill:active{
     --stop-4: 71.34%;
     --stop-5: 90.76%;
     --border-angle: 210deg;
+    --border-color-1: hsla(24, 75%, 90%, 0.2);
+    --border-color-2: hsla(24, 50%, 90%, 0.75);
+  }
+
+  .dark .gradient-button-variant:hover {
+    --color-1: #000020;
+    --color-2: #ccfbf1;
+    --color-3: #0d9488;
+    --color-4: #082f49;
+    --color-5: #000;
     --border-color-1: hsla(190, 75%, 90%, 0.2);
     --border-color-2: hsla(190, 50%, 90%, 0.75);
   }

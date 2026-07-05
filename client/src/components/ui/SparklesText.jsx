@@ -4,7 +4,7 @@ import { cn } from "../../lib/utils";
 
 const SparklesText = ({
   text,
-  colors = { first: "#00cfff", second: "#FE8BBB" },
+  colors = { first: "#f97316", second: "#00cfff" },
   className,
   sparklesCount = 10,
   textStyle,
