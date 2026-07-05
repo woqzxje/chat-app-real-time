@@ -93,21 +93,23 @@ export function ProfileEditModal({ children, open, onOpenChange }) {
       if (fileInputRef.current?.files?.[0]) {
         // Có ảnh mới -> Base64
         const file = fileInputRef.current.files[0];
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-          const base64Image = reader.result;
-          await updateProfile({ profilePic: base64Image, fullName: name, bio: value, socialLinks: validLinks });
-          onOpenChange(false);
-          setIsLoading(false);
-        };
+        
+        const base64Image = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        await updateProfile({ profilePic: base64Image, fullName: name, bio: value, socialLinks: validLinks });
       } else {
         // Không có ảnh mới
         await updateProfile({ fullName: name, bio: value, socialLinks: validLinks });
-        onOpenChange(false);
-        setIsLoading(false);
       }
+      onOpenChange(false);
     } catch (error) {
+      toast.error("Đã xảy ra lỗi, vui lòng thử lại");
+    } finally {
       setIsLoading(false);
     }
   };

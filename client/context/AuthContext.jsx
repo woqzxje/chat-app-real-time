@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }) => {
                 toast.success("Cập nhật hồ sơ thành công")
             }
         } catch (error) {
-            toast.error(error.message)
+            toast.error(error.response?.data?.detail || error.response?.data?.message || error.message)
         }
     }
 

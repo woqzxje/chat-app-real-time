@@ -766,18 +766,21 @@ const ChatContainer = ({ startCall }) => {
     setTimeout(scrollToBottom, 50);
 
     setUploading(true);
-    // Đọc file ảnh dưới dạng base64 để gửi lên server
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      try {
-        const dataUrl = reader.result;
-        await sendMessage({ image: dataUrl, is_nsfw: false });
-      } finally {
-        setUploading(false);
-        e.target.value = ''; // Reset input file
-      }
-    };
-    reader.readAsDataURL(file);
+    
+    try {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      await sendMessage({ image: dataUrl, is_nsfw: false });
+    } catch (err) {
+      toast.error("Không thể đọc hoặc gửi ảnh");
+    } finally {
+      setUploading(false);
+      e.target.value = ''; // Reset input file
+    }
   };
 
   // Hàm dùng chung để upload file/folder lên backend rồi lưu kết quả vào state
