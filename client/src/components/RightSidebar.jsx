@@ -267,7 +267,7 @@ const RightSidebar = () => {
   const friendsList = users.filter(u => u.isFriend && !u.isGroup && !(selectedUser?.members || []).includes(u._id));
 
   return selectedUser && (
-    <div className="bg-white/80 dark:bg-[#8185B2]/10 backdrop-blur-md flex-1 text-slate-900 dark:text-white w-full flex flex-col relative">
+    <div className="bg-white/40 dark:bg-[#8185B2]/10 backdrop-blur-lg flex-1 text-slate-900 dark:text-white w-full flex flex-col relative">
       
       {/* Phần nội dung có thể cuộn */}
       <div className="flex-1 overflow-y-scroll pb-6">

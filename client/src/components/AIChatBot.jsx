@@ -54,7 +54,7 @@ const AIChatBot = () => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 left-8 z-[100] p-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-full shadow-2xl hover:scale-110 transition-transform cursor-pointer hidden md:block"
+        className="fixed bottom-28 left-6 z-[100] p-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-full shadow-2xl hover:scale-110 transition-transform cursor-pointer hidden md:block"
         title="Trợ lý AI"
       >
         <Bot className="w-6 h-6" />

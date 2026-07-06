@@ -275,7 +275,7 @@ const SideBar = () => {
 
   // 4. --- Giao diện (Render) ---
   return (
-    <div className='bg-white/80 dark:bg-[#8185B2]/10 backdrop-blur-md flex-1 p-6 overflow-y-scroll text-slate-900 dark:text-white'>
+    <div className='bg-white/40 dark:bg-[#8185B2]/10 backdrop-blur-lg flex-1 p-6 overflow-y-scroll text-slate-900 dark:text-white'>
 
       {/* KHU VỰC HEADER: Logo và Menu */}
       <div className='pb-6'>
