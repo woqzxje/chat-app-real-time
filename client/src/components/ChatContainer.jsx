@@ -5,12 +5,13 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square, LogOut, Share2, Sparkles, X } from 'lucide-react';
+import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square, LogOut, Share2, Sparkles, X, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparklesText } from './ui/SparklesText';
 import { ShinyButton } from './ui/ShinyButton';
 import FloatingActionMenu from './ui/floating-action-menu';
 import { Paperclip, FolderPlus } from 'lucide-react';
+import { ReportModal } from './ReportModal';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
 
@@ -364,7 +365,7 @@ const CallBubble = ({ callInfo, createdAt }) => {
 };
 
 // ── Component MessageItem (Tin nhắn đơn lẻ) ──────────────────────────────────
-const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, revokeMessage, scrollToBottom, onForward }) => {
+const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, revokeMessage, scrollToBottom, onForward, onReport }) => {
   const isOwn = msg.senderId === authUser._id;
   const [showOptions, setShowOptions] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
@@ -447,6 +448,17 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                   >
                     <Share2 className="w-4 h-4" /> Chuyển tiếp
                   </button>
+                  {!isOwn && (
+                    <button 
+                      onClick={() => {
+                        setShowOptions(false);
+                        onReport(msg);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-yellow-500 hover:bg-white/10 hover:text-yellow-400 flex items-center gap-2 cursor-pointer"
+                    >
+                      <AlertTriangle className="w-4 h-4" /> Báo cáo
+                    </button>
+                  )}
                   {isOwn && (
                     <button 
                       onClick={() => {
@@ -489,6 +501,17 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
               className="hidden md:block text-gray-400 hover:text-green-400 cursor-pointer p-1"
             >
               <Share2 className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Nút Báo cáo (Chỉ hiện trên Desktop / Hover) */}
+          {!msg.isDeleted && !isOwn && (
+            <button 
+              onClick={() => onReport(msg)} 
+              title="Báo cáo" 
+              className="hidden md:block text-gray-400 hover:text-yellow-500 cursor-pointer p-1"
+            >
+              <AlertTriangle className="w-4 h-4" />
             </button>
           )}
           
@@ -646,6 +669,10 @@ const ChatContainer = ({ startCall }) => {
 
   // Trạng thái theo dõi quá trình upload file lên server
   const [uploading, setUploading] = useState(false);
+
+  // Trạng thái báo cáo tin nhắn
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportedMessage, setReportedMessage] = useState(null);
 
   // --- Trạng thái và ref cho Ghi âm (Voice Message) ---
   const [isRecording, setIsRecording] = useState(false);
@@ -967,8 +994,9 @@ const ChatContainer = ({ startCall }) => {
 
   // Nếu đã chọn người dùng để chat, hiển thị khung chat
   return (
-    <AnimatePresence mode="wait">
-      {selectedUser ? (
+    <>
+      <AnimatePresence mode="wait">
+        {selectedUser ? (
         <motion.div
           key="chat-view"
           initial={{ opacity: 0, x: 20 }}
@@ -1089,6 +1117,10 @@ const ChatContainer = ({ startCall }) => {
             revokeMessage={revokeMessage}
             scrollToBottom={scrollToBottom}
             onForward={onForward}
+            onReport={(message) => {
+              setReportedMessage(message);
+              setIsReportModalOpen(true);
+            }}
           />
           )
         ))}
@@ -1218,6 +1250,7 @@ const ChatContainer = ({ startCall }) => {
           <p className="text-lg font-medium text-white bg-red-500 px-4 py-1.5 shadow-lg">Chat mọi lúc, mọi nơi</p>
         </motion.div>
       )}
+      </AnimatePresence>
       {/* ── Forward Modal ── */}
       <AnimatePresence>
         {showForwardModal && (
@@ -1307,7 +1340,15 @@ const ChatContainer = ({ startCall }) => {
           </div>
         )}
       </AnimatePresence>
-    </AnimatePresence>
+
+      {/* Report Modal */}
+      <ReportModal 
+        open={isReportModalOpen} 
+        onOpenChange={setIsReportModalOpen} 
+        message={reportedMessage} 
+        authUser={authUser} 
+      />
+    </>
   );
 };
 

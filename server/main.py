@@ -43,6 +43,9 @@ app.include_router(message_router, prefix="/api/messages")
 app.include_router(file_router,    prefix="/api/files")
 # Route liên quan đến AI (Chatbot, Tóm tắt)
 app.include_router(ai_router,      prefix="/api/ai")
+# Route liên quan đến báo cáo (Report)
+from app.routes.report_routes import router as report_router
+app.include_router(report_router,  prefix="/api/reports")
 
 # Route kiểm tra trạng thái hoạt động của server
 @app.get("/api/status")

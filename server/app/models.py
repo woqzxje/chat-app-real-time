@@ -150,7 +150,10 @@ class Report(Document):
     """
     reporterId: str
     reportedId: str
+    messageId: str
     reason: str
+    status: str = "pending"
+    decision: Optional[str] = None
     createdAt: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:

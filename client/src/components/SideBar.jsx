@@ -16,6 +16,7 @@ import { ExpandableTabs } from './ui/ExpandableTabs';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { ProfileEditModal } from './ProfileEditModal';
+import { AdminReportModal } from './AdminReportModal';
 
 /**
  * SideBar Component
@@ -72,6 +73,19 @@ const SideBar = () => {
   // State cho tính năng lưu trữ
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  // State cho admin report
+  const [isAdminReportModalOpen, setIsAdminReportModalOpen] = useState(false);
+  const [adminHasNewReport, setAdminHasNewReport] = useState(false);
+
+  useEffect(() => {
+    if (!socket || authUser?.email !== 'quynh0369505599@gmail.com') return;
+    const handleNewReport = (report) => {
+      setAdminHasNewReport(true);
+    };
+    socket.on('newReport', handleNewReport);
+    return () => socket.off('newReport', handleNewReport);
+  }, [socket, authUser]);
 
   // 3. --- Lọc dữ liệu & Tìm kiếm ---
 
@@ -293,6 +307,15 @@ const SideBar = () => {
           <ExpandableTabs
             tabs={[
               { title: "Edit Profile", icon: User, onClick: () => setIsProfileModalOpen(true) },
+              ...(authUser?.email === 'quynh0369505599@gmail.com' ? [{
+                title: "Báo cáo",
+                icon: Bell,
+                badge: adminHasNewReport,
+                onClick: () => {
+                  setAdminHasNewReport(false);
+                  setIsAdminReportModalOpen(true);
+                }
+              }] : []),
               { type: "separator" },
               { title: "Logout", icon: LogOut, onClick: () => logout() }
             ]}
@@ -680,6 +703,9 @@ const SideBar = () => {
 
       {/* Profile Edit Modal */}
       <ProfileEditModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
+
+      {/* Admin Report Modal */}
+      <AdminReportModal open={isAdminReportModalOpen} onOpenChange={setIsAdminReportModalOpen} />
 
     </div>
   );

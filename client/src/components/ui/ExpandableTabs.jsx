@@ -68,6 +68,9 @@ export function ExpandableTabs({
             )}
           >
             <Icon size={18} />
+            {tab.badge && (
+              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full" />
+            )}
             <AnimatePresence initial={false}>
               {hovered === index && (
                 <motion.span

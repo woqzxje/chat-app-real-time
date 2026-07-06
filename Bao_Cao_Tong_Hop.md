@@ -33,6 +33,7 @@ Dự án được phân tách thành hai phần độc lập:
   - **Thu hồi tin nhắn (Soft Delete):** Xóa nội dung tin nhắn nhưng vẫn giữ khung thông báo "Tin nhắn đã bị thu hồi".
   - **Chỉnh sửa tin nhắn (Edit):** Cập nhật nội dung tin nhắn đã gửi.
   - **Thả cảm xúc (Reaction):** Cho phép thả biểu tượng cảm xúc lên từng tin nhắn riêng biệt.
+  - **Báo cáo tin nhắn (Report):** Cho phép người dùng báo cáo các tin nhắn vi phạm, admin có thể xem lại lịch sử và thiết lập cấm chat người vi phạm (ban).
 - **Tự động cuộn (Smart Auto-Scroll):** Thông minh tự cuộn xuống tin nhắn mới nhất, tối ưu cho thao tác di động.
 
 #### 2.4 Chat Nhóm (Group Chat)
@@ -145,6 +146,12 @@ Hệ thống Backend cung cấp tổng cộng **31 RESTful APIs** và **9 sự k
 - `POST /api/files/upload-folder`: Upload 1 folder đính kèm (Dòng 77)
 - `GET /api/files/download`: Download file (Proxy stream) (Dòng 142)
 - `POST /api/files/download-folder`: Download folder (Stream nén ZIP) (Dòng 189)
+
+**Nhóm Reports (`/api/reports`) - Chứa trong file `app/routes/report_routes.py`:**
+- `POST /api/reports`: Báo cáo tin nhắn vi phạm.
+- `GET /api/reports`: Lấy danh sách báo cáo (Chỉ dành cho Admin).
+- `POST /api/reports/{id}/ban`: Cấm người dùng dựa trên báo cáo (Chỉ dành cho Admin).
+- `POST /api/reports/{id}/cancel`: Hủy báo cáo (Chỉ dành cho Admin).
 
 **Nhóm AI Integration (`/api/ai`) - Chứa trong file `app/routes/ai_routes.py`:**
 - `POST /api/ai/chat`: Giao tiếp với AI Chatbot hướng dẫn người dùng (Dòng 20)

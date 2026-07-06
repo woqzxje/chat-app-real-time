@@ -109,7 +109,7 @@ Các dịch vụ và tiện ích bổ sung:
 
 - **Nhắn tin Thời gian thực**: Giao tiếp tốc độ ánh sáng thông qua Socket.IO. Hỗ trợ hiển thị trạng thái đang hoạt động và "Đã xem" (Read Receipts).
 - **Trải nghiệm UX Di Động**: Menu tùy chọn (3 chấm), nhấn giữ (Long-press) để thả biểu tượng cảm xúc, Layout không lỗi tràn viền trên mobile.
-- **Tính năng Trò Chuyện**: Chỉnh sửa tin nhắn (Edit), thu hồi tin nhắn (Revoke), phản hồi (Reaction).
+- **Tính năng Trò Chuyện**: Chỉnh sửa tin nhắn (Edit), thu hồi tin nhắn (Revoke), phản hồi (Reaction), báo cáo tin nhắn (Report).
 - **Trò Chuyện Nhóm (Group Chat)**: Hỗ trợ tạo nhóm, quản lý thành viên (thêm/kích), tùy biến giao diện nhóm.
 - **Gọi Video Trực Tuyến**: Thiết lập WebRTC Peer-to-Peer, hỗ trợ qua STUN/TURN Server.
 - **Truyền Tệp Tin Nâng Cao**: Hỗ trợ gửi ảnh, tài liệu và đặc biệt nén toàn bộ thư mục (Zip Folder) trực tiếp trên RAM máy chủ thông qua Cloudinary.
