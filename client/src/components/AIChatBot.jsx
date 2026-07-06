@@ -13,13 +13,19 @@ const AIChatBot = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   const dragControls = useDragControls();
   const constraintsRef = useRef(null);
   
   const { authUser } = useContext(AuthContext);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   };
 
   useEffect(() => {
@@ -155,7 +161,7 @@ const AIChatBot = () => {
             {/* Content Wrapper */}
             <div className={`flex-1 flex flex-col overflow-hidden transition-opacity duration-300 ${isMinimized ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5 z-10 custom-scrollbar">
+              <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-5 flex flex-col gap-5 z-10 custom-scrollbar">
                 {messages.map((msg, idx) => (
                   <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {msg.sender === 'ai' && (
@@ -164,7 +170,7 @@ const AIChatBot = () => {
                         </div>
                     )}
                     <div 
-                      className={`max-w-[78%] rounded-[1.25rem] px-5 py-3.5 text-[14px] leading-relaxed shadow-sm backdrop-blur-md 
+                      className={`max-w-[78%] rounded-[1.25rem] px-5 py-3.5 text-[14px] leading-relaxed shadow-sm backdrop-blur-md whitespace-pre-wrap
                         ${msg.sender === 'user' 
                           ? 'bg-gradient-to-r from-[#969BE7] to-[#a2a6ea] text-white rounded-br-sm shadow-[0_4px_15px_rgba(150,155,231,0.2)]' 
                           : 'bg-white/80 border border-[#D1D0EF]/40 text-gray-700 rounded-bl-sm shadow-[0_4px_15px_rgba(209,208,239,0.2)]'}`}
