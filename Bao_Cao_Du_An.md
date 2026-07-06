@@ -58,6 +58,10 @@ Dự án được phân tách thành hai phần độc lập:
 - **Responsive Mobile-First:** Giao diện co giãn hoàn hảo trên các thiết bị di động, không bị tràn viền (h-[100dvh]).
 - **Micro-interactions:** Hiệu ứng hover, click, thả tim được bổ sung mượt mà bằng Framer Motion. Menu ngữ cảnh (Right-click / Long-press trên mobile) giúp tương tác với tin nhắn tự nhiên như ứng dụng Native.
 
+### 2.8 Trợ lý ảo AI & Tóm tắt tin nhắn (AI Features)
+- **Trợ lý ảo thông minh (AI Chatbot):** Tích hợp Google Gemini hoạt động như một trợ lý ảo, hướng dẫn người dùng mới cách sử dụng các tính năng của ứng dụng (nhắn tin, tạo nhóm, gọi video) một cách thân thiện.
+- **Tóm tắt hội thoại (Chat Summarization):** Tự động đọc và tóm tắt 50 tin nhắn gần nhất, giúp người dùng nhanh chóng nắm bắt các ý chính và quyết định trong nhóm chat hoặc đoạn hội thoại cá nhân mà không cần phải cuộn lên xem lại.
+
 ---
 
 ## 3. THÔNG SỐ CÔNG NGHỆ ÁP DỤNG
@@ -74,4 +78,4 @@ Dự án được phân tách thành hai phần độc lập:
 - **Database:** MongoDB, Motor (Async driver), Beanie (ODM).
 - **Kết nối Socket:** `python-socketio`.
 - **Bảo mật:** Bcrypt, PyJWT.
-- **Dịch vụ bên thứ ba:** Cloudinary API (lưu trữ ảnh/file).
+- **Dịch vụ bên thứ ba:** Cloudinary API (lưu trữ ảnh/file), Google Gemini API (Tích hợp AI).

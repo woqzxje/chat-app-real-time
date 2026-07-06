@@ -29,9 +29,9 @@ Khi giảng viên yêu cầu demo, hãy thực hiện theo quy trình sau để 
 ---
 
 ## 2. Danh sách chính xác các API & Socket Events
-Hệ thống Backend cung cấp tổng cộng **29 RESTful APIs** và **9 sự kiện WebSockets (Socket.IO)** do Client gửi lên để xử lý real-time. Dưới đây là danh sách chính xác trích xuất từ mã nguồn để bạn đưa vào báo cáo:
+Hệ thống Backend cung cấp tổng cộng **31 RESTful APIs** và **9 sự kiện WebSockets (Socket.IO)** do Client gửi lên để xử lý real-time. Dưới đây là danh sách chính xác trích xuất từ mã nguồn để bạn đưa vào báo cáo:
 
-### 2.1. Nhóm REST API (29 Endpoints)
+### 2.1. Nhóm REST API (31 Endpoints)
 
 **Nhóm Auth & User (`/api/auth`) - Chứa trong file `app/routes/user_routes.py`:**
 - `POST /api/auth/signup`: Đăng ký tài khoản (Dòng 67)
@@ -68,6 +68,10 @@ Hệ thống Backend cung cấp tổng cộng **29 RESTful APIs** và **9 sự k
 - `GET /api/files/download`: Download file (Proxy stream) (Dòng 142)
 - `POST /api/files/download-folder`: Download folder (Stream nén ZIP) (Dòng 189)
 
+**Nhóm AI Integration (`/api/ai`) - Chứa trong file `app/routes/ai_routes.py`:**
+- `POST /api/ai/chat`: Giao tiếp với AI Chatbot hướng dẫn người dùng (Dòng 20)
+- `GET /api/ai/summarize/{target_id}`: Tóm tắt 50 tin nhắn gần nhất bằng Gemini (Dòng 48)
+
 *(Lưu ý: Không có API HTTP nào cho Video Call vì chức năng đó chạy 100% qua Socket)*
 
 ### 2.2. Nhóm Socket.IO Events (9 Sự kiện Client gửi lên)
@@ -98,7 +102,7 @@ Backend được xây dựng theo kiến trúc MVC/Controller-Service kết hợ
   - `models.py`: Chứa các Schema định nghĩa cấu trúc dữ liệu lưu trong DB (User, Message).
   - `dependencies.py`: File chứa các middleware (vd: chặn API nếu chưa có hoặc sai JWT Token).
   - `socket_manager.py`: Bộ não xử lý real-time, nắm giữ danh sách người dùng online và điều phối tín hiệu cuộc gọi (WebRTC).
-  - **Thư mục `routes/` (Controllers):** Nơi định nghĩa các endpoint API (URL) và logic nghiệp vụ, chia làm 3 file: `user_routes.py`, `message_routes.py`, `file_routes.py`.
+  - **Thư mục `routes/` (Controllers):** Nơi định nghĩa các endpoint API (URL) và logic nghiệp vụ, chia làm 4 file: `user_routes.py`, `message_routes.py`, `file_routes.py`, `ai_routes.py`.
 
 ---
 
@@ -158,6 +162,13 @@ Backend được xây dựng theo kiến trúc MVC/Controller-Service kết hợ
 - **Công nghệ:** FastAPI StreamingResponse, httpx, zipfile, Cloudinary API.
 - *Điểm nhấn để trả lời:* "Chức năng tải folder là phần khó. Thay vì lưu tạm xuống ổ cứng server rất tốn tài nguyên, em xử lý nén file zip trực tiếp trên RAM (Memory Stream) giúp hệ thống nhẹ gọn và an toàn hơn."
 
+### 4.7. File `app/routes/ai_routes.py`
+- **Tính năng:** Tích hợp AI Google Gemini để làm trợ lý ảo và tóm tắt tin nhắn.
+- **Logic code nổi bật:**
+  - Hàm `chat_with_ai`: Nhận lịch sử chat và câu hỏi, tạo prompt truyền cho model `gemini-2.5-flash` để sinh câu trả lời hướng dẫn người dùng.
+  - Hàm `summarize_chat`: Query 50 tin nhắn gần nhất trong MongoDB dựa vào `target_id`, xử lý định dạng hội thoại, sau đó yêu cầu AI tóm tắt nội dung chính và các quyết định.
+- **Công nghệ:** Google Generative AI (Gemini).
+
 ---
 
 ## 5. Phân Chia Công Việc (Task Division)
@@ -172,7 +183,7 @@ Dưới đây là bảng phân chia công việc chi tiết giữa 2 thành viê
 | **`main.py` & `socket_manager.py`** | Thiết lập kiến trúc Server bất đồng bộ (FastAPI), cấu hình WebSockets và điều phối tín hiệu WebRTC (P2P). |
 | **`database.py` & `models.py`** | Thiết kế cơ sở dữ liệu NoSQL (MongoDB), tích hợp Beanie ODM, tối ưu hóa truy vấn dữ liệu bất đồng bộ. |
 | **`message_routes.py` & `user_routes.py`** | Xây dựng RESTful API bảo mật với JWT, xử lý logic chat nhóm, quản lý thành viên, và luồng kết bạn. |
-| **`file_routes.py`** | Tích hợp Cloudinary API, xây dựng luồng nén file ZIP trực tiếp trên RAM (Memory Stream) để tải thư mục. |
+| **`file_routes.py` & `ai_routes.py`** | Tích hợp Cloudinary API, xử lý nén ZIP trên RAM, tích hợp Google Gemini API xử lý luồng AI Chatbot & Tóm tắt. |
 
 <br/>
 
