@@ -9,8 +9,13 @@ from beanie.operators import Or
 
 router = APIRouter(tags=["AI Integration"])
 
+class ChatMessage(BaseModel):
+    sender: str
+    text: str
+
 class ChatRequest(BaseModel):
     message: str
+    history: Optional[list[ChatMessage]] = []
 
 @router.post("/chat")
 async def chat_with_ai(request: ChatRequest, current_user: User = Depends(get_current_user)):
@@ -25,9 +30,17 @@ async def chat_with_ai(request: ChatRequest, current_user: User = Depends(get_cu
     
     system_prompt = "Bạn là trợ lý ảo thân thiện của ứng dụng ChatApp. Nhiệm vụ của bạn là hướng dẫn người dùng mới cách sử dụng các tính năng như: nhắn tin, gửi file, tạo nhóm, gọi video. Hãy trả lời ngắn gọn, súc tích và thân thiện bằng tiếng Việt."
     
-    prompt = f"{system_prompt}\n\nNgười dùng: {request.message}\nTrợ lý:"
+    conversation_text = ""
+    for msg in request.history:
+        role = "Người dùng" if msg.sender == "user" else "Trợ lý"
+        conversation_text += f"{role}: {msg.text}\n"
+        
+    prompt = f"{system_prompt}\n\n{conversation_text}Người dùng: {request.message}\nTrợ lý:"
     try:
-        response = model.generate_content(prompt)
+        response = model.generate_content(
+            prompt,
+            generation_config={"max_output_tokens": 300}
+        )
         return {"reply": response.text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
