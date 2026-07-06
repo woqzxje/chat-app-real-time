@@ -914,7 +914,7 @@ const ChatContainer = ({ startCall }) => {
       try {
           const token = localStorage.getItem('token');
           const res = await axios.get(`${BACKEND_URL}/api/ai/summarize/${selectedUser._id}`, {
-              headers: { Authorization: `Bearer ${token}` }
+              headers: { token }
           });
           setSummaryData(res.data.summary);
       } catch(err) {

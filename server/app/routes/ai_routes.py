@@ -3,7 +3,7 @@ import google.generativeai as genai
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from app.dependencies import get_current_user_id
+from app.dependencies import get_current_user
 from app.models import Message, User
 from beanie.operators import Or
 
@@ -13,7 +13,8 @@ class ChatRequest(BaseModel):
     message: str
 
 @router.post("/chat")
-async def chat_with_ai(request: ChatRequest, current_user_id: str = Depends(get_current_user_id)):
+async def chat_with_ai(request: ChatRequest, current_user: User = Depends(get_current_user)):
+    current_user_id = str(current_user.id)
     """API cho chatbot hướng dẫn người mới."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -32,7 +33,8 @@ async def chat_with_ai(request: ChatRequest, current_user_id: str = Depends(get_
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/summarize/{target_id}")
-async def summarize_chat(target_id: str, current_user_id: str = Depends(get_current_user_id)):
+async def summarize_chat(target_id: str, current_user: User = Depends(get_current_user)):
+    current_user_id = str(current_user.id)
     """API tóm tắt đoạn hội thoại giữa user hiện tại và target_id (có thể là user khác hoặc group)."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:

@@ -36,7 +36,7 @@ const AIChatBot = () => {
       const token = localStorage.getItem('token');
       const res = await axios.post(`${BACKEND_URL}/api/ai/chat`, 
         { message: userMessage },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { token } }
       );
       
       setMessages(prev => [...prev, { sender: 'ai', text: res.data.reply }]);
