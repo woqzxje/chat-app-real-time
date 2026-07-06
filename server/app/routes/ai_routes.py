@@ -21,7 +21,7 @@ async def chat_with_ai(request: ChatRequest, current_user: User = Depends(get_cu
         raise HTTPException(status_code=500, detail="Gemini API Key is not configured")
     
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     
     system_prompt = "Bạn là trợ lý ảo thân thiện của ứng dụng ChatApp. Nhiệm vụ của bạn là hướng dẫn người dùng mới cách sử dụng các tính năng như: nhắn tin, gửi file, tạo nhóm, gọi video. Hãy trả lời ngắn gọn, súc tích và thân thiện bằng tiếng Việt."
     
@@ -61,7 +61,7 @@ async def summarize_chat(target_id: str, current_user: User = Depends(get_curren
         chat_history += f"{sender}: {content}\n"
         
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     
     prompt = f"Dưới đây là lịch sử một đoạn chat. Hãy tóm tắt ngắn gọn những ý chính, các quyết định hoặc công việc cần làm (nếu có):\n\n{chat_history}"
     
