@@ -5,7 +5,7 @@ import { ChatContext } from '../../context/ChatContext';
 import { AuthContext } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
-import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square, LogOut, Share2 } from 'lucide-react';
+import { Video, Phone, Send, PanelRight, Image as ImageIcon, Pencil, Trash2, SmilePlus, Check, CheckCheck, PhoneOff, PhoneMissed, MoreVertical, UserPlus, Mic, Square, LogOut, Share2, Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SparklesText } from './ui/SparklesText';
 import { ShinyButton } from './ui/ShinyButton';
@@ -902,6 +902,29 @@ const ChatContainer = ({ startCall }) => {
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [forwardTargets, setForwardTargets] = useState([]);
 
+  // --- Trạng thái cho tính năng AI Tóm tắt ---
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryData, setSummaryData] = useState('');
+  const [isSummarizing, setIsSummarizing] = useState(false);
+
+  const handleSummarize = async () => {
+      setShowSummaryModal(true);
+      setIsSummarizing(true);
+      setSummaryData('');
+      try {
+          const token = localStorage.getItem('token');
+          const res = await axios.get(`${BACKEND_URL}/api/ai/summarize/${selectedUser._id}`, {
+              headers: { Authorization: `Bearer ${token}` }
+          });
+          setSummaryData(res.data.summary);
+      } catch(err) {
+          console.error(err);
+          setSummaryData('Có lỗi xảy ra khi yêu cầu AI tóm tắt cuộc trò chuyện. Bạn đã cấu hình API Key chưa?');
+      } finally {
+          setIsSummarizing(false);
+      }
+  };
+
   const handleForwardMessage = async () => {
     if (forwardTargets.length === 0 || !selectedMessageToForward) return;
     const msgData = {
@@ -1005,6 +1028,14 @@ const ChatContainer = ({ startCall }) => {
           title="Cuộc gọi Video"
         >
           <Video className="w-6 h-6" />
+        </button>
+        {/* Nút Tóm tắt AI */}
+        <button
+          onClick={handleSummarize}
+          className="text-slate-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+          title="Tóm tắt hội thoại bằng AI"
+        >
+          <Sparkles className="w-6 h-6" />
         </button>
         {/* Nút bật tắt Sidebar Phải */}
         <button
@@ -1233,6 +1264,44 @@ const ChatContainer = ({ startCall }) => {
                 >
                   Gửi
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── AI Summary Modal ── */}
+      <AnimatePresence>
+        {showSummaryModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowSummaryModal(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#1e293b] border border-gray-200 dark:border-[#334155] rounded-2xl w-full max-w-lg p-6 shadow-2xl flex flex-col max-h-[80vh]"
+            >
+              <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Sparkles className="w-6 h-6 text-purple-500" /> AI Tóm tắt hội thoại
+                  </h2>
+                  <button onClick={() => setShowSummaryModal(false)} className="text-gray-500 hover:text-gray-900 dark:hover:text-white cursor-pointer"><X className="w-5 h-5" /></button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 dark:bg-[#0f172a] rounded-xl p-5 border border-gray-100 dark:border-white/5">
+                  {isSummarizing ? (
+                      <div className="flex flex-col items-center justify-center py-12 gap-4 text-purple-500">
+                          <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          <p className="font-medium animate-pulse">AI đang đọc và phân tích tin nhắn...</p>
+                      </div>
+                  ) : (
+                      <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap text-[15px] leading-relaxed">
+                          {summaryData}
+                      </div>
+                  )}
               </div>
             </motion.div>
           </div>
