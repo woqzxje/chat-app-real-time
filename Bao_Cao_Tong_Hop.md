@@ -113,7 +113,7 @@ Dự án được phân tách thành **hai phần độc lập**:
 
 ## Phần III — Danh sách API & Socket Events
 
-> Hệ thống cung cấp **35 RESTful APIs** và **9 sự kiện WebSocket** chính.
+> Hệ thống cung cấp **40 RESTful APIs** và **9 sự kiện WebSocket** chính.
 
 ### 3.1 REST API Endpoints
 
