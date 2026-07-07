@@ -118,9 +118,8 @@ def send_otp_email(recipient_email: str, otp_code: str, subject: str = "Mã xác
 
         msg.attach(MIMEText(html, 'html'))
         
-        # Kết nối tới SMTP của Gmail với timeout 10s tránh bị treo
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
-        server.starttls()
+        # Thử sử dụng cổng 465 (SSL) thay vì 587 (TLS) để hy vọng xuyên qua tường lửa của Render
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
         server.send_message(msg)
         server.quit()
