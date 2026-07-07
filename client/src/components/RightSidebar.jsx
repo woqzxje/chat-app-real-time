@@ -594,64 +594,85 @@ const RightSidebar = () => {
       </div>
 
       {/* MODAL THÊM THÀNH VIÊN */}
-      {showAddMemberModal && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#1e293b] w-full max-w-xs p-5 rounded-2xl shadow-2xl border border-white/10 m-4 flex flex-col max-h-[80vh]">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">Thêm thành viên</h3>
-              <button onClick={() => setShowAddMemberModal(false)} className="text-gray-400 hover:text-white transition-colors cursor-pointer p-1">
-                <X className="w-5 h-5" />
+      <AnimatePresence>
+        {showAddMemberModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-[#1e293b] w-full max-w-sm p-6 rounded-3xl shadow-2xl border border-white/10 relative"
+            >
+              <button 
+                onClick={() => setShowAddMemberModal(false)} 
+                className="absolute top-5 right-5 text-gray-400 hover:text-white transition-colors cursor-pointer p-1.5 bg-white/5 rounded-full hover:bg-white/10"
+              >
+                <X className="w-4 h-4" />
               </button>
-            </div>
-            
-            <div className="mb-2">
-              <label className="block text-sm font-medium text-gray-300 mb-1">Chọn bạn bè</label>
-              <div className="bg-black/20 border border-white/5 rounded-xl overflow-y-auto flex-1 max-h-48 p-2 space-y-1">
-                {friendsList.length === 0 ? (
-                  <p className="text-gray-500 text-sm p-2 italic text-center">Không có bạn bè nào có thể thêm.</p>
-                ) : (
-                  friendsList.map(friend => (
-                    <div 
-                      key={friend._id}
-                      onClick={() => {
-                        if (selectedFriends.includes(friend._id)) {
-                          setSelectedFriends(selectedFriends.filter(id => id !== friend._id));
-                        } else {
-                          setSelectedFriends([...selectedFriends, friend._id]);
-                        }
-                      }}
-                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${selectedFriends.includes(friend._id) ? 'bg-orange-500/20 dark:bg-cyan-500/20' : 'hover:bg-white/5'}`}
-                    >
-                      <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selectedFriends.includes(friend._id) ? 'bg-orange-500 border-orange-500 dark:bg-cyan-500 dark:border-cyan-500' : 'border-gray-500'}`}>
-                        {selectedFriends.includes(friend._id) && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <img src={friend.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-6 h-6 rounded-full object-cover" />
-                      <p className="text-sm font-medium flex-1 truncate">{friend.fullName}</p>
-                    </div>
-                  ))
-                )}
+              
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-white mb-1">Thêm thành viên</h3>
+                <p className="text-sm text-white/50">Chọn bạn bè để thêm vào nhóm <span className="font-semibold text-orange-400 dark:text-cyan-400">{selectedUser?.fullName}</span></p>
               </div>
-            </div>
+              
+              <div className="bg-black/20 border border-white/5 rounded-2xl overflow-hidden flex flex-col mb-6">
+                <div className="max-h-64 overflow-y-auto p-2 custom-scrollbar space-y-1">
+                  {friendsList.length === 0 ? (
+                    <div className="py-10 px-4 text-center">
+                      <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
+                        <UserPlus className="w-5 h-5 text-white/30" />
+                      </div>
+                      <p className="text-white/70 text-sm font-medium">Không có bạn bè nào để thêm</p>
+                      <p className="text-white/40 text-xs mt-1">Hãy kết bạn thêm để trò chuyện nhóm nhé.</p>
+                    </div>
+                  ) : (
+                    friendsList.map(friend => (
+                      <div 
+                        key={friend._id}
+                        onClick={() => {
+                          if (selectedFriends.includes(friend._id)) {
+                            setSelectedFriends(selectedFriends.filter(id => id !== friend._id));
+                          } else {
+                            setSelectedFriends([...selectedFriends, friend._id]);
+                          }
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${selectedFriends.includes(friend._id) ? 'bg-orange-500/10 dark:bg-cyan-500/10 border-orange-500/20 dark:border-cyan-500/20' : 'hover:bg-white/5 border-transparent'} border`}
+                      >
+                        <div className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-colors ${selectedFriends.includes(friend._id) ? 'bg-orange-500 border-orange-500 dark:bg-cyan-500 dark:border-cyan-500' : 'border-white/20'}`}>
+                          {selectedFriends.includes(friend._id) && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                        </div>
+                        <img src={friend.profilePic || assets.avatar_icon} onError={(e) => { e.target.onerror = null; e.target.src = assets.avatar_icon; }} alt="Avatar" className="w-10 h-10 rounded-full object-cover shadow-sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white truncate">{friend.fullName}</p>
+                          <p className="text-xs text-white/40 truncate">{friend.email}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
 
-            <div className="mt-4 pt-4 border-t border-white/10 flex justify-end gap-2">
-              <button 
-                onClick={() => setShowAddMemberModal(false)}
-                className="px-4 py-2 rounded-xl text-gray-300 hover:bg-white/5 font-medium transition-colors text-sm cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button 
-                onClick={handleAddMember}
-                disabled={isAddingMember}
-                className="px-4 py-2 bg-orange-500 hover:bg-orange-400 dark:bg-cyan-500 dark:hover:bg-cyan-400 text-white rounded-xl font-medium shadow-[0_0_10px_rgba(249,115,22,0.4)] dark:shadow-[0_0_10px_rgba(6,182,212,0.4)] transition-all disabled:opacity-50 flex items-center gap-2 text-sm cursor-pointer"
-              >
-                {isAddingMember && <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                Thêm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={() => setShowAddMemberModal(false)}
+                  className="px-5 py-2.5 rounded-xl text-white/60 hover:text-white hover:bg-white/5 font-medium transition-colors text-sm cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button 
+                  onClick={handleAddMember}
+                  disabled={isAddingMember || selectedFriends.length === 0}
+                  className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 dark:from-cyan-400 dark:to-blue-500 text-white rounded-xl font-medium shadow-[0_4px_15px_rgba(249,115,22,0.3)] dark:shadow-[0_4px_15px_rgba(6,182,212,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm cursor-pointer"
+                >
+                  {isAddingMember && <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />}
+                  Thêm thành viên
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
 
