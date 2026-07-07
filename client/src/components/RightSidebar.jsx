@@ -592,6 +592,7 @@ const RightSidebar = () => {
         </div>
       ) : null}
       </div>
+    </div>
 
       {/* MODAL THÊM THÀNH VIÊN */}
       <AnimatePresence>
@@ -673,8 +674,6 @@ const RightSidebar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-    </div>
 
       <ConfirmModal
         open={confirmDialog.open}
