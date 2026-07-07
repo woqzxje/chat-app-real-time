@@ -4,14 +4,16 @@ from dotenv import load_dotenv
 
 def send_otp_email(recipient_email: str, otp_code: str, subject: str = "Mã xác thực OTP từ ChatITC", context: str = "Đăng ký tài khoản"):
     """
-    Gửi email OTP 6 số đẹp mắt bằng HTML sử dụng Resend API (HTTP).
+    Gửi email OTP 6 số đẹp mắt bằng HTML sử dụng Brevo API (HTTP).
     Giải pháp này hoạt động 100% trên Render vì nó dùng cổng HTTPS (443) chuẩn, không bị chặn tường lửa.
+    Free plan: 300 email/ngày.
     """
     load_dotenv() # Tải lại biến môi trường
-    RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+    BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
+    SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "chatitc.noreply@gmail.com")
 
-    if not RESEND_API_KEY:
-        print("CẢNH BÁO: Chưa cấu hình RESEND_API_KEY trong file .env")
+    if not BREVO_API_KEY:
+        print("CẢNH BÁO: Chưa cấu hình BREVO_API_KEY trong file .env")
         return False
         
     html = f"""
@@ -109,24 +111,33 @@ def send_otp_email(recipient_email: str, otp_code: str, subject: str = "Mã xác
     """
 
     headers = {
-        "Authorization": f"Bearer {RESEND_API_KEY}",
-        "Content-Type": "application/json"
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
     }
 
     data = {
-        "from": "ChatITC <onboarding@resend.dev>",
-        "to": [recipient_email],
+        "sender": {
+            "name": "ChatITC",
+            "email": SENDER_EMAIL
+        },
+        "to": [
+            {
+                "email": recipient_email
+            }
+        ],
         "subject": subject,
-        "html": html
+        "htmlContent": html
     }
 
     try:
-        # Gửi request lên API của Resend (Dùng cổng 443 HTTPS không bao giờ bị chặn)
-        response = requests.post("https://api.resend.com/emails", headers=headers, json=data, timeout=10)
+        # Gửi request lên API của Brevo (Dùng cổng 443 HTTPS không bao giờ bị chặn)
+        response = requests.post("https://api.brevo.com/v3/smtp/email", headers=headers, json=data, timeout=10)
         response.raise_for_status() # Báo lỗi nếu API trả về lỗi (400, 401, 403, 500...)
+        print(f"✅ Gửi email OTP thành công tới {recipient_email}")
         return True
     except Exception as e:
-        print("Lỗi gửi email bằng Resend:", str(e))
+        print("❌ Lỗi gửi email bằng Brevo:", str(e))
         if hasattr(e, 'response') and e.response is not None:
-            print("Chi tiết lỗi Resend:", e.response.text)
+            print("Chi tiết lỗi Brevo:", e.response.text)
         return False
