@@ -281,9 +281,17 @@ async def google_login(body: GoogleLoginBody):
 @user_router.post("/forgot-password")
 async def forgot_password(body: ForgotPasswordBody):
     """Gửi mã OTP để khôi phục mật khẩu"""
+    print(f"[FORGOT-PASSWORD] Yêu cầu khôi phục cho email: {body.email}")
+    
     user = await User.find_one(User.email == body.email)
     if not user:
+        print(f"[FORGOT-PASSWORD] Email không tồn tại: {body.email}")
         return {"success": False, "message": "Email không tồn tại trong hệ thống"}
+    
+    # Thông báo nếu là tài khoản Google (nhưng vẫn cho phép đặt mật khẩu mới)
+    is_google_account = (user.password == "" or user.password is None)
+    if is_google_account:
+        print(f"[FORGOT-PASSWORD] Tài khoản Google phát hiện cho: {body.email}")
         
     import random
     from datetime import datetime, timedelta
@@ -293,13 +301,22 @@ async def forgot_password(body: ForgotPasswordBody):
     expiry = datetime.utcnow() + timedelta(minutes=5)
     
     await user.set({"otp_code": otp, "otp_expiry": expiry})
+    print(f"[FORGOT-PASSWORD] OTP đã lưu vào DB cho {body.email}: {otp}")
     
     import asyncio
     email_sent = await asyncio.to_thread(send_otp_email, body.email, otp, "Mã xác thực OTP từ ChatITC", "Khôi phục mật khẩu")
+    
     if not email_sent:
+        print(f"[FORGOT-PASSWORD] [FAIL] Gui email THAT BAI cho {body.email}")
         return {"success": False, "message": "Lỗi cấu hình email, không thể gửi mã khôi phục."}
+    
+    print(f"[FORGOT-PASSWORD] [OK] Email OTP da gui thanh cong toi {body.email}")
+    
+    msg = "Đã gửi mã xác thực đến email của bạn"
+    if is_google_account:
+        msg += ". Lưu ý: Tài khoản của bạn đăng nhập qua Google, bạn có thể đặt mật khẩu mới để đăng nhập bằng email."
         
-    return {"success": True, "message": "Đã gửi mã xác thực đến email của bạn"}
+    return {"success": True, "message": msg}
 
 @user_router.post("/reset-password")
 async def reset_password(body: ResetPasswordBody):

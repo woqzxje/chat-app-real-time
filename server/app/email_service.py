@@ -10,11 +10,13 @@ def send_otp_email(recipient_email: str, otp_code: str, subject: str = "Mã xác
     """
     load_dotenv() # Tải lại biến môi trường
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
-    SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "chatitc.noreply@gmail.com")
+    SENDER_EMAIL = os.environ.get("SENDER_EMAIL") or os.environ.get("BREVO_EMAIL") or "chatitc.noreply@gmail.com"
 
     if not BREVO_API_KEY:
-        print("CẢNH BÁO: Chưa cấu hình BREVO_API_KEY trong file .env")
+        print("[EMAIL] CANH BAO: Chua cau hinh BREVO_API_KEY trong file .env")
         return False
+    
+    print(f"[EMAIL] Sender: {SENDER_EMAIL} -> Recipient: {recipient_email}")
         
     html = f"""
     <!DOCTYPE html>
@@ -134,10 +136,10 @@ def send_otp_email(recipient_email: str, otp_code: str, subject: str = "Mã xác
         # Gửi request lên API của Brevo (Dùng cổng 443 HTTPS không bao giờ bị chặn)
         response = requests.post("https://api.brevo.com/v3/smtp/email", headers=headers, json=data, timeout=10)
         response.raise_for_status() # Báo lỗi nếu API trả về lỗi (400, 401, 403, 500...)
-        print(f"✅ Gửi email OTP thành công tới {recipient_email}")
+        print(f"[OK] Gui email OTP thanh cong toi {recipient_email}")
         return True
     except Exception as e:
-        print("❌ Lỗi gửi email bằng Brevo:", str(e))
+        print("[FAIL] Loi gui email bang Brevo:", str(e))
         if hasattr(e, 'response') and e.response is not None:
             print("Chi tiết lỗi Brevo:", e.response.text)
         return False
