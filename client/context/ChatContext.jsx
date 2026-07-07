@@ -257,12 +257,13 @@ export const ChatProvider = ({ children }) => {
     useEffect(() => {
         if (!socket) return;
 
-        // Server emit khi có tài khoản mới -> thêm ngay vào sidebar
+        // Server emit khi có tài khoản mới
         socket.on("newUserRegistered", (newUser) => {
             if (!authUser || newUser._id === authUser._id) return;
-            setUsers((prev) => {
-                const exists = prev.some((u) => u._id === newUser._id);
-                return exists ? prev : [...prev, newUser];
+            // Chỉ hiển thị thông báo thay vì tự động thêm vào sidebar làm rác danh sách người lạ
+            toast.success(`Thành viên mới gia nhập: ${newUser.fullName}`, {
+                icon: '👋',
+                style: { background: '#f97316', color: '#fff' }
             });
         });
 
@@ -279,7 +280,15 @@ export const ChatProvider = ({ children }) => {
                 if (exists) {
                     return prev.map((u) => (u._id === updatedUser._id ? { ...u, ...updatedUser } : u));
                 }
-                return [...prev, updatedUser];
+                
+                // Nếu chưa tồn tại trong danh sách: 
+                // Chỉ thêm vào nếu đây là một Nhóm (Group) vừa được tạo hoặc mình vừa được thêm vào
+                // Tránh tình trạng thêm User lạ vào sidebar khi họ đổi ảnh đại diện
+                if (updatedUser.isGroup) {
+                    return [...prev, updatedUser];
+                }
+                
+                return prev;
             });
             // Nếu người đang chat cũng vừa thay đổi -> cập nhật luôn header/right panel
             setSelectedUser((prev) =>

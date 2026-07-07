@@ -22,11 +22,21 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isAgreed, setIsAgreed] = useState(false)
 
+  // Trạng thái cho Modals OTP & Quên Mật Khẩu
+  const [showOTPModal, setShowOTPModal] = useState(false)
+  const [otpCode, setOtpCode] = useState("")
+  const [showForgotModal, setShowForgotModal] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState("")
+  const [resetOtp, setResetOtp] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [isModalLoading, setIsModalLoading] = useState(false)
+
   // Trạng thái kiểm soát việc chuyển sang bước nhập Bio khi đăng ký
   const [isDataSubmitted, setIsDataSubmitted] = useState(false);
 
   // Lấy hàm login từ AuthContext
-  const { login } = useContext(AuthContext)
+  const { login, verifyRegistration, forgotPassword, resetPassword } = useContext(AuthContext)
 
   // 3D card tilt effect (CSS state-based to avoid hook conflicts)
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 })
@@ -58,17 +68,60 @@ const LoginPage = () => {
     setIsLoading(true)
 
     // Gọi API đăng nhập hoặc đăng ký thông qua hàm login từ context
-    const success = await login(currState === "Sign up" ? 'signup' : 'login', { fullName, email, password, bio })
+    const response = await login(currState === "Sign up" ? 'signup' : 'login', { fullName, email, password, bio })
 
     setIsLoading(false)
 
-    // Sau khi đăng ký thành công, tự động chuyển về màn hình Đăng nhập để người dùng nhập lại thông tin
-    if (success && currState === "Sign up") {
+    if (response?.requireOtp) {
+      // Mở modal OTP nếu backend yêu cầu
+      setShowOTPModal(true);
+      return;
+    }
+
+    // Sau khi đăng ký thành công (nếu không cần OTP), tự động chuyển về màn hình Đăng nhập
+    if (response?.success && currState === "Sign up") {
       setCurrState("Login")
       setIsDataSubmitted(false)
       setFullName("")
       setPassword("")
       setBio("")
+    }
+  }
+
+  // --- HANDLERS CHO CÁC MODAL ---
+  const onVerifyOTP = async (e) => {
+    e.preventDefault();
+    setIsModalLoading(true);
+    const success = await verifyRegistration(email, otpCode);
+    setIsModalLoading(false);
+    if (success) {
+      setShowOTPModal(false);
+      setOtpCode("");
+    }
+  }
+
+  const onForgotPassword = async (e) => {
+    e.preventDefault();
+    setIsModalLoading(true);
+    const success = await forgotPassword(forgotEmail);
+    setIsModalLoading(false);
+    if (success) {
+      setShowForgotModal(false);
+      setShowResetModal(true);
+    }
+  }
+
+  const onResetPassword = async (e) => {
+    e.preventDefault();
+    setIsModalLoading(true);
+    const success = await resetPassword(forgotEmail, resetOtp, newPassword);
+    setIsModalLoading(false);
+    if (success) {
+      setShowResetModal(false);
+      setResetOtp("");
+      setNewPassword("");
+      setForgotEmail("");
+      setCurrState("Login");
     }
   }
 
@@ -85,6 +138,7 @@ const LoginPage = () => {
   }
 
   return (
+    <>
     <div className='min-h-screen flex items-center justify-center gap-8 sm:justify-evenly max-sm:flex-col px-4'>
       {/* ----------- Phần bên trái: Logo lớn ----------- */}
       <motion.div
@@ -284,6 +338,18 @@ const LoginPage = () => {
                           </button>
                         </div>
                       </motion.div>
+                      
+                      {/* Nút Quên mật khẩu */}
+                      {currState === "Login" && (
+                        <div className="flex justify-end mt-1">
+                          <span 
+                            onClick={() => setShowForgotModal(true)}
+                            className="text-xs text-white/50 hover:text-orange-400 dark:hover:text-cyan-400 cursor-pointer transition-colors duration-300"
+                          >
+                            Quên mật khẩu?
+                          </span>
+                        </div>
+                      )}
                     </motion.div>
                   ) : (
                     /* Bio textarea — bước 2 khi đăng ký */
@@ -428,6 +494,151 @@ const LoginPage = () => {
         </div>
       </motion.div>
     </div>
+
+      {/* ──────────────── MODALS ──────────────── */}
+      
+      {/* 1. Modal Nhập OTP Khi Đăng ký / Đăng nhập (Chưa verify) */}
+      <AnimatePresence>
+        {showOTPModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-sm bg-[#1e293b] border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden"
+            >
+              <button 
+                onClick={() => setShowOTPModal(false)}
+                className="absolute top-4 right-4 text-white/40 hover:text-white"
+              >✕</button>
+              
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-white mb-2">Xác thực tài khoản</h3>
+                <p className="text-sm text-white/50">Mã 6 số đã được gửi đến email:<br/><span className="text-orange-400 dark:text-cyan-400">{email}</span></p>
+              </div>
+              
+              <form onSubmit={onVerifyOTP} className="space-y-4">
+                <input 
+                  type="text"
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Nhập mã OTP (6 số)"
+                  className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-center text-xl font-bold tracking-[0.5em] text-white focus:border-orange-500 dark:focus:border-cyan-500 outline-none transition-colors"
+                  required 
+                />
+                <GradientButton type="submit" disabled={isModalLoading} className="w-full h-11">
+                  {isModalLoading ? "Đang xử lý..." : "Xác nhận mã"}
+                </GradientButton>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 2. Modal Quên mật khẩu (Nhập Email) */}
+      <AnimatePresence>
+        {showForgotModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-sm bg-[#1e293b] border border-white/10 rounded-2xl p-6 shadow-2xl relative"
+            >
+              <button 
+                onClick={() => setShowForgotModal(false)}
+                className="absolute top-4 right-4 text-white/40 hover:text-white"
+              >✕</button>
+              
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-white mb-2">Quên mật khẩu?</h3>
+                <p className="text-sm text-white/50">Nhập email đăng ký của bạn để nhận mã khôi phục.</p>
+              </div>
+              
+              <form onSubmit={onForgotPassword} className="space-y-4">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 w-4 h-4 text-white/40" />
+                  <input 
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="Địa chỉ Email"
+                    className="w-full bg-black/30 border border-white/10 rounded-lg pl-10 pr-3 py-2.5 text-white focus:border-orange-500 dark:focus:border-cyan-500 outline-none transition-colors"
+                    required 
+                  />
+                </div>
+                <GradientButton type="submit" disabled={isModalLoading} className="w-full h-11">
+                  {isModalLoading ? "Đang gửi..." : "Gửi mã khôi phục"}
+                </GradientButton>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 3. Modal Khôi phục mật khẩu (Nhập OTP + Mật khẩu mới) */}
+      <AnimatePresence>
+        {showResetModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-sm bg-[#1e293b] border border-white/10 rounded-2xl p-6 shadow-2xl relative"
+            >
+              <button 
+                onClick={() => setShowResetModal(false)}
+                className="absolute top-4 right-4 text-white/40 hover:text-white"
+              >✕</button>
+              
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold text-white mb-2">Đặt lại mật khẩu</h3>
+                <p className="text-sm text-white/50">Mã 6 số đã được gửi đến:<br/><span className="text-orange-400 dark:text-cyan-400">{forgotEmail}</span></p>
+              </div>
+              
+              <form onSubmit={onResetPassword} className="space-y-4">
+                <input 
+                  type="text"
+                  maxLength={6}
+                  value={resetOtp}
+                  onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Nhập mã OTP (6 số)"
+                  className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-center text-xl font-bold tracking-[0.5em] text-white focus:border-orange-500 dark:focus:border-cyan-500 outline-none transition-colors"
+                  required 
+                />
+                
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 w-4 h-4 text-white/40" />
+                  <input 
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mật khẩu mới"
+                    className="w-full bg-black/30 border border-white/10 rounded-lg pl-10 pr-10 py-2.5 text-white focus:border-orange-500 dark:focus:border-cyan-500 outline-none transition-colors"
+                    required 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 cursor-pointer text-white/40 hover:text-white"
+                  >
+                    {showPassword ? <Eye className="w-4 h-4" /> : <EyeClosed className="w-4 h-4" />}
+                  </button>
+                </div>
+                
+                <GradientButton type="submit" disabled={isModalLoading} className="w-full h-11">
+                  {isModalLoading ? "Đang xử lý..." : "Lưu mật khẩu mới"}
+                </GradientButton>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 

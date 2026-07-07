@@ -83,6 +83,11 @@ class User(Document):
     banned_until: Optional[datetime] = None # Thời gian bị khóa mõm/khóa acc (dành cho Admin xử lý vi phạm)
     isAdmin: bool = False # Đánh dấu quyền quản trị viên hệ thống
 
+    # Xác thực OTP
+    is_verified: bool = True # Mặc định True cho các tài khoản cũ, tài khoản mới tạo sẽ là False
+    otp_code: Optional[str] = None # Lưu mã OTP 6 số
+    otp_expiry: Optional[datetime] = None # Thời gian hết hạn của OTP
+
     class Settings:
         name = "users" # Chỉ định tên Collection vật lý trong MongoDB
 

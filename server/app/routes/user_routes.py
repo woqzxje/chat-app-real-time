@@ -43,6 +43,18 @@ class GoogleLoginBody(BaseModel):
     credential: str
 
 
+class VerifyRegistrationBody(BaseModel):
+    email: str
+    otp: str
+
+class ForgotPasswordBody(BaseModel):
+    email: str
+
+class ResetPasswordBody(BaseModel):
+    email: str
+    otp: str
+    new_password: str
+
 # ── Các hàm hỗ trợ (Helpers) ──────────────────────────────────────────────────
 
 def _user_dict(user: User, exclude_password: bool = True) -> dict:
@@ -79,30 +91,88 @@ async def signup(body: SignupBody):
     # Kiểm tra email đã tồn tại chưa
     existing = await User.find_one(User.email == body.email)
     if existing:
-        return {"success": False, "message": "Tài khoản đã tồn tại"}
+        if existing.is_verified:
+            return {"success": False, "message": "Tài khoản đã tồn tại"}
+        else:
+            # Nếu chưa verify, cho phép gửi lại OTP
+            pass
 
-    # Mã hóa mật khẩu trước khi lưu vào database
-    hashed = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
-    new_user = User(
-        fullName=body.fullName,
-        email=body.email,
-        password=hashed,
-        bio=body.bio or "",
-        isAdmin=(body.email == "quynh0369505599@gmail.com")
-    )
-    await new_user.insert()
+    import random
+    from datetime import datetime, timedelta
+    from app.email_service import send_otp_email
+
+    otp = str(random.randint(100000, 999999))
+    expiry = datetime.utcnow() + timedelta(minutes=5)
+
+    if existing and not existing.is_verified:
+        # Cập nhật mã OTP mới cho account chưa verify
+        hashed = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
+        await existing.set({
+            "fullName": body.fullName,
+            "password": hashed,
+            "otp_code": otp,
+            "otp_expiry": expiry
+        })
+        user_to_send = existing
+    else:
+        # Tạo mới user
+        hashed = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
+        new_user = User(
+            fullName=body.fullName,
+            email=body.email,
+            password=hashed,
+            bio=body.bio or "",
+            isAdmin=(body.email == "quynh0369505599@gmail.com"),
+            is_verified=False,
+            otp_code=otp,
+            otp_expiry=expiry
+        )
+        await new_user.insert()
+        user_to_send = new_user
+
+    # Gửi email OTP
+    email_sent = send_otp_email(body.email, otp, context="Đăng ký tài khoản")
+    if not email_sent:
+        return {"success": False, "message": "Không thể gửi email OTP, vui lòng thử lại sau."}
+
+    return {
+        "success": True,
+        "requireOtp": True,
+        "email": body.email,
+        "message": "Đã gửi mã OTP đến email của bạn",
+    }
+
+
+@user_router.post("/verify-registration")
+async def verify_registration(body: VerifyRegistrationBody):
+    """Xác thực OTP khi đăng ký"""
+    user = await User.find_one(User.email == body.email)
+    if not user:
+        return {"success": False, "message": "Tài khoản không tồn tại"}
+    if user.is_verified:
+        return {"success": False, "message": "Tài khoản đã được xác thực trước đó"}
+    
+    from datetime import datetime
+    if user.otp_code != body.otp:
+        return {"success": False, "message": "Mã OTP không chính xác"}
+    if user.otp_expiry and datetime.utcnow() > user.otp_expiry:
+        return {"success": False, "message": "Mã OTP đã hết hạn"}
+
+    # Thành công -> xác thực user
+    await user.set({"is_verified": True, "otp_code": None, "otp_expiry": None})
+    user.is_verified = True
 
     # Thông báo real-time cho tất cả client đang online biết có user mới
     from app.socket_manager import sio as _sio
-    await _sio.emit("newUserRegistered", _user_dict(new_user))
+    await _sio.emit("newUserRegistered", _user_dict(user))
 
     # Tạo JWT Token cho phiên làm việc mới
-    token = generate_token(str(new_user.id))
+    token = generate_token(str(user.id))
     return {
         "success": True,
-        "userData": _user_dict(new_user),
+        "userData": _user_dict(user),
         "token": token,
-        "message": "Tạo tài khoản thành công",
+        "message": "Xác thực tài khoản thành công",
     }
 
 
@@ -118,9 +188,27 @@ async def login(body: LoginBody):
     # Kiểm tra mật khẩu có khớp không
     if not bcrypt.checkpw(body.password.encode(), user.password.encode()):
         return {"success": False, "message": "Thông tin đăng nhập không chính xác"}
+        
+    if not getattr(user, 'is_verified', True):
+        # Tạo OTP mới và gửi lại
+        import random
+        from datetime import datetime, timedelta
+        from app.email_service import send_otp_email
+        
+        otp = str(random.randint(100000, 999999))
+        expiry = datetime.utcnow() + timedelta(minutes=5)
+        await user.set({"otp_code": otp, "otp_expiry": expiry})
+        send_otp_email(body.email, otp, context="Kích hoạt tài khoản")
+        
+        return {
+            "success": False, 
+            "requireOtp": True, 
+            "email": body.email,
+            "message": "Tài khoản chưa xác thực. Đã gửi mã OTP đến email của bạn."
+        }
 
     # Auto grant admin if it's the designated admin email
-    if user.email == "quynh0369505599@gmail.com" and not user.isAdmin:
+    if user.email == "quynh0369505599@gmail.com" and not getattr(user, 'isAdmin', False):
         await user.set({"isAdmin": True})
         user.isAdmin = True
 
@@ -183,6 +271,55 @@ async def google_login(body: GoogleLoginBody):
     except Exception as e:
         print("Google Auth Exception:", e)
         return {"success": False, "message": f"Lỗi xác thực: {str(e)}"}
+
+
+# ── FORGOT PASSWORD FLOW ─────────────────────────────────────────────────────
+
+@user_router.post("/forgot-password")
+async def forgot_password(body: ForgotPasswordBody):
+    """Gửi mã OTP để khôi phục mật khẩu"""
+    user = await User.find_one(User.email == body.email)
+    if not user:
+        return {"success": False, "message": "Email không tồn tại trong hệ thống"}
+        
+    import random
+    from datetime import datetime, timedelta
+    from app.email_service import send_otp_email
+    
+    otp = str(random.randint(100000, 999999))
+    expiry = datetime.utcnow() + timedelta(minutes=5)
+    
+    await user.set({"otp_code": otp, "otp_expiry": expiry})
+    
+    email_sent = send_otp_email(body.email, otp, context="Khôi phục mật khẩu")
+    if not email_sent:
+        return {"success": False, "message": "Lỗi hệ thống khi gửi email."}
+        
+    return {"success": True, "message": "Đã gửi mã xác thực đến email của bạn"}
+
+@user_router.post("/reset-password")
+async def reset_password(body: ResetPasswordBody):
+    """Xác thực mã OTP và đặt lại mật khẩu mới"""
+    user = await User.find_one(User.email == body.email)
+    if not user:
+        return {"success": False, "message": "Tài khoản không tồn tại"}
+        
+    from datetime import datetime
+    if user.otp_code != body.otp:
+        return {"success": False, "message": "Mã OTP không chính xác"}
+    if user.otp_expiry and datetime.utcnow() > user.otp_expiry:
+        return {"success": False, "message": "Mã OTP đã hết hạn"}
+        
+    # Đổi mật khẩu
+    hashed = bcrypt.hashpw(body.new_password.encode(), bcrypt.gensalt()).decode()
+    await user.set({
+        "password": hashed,
+        "otp_code": None,
+        "otp_expiry": None,
+        "is_verified": True # Nếu họ dùng reset pass thì coi như verify luôn
+    })
+    
+    return {"success": True, "message": "Đổi mật khẩu thành công. Vui lòng đăng nhập lại."}
 
 
 
@@ -313,16 +450,44 @@ async def get_friend_requests(current_user: User = Depends(get_current_user)):
 
 # ── GET /api/auth/search ─────────────────────────────────────────────────────
 
+import re
+
+def remove_vietnamese_accents(s: str) -> str:
+    s = re.sub(r'[àáạảãâầấậẩẫăằắặẳẵ]', 'a', s)
+    s = re.sub(r'[ÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴ]', 'A', s)
+    s = re.sub(r'[èéẹẻẽêềếệểễ]', 'e', s)
+    s = re.sub(r'[ÈÉẸẺẼÊỀẾỆỂỄ]', 'E', s)
+    s = re.sub(r'[òóọỏõôồốộổỗơờớợởỡ]', 'o', s)
+    s = re.sub(r'[ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠ]', 'O', s)
+    s = re.sub(r'[ìíịỉĩ]', 'i', s)
+    s = re.sub(r'[ÌÍỊỈĨ]', 'I', s)
+    s = re.sub(r'[ùúụủũưừứựửữ]', 'u', s)
+    s = re.sub(r'[ÙÚỤỦŨƯỪỨỰỬỮ]', 'U', s)
+    s = re.sub(r'[ỳýỵỷỹ]', 'y', s)
+    s = re.sub(r'[ỲÝỴỶỸ]', 'Y', s)
+    s = re.sub(r'[Đđ]', 'd', s)
+    return s
+
 @user_router.get("/search")
 async def search_users(q: str = "", current_user: User = Depends(get_current_user)):
-    """Tìm kiếm người dùng theo tên"""
+    """Tìm kiếm người dùng theo tên (hỗ trợ tiếng Việt không dấu)"""
     if not q.strip():
         return {"success": True, "users": []}
     
-    users = await User.find(
-        {"fullName": {"$regex": q, "$options": "i"}, "_id": {"$ne": current_user.id}}
-    ).to_list()
-    return {"success": True, "users": [_user_dict(u) for u in users]}
+    q_normalized = remove_vietnamese_accents(q.strip()).lower()
+    
+    # Lấy tất cả người dùng (trừ bản thân) để lọc trong memory
+    # (Phù hợp cho dự án demo/quy mô nhỏ. Với quy mô lớn cần thêm trường normalized_name vào DB)
+    users = await User.find({"_id": {"$ne": current_user.id}}).to_list()
+    
+    matched_users = []
+    for u in users:
+        name_normalized = remove_vietnamese_accents(u.fullName).lower()
+        # Tìm kiếm theo tên hoặc email
+        if q_normalized in name_normalized or q_normalized in u.email.lower():
+            matched_users.append(u)
+            
+    return {"success": True, "users": [_user_dict(u) for u in matched_users]}
 
 
 # ── PUT /api/auth/update-profile ─────────────────────────────────────────────

@@ -39,6 +39,10 @@ export const AuthProvider = ({ children }) => {
             const { data } = await axios.post(`/api/auth/${state}`, credentials);
             if(data.success){
                 if(state === 'login' || state === 'signup' || state === 'google-login'){
+                    if(data.requireOtp) {
+                        toast.success(data.message)
+                        return { success: true, requireOtp: true };
+                    }
                     setAuthUser(data.userData);
                     connectSocket(data.userData); // Kết nối socket ngay lập tức
                     
@@ -48,13 +52,70 @@ export const AuthProvider = ({ children }) => {
                     localStorage.setItem("token", data.token)
                 }
                 toast.success(data.message)
-                return true;
+                return { success: true, requireOtp: data.requireOtp };
             } else{
+                if(data.requireOtp) {
+                    toast.success(data.message)
+                    return { success: false, requireOtp: true };
+                }
                 toast.error(data.message)
-                return false;
+                return { success: false, requireOtp: false };
             }
         } catch (error) {
             toast.error(error.response?.data?.message || error.message)
+            return { success: false, requireOtp: false };
+        }
+    }
+
+    const verifyRegistration = async (email, otp) => {
+        try {
+            const { data } = await axios.post('/api/auth/verify-registration', { email, otp });
+            if (data.success) {
+                setAuthUser(data.userData);
+                connectSocket(data.userData);
+                axios.defaults.headers.common["token"] = data.token;
+                setToken(data.token);
+                localStorage.setItem("token", data.token);
+                toast.success(data.message);
+                return true;
+            } else {
+                toast.error(data.message);
+                return false;
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message);
+            return false;
+        }
+    }
+
+    const forgotPassword = async (email) => {
+        try {
+            const { data } = await axios.post('/api/auth/forgot-password', { email });
+            if (data.success) {
+                toast.success(data.message);
+                return true;
+            } else {
+                toast.error(data.message);
+                return false;
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message);
+            return false;
+        }
+    }
+
+    const resetPassword = async (email, otp, new_password) => {
+        try {
+            const { data } = await axios.post('/api/auth/reset-password', { email, otp, new_password });
+            if (data.success) {
+                toast.success(data.message);
+                return true;
+            } else {
+                toast.error(data.message);
+                return false;
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message);
             return false;
         }
     }
@@ -125,7 +186,10 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         updateProfile,
-        setAuthUser
+        setAuthUser,
+        verifyRegistration,
+        forgotPassword,
+        resetPassword
     }
 
     return (
