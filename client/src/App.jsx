@@ -8,6 +8,7 @@ import { AuthContext } from '../context/AuthContext'
 import { ThemeContext } from '../context/ThemeContext'
 import { StaticAuroraBackground } from './components/ui/static-aurora-background'
 import { ThemeToggle } from './components/ThemeToggle'
+import AIChatBot from './components/AIChatBot'
 
 const App = () => {
   // Lấy thông tin người dùng đã đăng nhập từ AuthContext
@@ -19,6 +20,9 @@ const App = () => {
       <ThemeToggle />
       {/* Component hiển thị các thông báo (toast) */}
       <Toaster />
+      
+      {/* Bot Hướng Dẫn AI nằm ở cấp cao nhất */}
+      <AIChatBot />
 
       <Routes>
         {/* Nếu đã đăng nhập thì vào Trang chủ, nếu chưa thì chuyển hướng sang Đăng nhập */}

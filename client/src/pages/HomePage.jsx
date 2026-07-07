@@ -6,8 +6,6 @@ import { ChatContext } from '../../context/ChatContext'
 import { AuthContext } from '../../context/AuthContext'
 import { useVideoCall } from '../hooks/useVideoCall'
 import { VideoCallModal } from '../components/VideoCallModal'
-import AIChatBot from '../components/AIChatBot'
-
 const HomePage = () => {
 
   const { selectedUser, showRightSidebar } = useContext(ChatContext)
@@ -60,8 +58,6 @@ const HomePage = () => {
         isVideoCall={isVideoCall}
       />
       
-      {/* Bot Hướng Dẫn AI */}
-      <AIChatBot />
     </div>
   )
 }

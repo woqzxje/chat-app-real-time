@@ -22,6 +22,7 @@
 | [Chương 8](#chương-8-trợ-lý-ảo-ai--tóm-tắt-tin-nhắn) | Trợ lý ảo AI & Tóm tắt Tin nhắn |
 | [Chương 9](#chương-9-hệ-thống-email-otp) | Hệ thống Email OTP (Brevo API) |
 | [Chương 10](#chương-10-quản-trị-admin) | Quản trị Admin (Báo cáo & Cấm chat) |
+| [Chương 11](#chương-11-quản-lý-trạng-thái-frontend-context-api) | Quản lý Trạng thái Frontend (Context API) |
 
 ---
 
@@ -55,16 +56,16 @@ Dự án sử dụng **NoSQL (MongoDB)** và **Beanie ODM** để ánh xạ dữ
 | Trường | Kiểu | Mô tả |
 |:---|:---|:---|
 | `senderId` | `str` | ID người gửi |
-| `receiverId` | `str` | ID người nhận hoặc ID nhóm |
+| `receiverId` | `str` | ID người nhận hoặc ID nhóm (Đa hình) |
 | `text` | `str` | Nội dung văn bản |
-| `image` | `str` | URL hình ảnh đính kèm |
-| `fileUrl`, `fileName`, `fileSize` | `str/int` | Thông tin tệp đính kèm |
-| `folderData` | `list` | Cấu trúc thư mục đính kèm |
-| `isSeen` | `bool` | Đã xem chưa |
+| `attachment` | `Object` | Object chứa thông tin file/folder đính kèm (`FileAttachment`) |
+| `callInfo` | `Object` | Object lưu lịch sử cuộc gọi video/voice (`CallInfo`) |
+| `seen` / `seenBy` | `bool/list` | Đã xem (1-1) / Danh sách ID đã xem (Nhóm) |
 | `isDeleted` | `bool` | Đã thu hồi (Soft Delete) |
-| `isEdited` | `bool` | Đã chỉnh sửa |
-| `reactions` | `list[dict]` | Mảng `{userId, emoji}` |
-| `callDuration` | `int` | Thời lượng cuộc gọi (giây) |
+| `deletedByAdmin`| `bool` | Bị admin xóa do vi phạm |
+| `isEdited` | `bool` | Đã chỉnh sửa (`editedAt` lưu thời gian) |
+| `reactions` | `list[dict]` | Mảng Object `{userId, emoji}` |
+| `isSystemMessage`| `bool` | Tin nhắn hệ thống (VD: "A đã thêm B vào nhóm") |
 
 #### Schema `ChatGroup`
 
@@ -241,10 +242,10 @@ Giải tán: DELETE /groups/{id} → Xóa record Group → Socket emit "groupDis
 ```
 File: User chọn file → Client nén ảnh (giảm size) → POST /files/upload
 → Server gọi cloudinary.uploader.upload(file_bytes) → Trả URL
-→ URL được gắn vào trường image/fileUrl của Message
+→ URL được gắn vào khối `attachment` của Message (phân loại file_type: image/video/document)
 
-Folder: <input webkitdirectory /> → Duyệt đệ quy → POST /files/upload-folder
-→ Server upload từng file, giữ nguyên cấu trúc đường dẫn tương đối
+Folder: `<input webkitdirectory />` → Duyệt đệ quy → POST `/files/upload-folder`
+→ Server upload từng file, lưu vào mảng `files` bên trong khối `attachment`, giữ nguyên cấu trúc đường dẫn tương đối.
 ```
 
 ### 6.2 Download Folder — Zip on-the-fly
@@ -294,8 +295,8 @@ Bước 3 (ICE Candidates):
 ### 7.3 Kết thúc cuộc gọi
 
 ```
-User tắt máy → peer.destroy() → Socket "video:end"
-→ Server tạo Message: "Cuộc gọi video kéo dài 05:23" → Lưu DB
+User tắt máy → `peer.destroy()` → Socket `video:end`
+→ Server tạo Message với trường `callInfo` chứa loại cuộc gọi và thời lượng (`duration`) → Lưu DB
 → Tin nhắn lịch sử hiện trong khung chat
 ```
 
@@ -368,6 +369,31 @@ Admin bấm "Cấm chat" → POST /api/reports/{id}/ban + {duration}
 Gỡ cấm: POST /api/auth/unban/{user_id}
 → Set banned_until = None → Socket emit → UI cập nhật
 ```
+
+---
+
+## Chương 11: Quản lý Trạng thái Frontend (Context API)
+
+> Kiến trúc luồng dữ liệu một chiều (One-way Data Flow) kết hợp với Global State quản lý bởi Context API giúp Frontend React hoạt động đồng bộ và mượt mà.
+
+### 11.1 `AuthContext` — Vòng đời Người dùng & Kết nối Socket
+- **Xác thực**: Lưu trữ thông tin `authUser` từ khi mở trang (gọi API `/api/auth/check`) để bảo vệ các tuyến đường (Protected Routes). Nếu không có `authUser`, ép chuyển hướng về `/login`.
+- **Quản lý Socket**: 
+  - Đóng vai trò là "Cầu dao tổng" của Socket. 
+  - Ngay khi `authUser` hợp lệ, `AuthContext` sẽ khởi tạo `io(BACKEND_URL)`.
+  - Nếu User đăng xuất, gọi `socket.disconnect()` để hủy phiên real-time.
+  
+### 11.2 `ChatContext` — Trung tâm Xử lý Real-time
+- Là nơi chứa State tập trung nhất: `messages` (mảng tin nhắn hiện tại), `selectedUser` / `selectedGroup` (phòng chat đang mở), `onlineUsers` (danh sách ID online).
+- **Lắng nghe sự kiện (Event Listeners)**: Trong `useEffect`, liên tục đăng ký các `socket.on()` như:
+  - `receiveMessage`: Nếu tin nhắn thuộc về phòng đang mở → Push vào `messages`. Ngược lại → Tăng số đếm tin chưa đọc.
+  - `messageDeleted` / `messageEdited`: Duyệt tìm trong mảng `messages` và cập nhật lại `text` hoặc cờ `isDeleted`, giúp UI render lại không cần F5.
+  - `messageReacted`: Cập nhật mảng `reactions` nhúng (embedded) bên trong object tin nhắn tương ứng.
+  
+### 11.3 Tối ưu hóa UI/UX
+- **Auto-scroll thông minh**: Trong `ChatContainer.jsx`, sử dụng `useRef` gán vào thẻ div cuối cùng, khi mảng `messages` thay đổi độ dài, gọi `.scrollIntoView({ behavior: 'smooth' })` để luôn cuộn xuống tin nhắn mới.
+- **Tối ưu File Upload**: Thay vì đọc toàn bộ file to vào Base64 (làm crash trình duyệt), sử dụng `FormData` để truyền file nhị phân trực tiếp lên Server qua Axios multipart.
+- **Micro-interactions**: Sử dụng thư viện `Framer Motion` cho hiệu ứng lật trang 3D ở màn hình đăng nhập, popup modal, và hiệu ứng của chatbot AI.
 
 ---
 
