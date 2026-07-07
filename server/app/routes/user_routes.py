@@ -130,10 +130,11 @@ async def signup(body: SignupBody):
         await new_user.insert()
         user_to_send = new_user
 
-    # Gửi email OTP
-    email_sent = send_otp_email(body.email, otp, context="Đăng ký tài khoản")
+    # Gửi email OTP không block event loop
+    import asyncio
+    email_sent = await asyncio.to_thread(send_otp_email, body.email, otp, "Mã xác thực OTP từ ChatITC", "Đăng ký tài khoản")
     if not email_sent:
-        return {"success": False, "message": "Không thể gửi email OTP, vui lòng thử lại sau."}
+        return {"success": False, "message": "Không thể gửi email OTP, vui lòng kiểm tra lại cấu hình."}
 
     return {
         "success": True,
@@ -198,7 +199,9 @@ async def login(body: LoginBody):
         otp = str(random.randint(100000, 999999))
         expiry = datetime.utcnow() + timedelta(minutes=5)
         await user.set({"otp_code": otp, "otp_expiry": expiry})
-        send_otp_email(body.email, otp, context="Kích hoạt tài khoản")
+        
+        import asyncio
+        await asyncio.to_thread(send_otp_email, body.email, otp, "Mã xác thực OTP từ ChatITC", "Kích hoạt tài khoản")
         
         return {
             "success": False, 
@@ -291,9 +294,10 @@ async def forgot_password(body: ForgotPasswordBody):
     
     await user.set({"otp_code": otp, "otp_expiry": expiry})
     
-    email_sent = send_otp_email(body.email, otp, context="Khôi phục mật khẩu")
+    import asyncio
+    email_sent = await asyncio.to_thread(send_otp_email, body.email, otp, "Mã xác thực OTP từ ChatITC", "Khôi phục mật khẩu")
     if not email_sent:
-        return {"success": False, "message": "Lỗi hệ thống khi gửi email."}
+        return {"success": False, "message": "Lỗi cấu hình email, không thể gửi mã khôi phục."}
         
     return {"success": True, "message": "Đã gửi mã xác thực đến email của bạn"}
 

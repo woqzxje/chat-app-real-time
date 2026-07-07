@@ -2,14 +2,16 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
-
-EMAIL_SENDER = os.environ.get("EMAIL_SENDER")
-EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+from dotenv import load_dotenv
 
 def send_otp_email(recipient_email: str, otp_code: str, subject: str = "Mã xác thực OTP từ ChatITC", context: str = "Đăng ký tài khoản"):
     """
     Gửi email OTP 6 số đẹp mắt bằng HTML.
     """
+    load_dotenv() # Tải lại biến môi trường để không cần restart server
+    EMAIL_SENDER = os.environ.get("EMAIL_SENDER")
+    EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
+
     if not EMAIL_SENDER or not EMAIL_PASSWORD:
         print("CẢNH BÁO: Chưa cấu hình EMAIL_SENDER hoặc EMAIL_PASSWORD trong file .env")
         return False
@@ -116,8 +118,8 @@ def send_otp_email(recipient_email: str, otp_code: str, subject: str = "Mã xác
 
         msg.attach(MIMEText(html, 'html'))
         
-        # Kết nối tới SMTP của Gmail
-        server = smtplib.SMTP('smtp.gmail.com', 587)
+        # Kết nối tới SMTP của Gmail với timeout 10s tránh bị treo
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
         server.starttls()
         server.login(EMAIL_SENDER, EMAIL_PASSWORD)
         server.send_message(msg)
