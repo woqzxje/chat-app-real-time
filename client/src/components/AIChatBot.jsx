@@ -71,7 +71,7 @@ const AIChatBot = () => {
           if (isOpen) setIsOpen(false); 
           else { setIsOpen(true); setIsMinimized(false); } 
         }}
-        className="fixed bottom-6 left-[140px] z-[100] w-14 h-14 rounded-full shadow-[0_8px_25px_rgba(150,155,231,0.4)] hover:shadow-[0_8px_30px_rgba(150,155,231,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer hidden md:block overflow-hidden p-0 border-2 border-white"
+        className="fixed bottom-6 left-[140px] z-[9999] w-14 h-14 rounded-full shadow-[0_8px_25px_rgba(150,155,231,0.4)] hover:shadow-[0_8px_30px_rgba(150,155,231,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer hidden md:block overflow-hidden p-0 border-2 border-white"
         title="Trợ lý AI"
       >
         <img src="/girl_picture.jpg" alt="Trợ lý AI" className="w-full h-full object-cover" />
@@ -86,7 +86,7 @@ const AIChatBot = () => {
           if (isOpen) setIsOpen(false); 
           else { setIsOpen(true); setIsMinimized(false); } 
         }}
-        className="fixed bottom-24 right-4 z-[100] w-12 h-12 rounded-full shadow-[0_8px_20px_rgba(150,155,231,0.4)] hover:shadow-[0_8px_25px_rgba(150,155,231,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer md:hidden overflow-hidden p-0 border-2 border-white"
+        className="fixed bottom-24 right-4 z-[9999] w-12 h-12 rounded-full shadow-[0_8px_20px_rgba(150,155,231,0.4)] hover:shadow-[0_8px_25px_rgba(150,155,231,0.7)] hover:scale-105 transition-all duration-300 cursor-pointer md:hidden overflow-hidden p-0 border-2 border-white"
         title="Trợ lý AI"
       >
         <img src="/girl_picture.jpg" alt="Trợ lý AI" className="w-full h-full object-cover" />
@@ -107,7 +107,7 @@ const AIChatBot = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className={`fixed md:bottom-24 md:left-[140px] bottom-0 left-0 w-full md:w-[350px] bg-[#FCF8FB] md:rounded-3xl shadow-[0_15px_50px_-10px_rgba(150,155,231,0.5)] flex flex-col overflow-hidden z-[100] border border-[#D1D0EF]/60 transition-[height] duration-300 ease-in-out ${isMinimized ? 'h-[88px]' : 'h-[100dvh] md:h-[520px]'}`}
+            className={`fixed md:bottom-24 md:left-[140px] bottom-0 left-0 w-full md:w-[350px] bg-[#FCF8FB] md:rounded-3xl shadow-[0_15px_50px_-10px_rgba(150,155,231,0.5)] flex flex-col overflow-hidden z-[9999] border border-[#D1D0EF]/60 transition-[height] duration-300 ease-in-out ${isMinimized ? 'h-[88px]' : 'h-[100dvh] md:h-[520px]'}`}
           >
             {/* Diffuse Aurora Background */}
             <div className="absolute inset-0 bg-aurora opacity-[0.15] pointer-events-none mix-blend-multiply"></div>
