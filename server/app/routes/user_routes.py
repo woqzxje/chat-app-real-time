@@ -407,6 +407,12 @@ async def unban_user(user_id: str, current_user: User = Depends(get_current_user
     await target_user.set({"banned_until": None})
     target_user.banned_until = None
     
+    from app.models import Report
+    reports = await Report.find(Report.reportedId == str(target_user.id)).to_list()
+    for report in reports:
+        if report.status == "resolved" and report.decision and "cấm chat" in report.decision.lower() and "gỡ" not in report.decision.lower():
+            await report.set({"decision": "Đã gỡ cấm chat"})
+    
     # Real-time event tới user được gỡ ban
     from app.socket_manager import sio as _sio, user_socket_map
     target_sid = user_socket_map.get(user_id)

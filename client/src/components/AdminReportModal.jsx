@@ -14,7 +14,7 @@ export const AdminReportModal = ({ open, onOpenChange }) => {
   const { authUser, socket } = useContext(AuthContext);
 
   useEffect(() => {
-    if (open && authUser?.email === 'quynh0369505599@gmail.com') {
+    if (open && authUser) {
       fetchReports();
     }
   }, [open, authUser]);
@@ -77,6 +77,20 @@ export const AdminReportModal = ({ open, onOpenChange }) => {
     }
   };
 
+  const handleUnban = async () => {
+    if (!selectedReport) return;
+    try {
+      await axios.post(`/api/reports/${selectedReport.id}/unban`, null, {
+        params: { email: authUser.email }
+      });
+      toast.success('Đã gỡ cấm tài khoản');
+      setSelectedReport(null);
+      fetchReports();
+    } catch (error) {
+      toast.error('Lỗi khi gỡ cấm tài khoản');
+    }
+  };
+
   if (!open) return null;
 
   return createPortal(
@@ -85,7 +99,7 @@ export const AdminReportModal = ({ open, onOpenChange }) => {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <ShieldAlert className="text-red-500 w-7 h-7" />
-            Lịch sử Báo Cáo
+            {authUser?.email === 'quynh0369505599@gmail.com' ? 'Lịch sử Báo Cáo' : 'Lịch sử Báo Cáo Của Tôi'}
           </h2>
           <button onClick={() => onOpenChange(false)} className="text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer">
             <X className="w-6 h-6" />
@@ -139,7 +153,7 @@ export const AdminReportModal = ({ open, onOpenChange }) => {
                     
                     <div className="mt-3">
                       <span className="font-semibold block mb-1">Nội dung tin nhắn bị báo cáo:</span>
-                      <div className="p-3 bg-white dark:bg-black/20 rounded border border-slate-200 dark:border-white/10 italic text-slate-600 dark:text-slate-400 max-h-24 overflow-y-auto">
+                      <div className="whitespace-pre-wrap p-3 bg-white dark:bg-black/20 rounded border border-slate-200 dark:border-white/10 italic text-slate-600 dark:text-slate-400 max-h-24 overflow-y-auto">
                         "{selectedReport.messageText}"
                       </div>
                     </div>
@@ -154,42 +168,73 @@ export const AdminReportModal = ({ open, onOpenChange }) => {
                 </div>
 
                 {selectedReport.status === 'pending' ? (
-                  <div className="mt-auto pt-4 space-y-3">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Thời gian cấm chat:</label>
-                      <select
-                        value={banDurationDays}
-                        onChange={(e) => setBanDurationDays(e.target.value)}
-                        className="p-2 border border-slate-300 dark:border-white/10 rounded-lg bg-white dark:bg-[#0e2230] text-slate-900 dark:text-white focus:outline-none focus:border-red-500"
-                      >
-                        <option value={1}>1 Ngày</option>
-                        <option value={3}>3 Ngày</option>
-                        <option value={7}>7 Ngày</option>
-                        <option value={30}>30 Ngày</option>
-                        <option value={365}>Vĩnh viễn (365 Ngày)</option>
-                      </select>
+                  authUser?.email === 'quynh0369505599@gmail.com' ? (
+                    <div className="mt-auto pt-4 space-y-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Thời gian cấm chat:</label>
+                        <select
+                          value={banDurationDays}
+                          onChange={(e) => setBanDurationDays(e.target.value)}
+                          className="p-2 border border-slate-300 dark:border-white/10 rounded-lg bg-white dark:bg-[#0e2230] text-slate-900 dark:text-white focus:outline-none focus:border-red-500"
+                        >
+                          <option value={1}>1 Ngày</option>
+                          <option value={3}>3 Ngày</option>
+                          <option value={7}>7 Ngày</option>
+                          <option value={30}>30 Ngày</option>
+                          <option value={365}>Vĩnh viễn (365 Ngày)</option>
+                        </select>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <button onClick={handleCancelReport} className="flex-1 py-2 px-4 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 font-medium transition-colors">
+                          Hủy Báo Cáo
+                        </button>
+                        <button onClick={handleBan} className="flex-1 py-2 px-4 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition-colors shadow-lg shadow-red-500/30">
+                          Cấm Chat
+                        </button>
+                      </div>
                     </div>
-                    
-                    <div className="flex gap-3">
-                      <button onClick={handleCancelReport} className="flex-1 py-2 px-4 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 font-medium transition-colors">
-                        Hủy Báo Cáo
-                      </button>
-                      <button onClick={handleBan} className="flex-1 py-2 px-4 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium transition-colors shadow-lg shadow-red-500/30">
-                        Cấm Chat
-                      </button>
+                  ) : (
+                    <div className="mt-auto pt-4">
+                      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-xl flex items-start gap-3">
+                        <div className="mt-0.5">
+                          <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                        </div>
+                        <div>
+                          <span className="font-semibold text-yellow-800 dark:text-yellow-300 block">Đang chờ xử lý</span>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                            Báo cáo của bạn đã được ghi nhận và đang chờ quản trị viên xem xét.
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )
                 ) : (
                   <div className="mt-auto pt-4">
                     <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-xl flex items-start gap-3">
                       <div className="mt-0.5">
                         <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <span className="font-semibold text-green-800 dark:text-green-300 block">Đã xử lý</span>
                         <p className="text-sm text-green-700 dark:text-green-400 mt-1">
                           Quyết định: {selectedReport.decision || 'Không có quyết định'}
                         </p>
+                        
+                        {authUser?.email === 'quynh0369505599@gmail.com' && 
+                         selectedReport.decision?.includes('cấm chat') && 
+                         !selectedReport.decision?.includes('gỡ') &&
+                         selectedReport.banned_until && 
+                         new Date(selectedReport.banned_until) > new Date() && (
+                          <div className="mt-3">
+                            <button 
+                              onClick={handleUnban}
+                              className="py-1.5 px-4 text-sm rounded-lg bg-orange-500 hover:bg-orange-600 dark:bg-cyan-500 dark:hover:bg-cyan-600 text-white font-medium transition-colors cursor-pointer shadow-sm"
+                            >
+                              Gỡ ban (Unban)
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

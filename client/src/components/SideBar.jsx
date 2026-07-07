@@ -79,12 +79,21 @@ const SideBar = () => {
   const [adminHasNewReport, setAdminHasNewReport] = useState(false);
 
   useEffect(() => {
-    if (!socket || authUser?.email !== 'quynh0369505599@gmail.com') return;
-    const handleNewReport = (report) => {
-      setAdminHasNewReport(true);
-    };
-    socket.on('newReport', handleNewReport);
-    return () => socket.off('newReport', handleNewReport);
+    if (!socket || !authUser) return;
+    
+    if (authUser.email === 'quynh0369505599@gmail.com') {
+      const handleNewReport = (report) => {
+        setAdminHasNewReport(true);
+      };
+      socket.on('newReport', handleNewReport);
+      return () => socket.off('newReport', handleNewReport);
+    } else {
+      const handleReportResolved = (data) => {
+        setAdminHasNewReport(true); // Re-using state for notification
+      };
+      socket.on('reportResolved', handleReportResolved);
+      return () => socket.off('reportResolved', handleReportResolved);
+    }
   }, [socket, authUser]);
 
   // 3. --- Lọc dữ liệu & Tìm kiếm ---
@@ -307,7 +316,7 @@ const SideBar = () => {
           <ExpandableTabs
             tabs={[
               { title: "Edit Profile", icon: User, onClick: () => setIsProfileModalOpen(true) },
-              ...(authUser?.email === 'quynh0369505599@gmail.com' ? [{
+              {
                 title: "Báo cáo",
                 icon: Bell,
                 badge: adminHasNewReport,
@@ -315,7 +324,7 @@ const SideBar = () => {
                   setAdminHasNewReport(false);
                   setIsAdminReportModalOpen(true);
                 }
-              }] : []),
+              },
               { type: "separator" },
               { title: "Logout", icon: LogOut, onClick: () => logout() }
             ]}

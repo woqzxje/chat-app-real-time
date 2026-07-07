@@ -12,6 +12,7 @@ import { ShinyButton } from './ui/ShinyButton';
 import FloatingActionMenu from './ui/floating-action-menu';
 import { Paperclip, FolderPlus } from 'lucide-react';
 import { ReportModal } from './ReportModal';
+import ConfirmModal from './ConfirmModal';
 
 const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '');
 
@@ -369,7 +370,21 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
   const isOwn = msg.senderId === authUser._id;
   const [showOptions, setShowOptions] = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(msg.text || '');
+  const [bubbleWidth, setBubbleWidth] = useState(0);
+  const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
   const timerRef = useRef(null);
+  const editTextareaRef = useRef(null);
+  const bubbleRef = useRef(null);
+
+  const startEditing = () => {
+    if (bubbleRef.current) {
+      setBubbleWidth(bubbleRef.current.offsetWidth);
+    }
+    setIsEditing(true);
+    setEditValue(msg.text || '');
+  };
 
   // Xử lý sự kiện đè (Long press) trên Mobile
   const handleTouchStart = () => {
@@ -387,6 +402,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
   };
 
   return (
+    <>
     <div 
       className={`flex items-end gap-3 justify-end group ${!isOwn ? 'flex-row-reverse' : ''}`}
       onMouseLeave={() => {
@@ -429,10 +445,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                     <button 
                       onClick={() => {
                         setShowOptions(false);
-                        const newText = prompt('Chỉnh sửa tin nhắn:', msg.text || '');
-                        if (newText !== null && newText.trim() !== '' && newText.trim() !== msg.text) {
-                            editMessage(msg._id, newText.trim());
-                        }
+                        startEditing();
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white flex items-center gap-2 cursor-pointer"
                     >
@@ -463,9 +476,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                     <button 
                       onClick={() => {
                         setShowOptions(false);
-                        if(window.confirm('Bạn có chắc muốn thu hồi tin nhắn này?')) {
-                            revokeMessage(msg._id);
-                        }
+                        setShowRevokeConfirm(true);
                       }}
                       className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/10 hover:text-red-300 flex items-center gap-2 cursor-pointer"
                     >
@@ -481,10 +492,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
           {isOwn && (!msg.image && !msg.attachment) && (
             <button 
               onClick={() => {
-                const newText = prompt('Chỉnh sửa tin nhắn:', msg.text || '');
-                if (newText !== null && newText.trim() !== '' && newText.trim() !== msg.text) {
-                    editMessage(msg._id, newText.trim());
-                }
+                startEditing();
               }} 
               title="Chỉnh sửa" 
               className="hidden md:block text-gray-400 hover:text-orange-500 dark:hover:text-cyan-400 cursor-pointer p-1"
@@ -519,9 +527,7 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
           {isOwn && (
             <button 
               onClick={() => {
-                if(window.confirm('Bạn có chắc muốn thu hồi tin nhắn này?')) {
-                    revokeMessage(msg._id);
-                }
+                setShowRevokeConfirm(true);
               }} 
               title="Thu hồi" 
               className="hidden md:block text-gray-400 hover:text-red-400 cursor-pointer p-1"
@@ -588,11 +594,56 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
                     )}
                   </div>
                 )}
-                {msg.text && (
-                  <p className={`p-4 max-w-85 text-base font-medium rounded-2xl mb-1 break-all bg-orange-500/30 dark:bg-cyan-500/30 text-slate-900 dark:text-white ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'}`}>
+                {isEditing ? (
+                  <div
+                    className={`flex flex-col mb-1 p-4 rounded-2xl break-words bg-orange-500/30 dark:bg-cyan-500/30 ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'}`}
+                    style={{ width: bubbleWidth > 0 ? bubbleWidth + 'px' : undefined, maxWidth: '75vw' }}
+                  >
+                    <textarea
+                      ref={editTextareaRef}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setIsEditing(false);
+                        } else if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (editValue.trim() !== '' && editValue.trim() !== msg.text) {
+                            editMessage(msg._id, editValue.trim());
+                          }
+                          setIsEditing(false);
+                        }
+                      }}
+                      className="w-full bg-transparent text-slate-900 dark:text-white text-base font-medium outline-none resize-none overflow-y-auto whitespace-pre-wrap"
+                      autoFocus
+                      onFocus={(e) => {
+                        const val = e.target.value;
+                        e.target.value = '';
+                        e.target.value = val;
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                      onInput={(e) => {
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                    />
+                    <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-2 pt-2 border-t border-black/10 dark:border-white/10">
+                      nhấn <span className="text-blue-500 dark:text-blue-400 cursor-pointer hover:underline" onClick={() => setIsEditing(false)}>escape để hủy</span> • nhấn <span className="text-blue-500 dark:text-blue-400 cursor-pointer hover:underline" onClick={() => {
+                        if (editValue.trim() !== '' && editValue.trim() !== msg.text) {
+                            editMessage(msg._id, editValue.trim());
+                        }
+                        setIsEditing(false);
+                      }}>enter để lưu</span>
+                    </div>
+                  </div>
+                ) : (
+                  msg.text && (
+                  <p ref={bubbleRef} className={`whitespace-pre-wrap p-4 max-w-[75vw] md:max-w-[65vw] lg:max-w-[55vw] xl:max-w-[45vw] text-base font-medium rounded-2xl mb-1 break-words bg-orange-500/30 dark:bg-cyan-500/30 text-slate-900 dark:text-white ${isOwn ? 'rounded-br-none' : 'rounded-bl-none'}`}>
                     {msg.text}
                     {msg.isEdited && <span className="block text-[10px] text-slate-600 dark:text-white/50 text-right mt-1">(Đã chỉnh sửa)</span>}
                   </p>
+                  )
                 )}
                 {/* Reactions Bubble */}
                 {msg.reactions && msg.reactions.length > 0 && (
@@ -640,6 +691,22 @@ const MessageItem = ({ msg, authUser, selectedUser, reactMessage, editMessage, r
         </div>
       </div>
     </div>
+
+      {/* Modal xác nhận thu hồi */}
+      <ConfirmModal
+        open={showRevokeConfirm}
+        title="Thu hồi tin nhắn"
+        message="Bạn có chắc muốn thu hồi tin nhắn này? Tin nhắn sẽ bị xóa vĩnh viễn và không thể khôi phục."
+        confirmText="Thu hồi"
+        cancelText="Không"
+        variant="danger"
+        onConfirm={() => {
+          revokeMessage(msg._id);
+          setShowRevokeConfirm(false);
+        }}
+        onCancel={() => setShowRevokeConfirm(false)}
+      />
+    </>
   );
 };
 
@@ -680,6 +747,52 @@ const ChatContainer = ({ startCall }) => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerIntervalRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '52px';
+      if (input.length > 0) {
+        textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
+      }
+    }
+  }, [input]);
+
+  const handlePaste = (e) => {
+    const htmlData = e.clipboardData.getData('text/html');
+    const plainData = e.clipboardData.getData('text/plain');
+    
+    // Nếu plain text không có xuống dòng nhưng HTML có chứa thẻ block, ta sẽ dùng DOMParser để lấy text chuẩn xác hơn
+    if (htmlData && plainData && !plainData.includes('\n') && (htmlData.includes('<p') || htmlData.includes('<br') || htmlData.includes('<div'))) {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlData, 'text/html');
+        // Trình duyệt tự động chèn \n cho các thẻ block khi ta dùng innerText trên một element được append vào document
+        // Tạo thẻ div ảo, append vào body nhưng ẩn đi để lấy innerText chính xác nhất
+        const tempDiv = document.createElement('div');
+        tempDiv.style.whiteSpace = 'pre-wrap';
+        tempDiv.innerHTML = htmlData;
+        document.body.appendChild(tempDiv);
+        const text = tempDiv.innerText;
+        document.body.removeChild(tempDiv);
+        
+        if (text && text.includes('\n')) {
+          e.preventDefault();
+          const start = e.target.selectionStart;
+          const end = e.target.selectionEnd;
+          const newValue = input.substring(0, start) + text + input.substring(end);
+          setInput(newValue);
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + text.length;
+            }
+          }, 0);
+        }
+      } catch (err) {
+        console.error("Paste parsing error", err);
+      }
+    }
+  };
 
   // --- Các hàm xử lý Ghi âm ---
   const startRecording = async () => {
@@ -1160,14 +1273,22 @@ const ChatContainer = ({ startCall }) => {
                   </button>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center bg-slate-200/50 dark:bg-gray-100/12 px-4 rounded-full gap-2 min-w-0">
-                  <input
+                <div className="flex-1 flex items-center bg-slate-200/50 dark:bg-gray-100/12 px-4 rounded-3xl gap-2 min-w-0">
+                  <textarea
+                    ref={textareaRef}
+                    rows={1}
                     onChange={(e) => setInput(e.target.value)}
                     value={input}
-                    onKeyDown={(e) => e.key === 'Enter' ? handleSendMessage(e) : null}
-                    type="text"
+                    onPaste={handlePaste}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(e);
+                      }
+                    }}
                     placeholder={attachment ? 'Thêm lời nhắn (tuỳ chọn)...' : 'Nhập tin nhắn...'}
-                    className="flex-1 text-base p-4 border-none rounded-full outline-none text-slate-900 placeholder-slate-500 dark:text-white dark:placeholder-gray-400 bg-transparent min-w-0"
+                    className="flex-1 text-base py-3.5 px-4 border-none rounded-3xl outline-none text-slate-900 placeholder-slate-500 dark:text-white dark:placeholder-gray-400 bg-transparent min-w-0 resize-none overflow-y-auto"
+                    style={{ height: '52px' }}
                   />
 
                   {/* Nút ghi âm */}

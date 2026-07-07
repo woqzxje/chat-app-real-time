@@ -109,6 +109,7 @@ class Message(Document):
     # Thay vì dùng lệnh xóa cứng (hard delete), ta chỉ set cờ isDeleted = True và gỡ nội dung `text` ra.
     # Điều này giúp Client hiển thị "Tin nhắn đã bị thu hồi" và giữ vẹn toàn cấu trúc hội thoại.
     isDeleted: bool = False # Cờ báo tin nhắn đã bị thu hồi
+    deletedByAdmin: bool = False # Cờ báo tin nhắn bị xóa bởi Admin (do vi phạm báo cáo)
     isEdited: bool = False # Cờ báo tin nhắn đã bị chỉnh sửa
     editedAt: Optional[datetime] = None # Đóng dấu thời gian chỉnh sửa
     

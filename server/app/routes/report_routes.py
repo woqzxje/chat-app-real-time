@@ -60,10 +60,14 @@ async def create_report(report_data: ReportCreate):
 
 @router.get("/")
 async def get_reports(email: str):
-    if email != ADMIN_EMAIL:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    
-    reports = await Report.find_all().to_list()
+    if email == ADMIN_EMAIL:
+        reports = await Report.find_all().to_list()
+    else:
+        user = await User.find_one(User.email == email)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        reports = await Report.find(Report.reporterId == str(user.id)).to_list()
+        
     # Sort descending by createdAt in Python (or use Beanie sort, but reverse is fine)
     reports.reverse()
     # Thêm thông tin người gửi, người bị report, và nội dung tin nhắn để admin dễ nhìn
@@ -89,7 +93,8 @@ async def get_reports(email: str):
             "reason": r.reason,
             "status": r.status,
             "decision": getattr(r, 'decision', None),
-            "createdAt": r.createdAt.isoformat()
+            "createdAt": r.createdAt.isoformat(),
+            "banned_until": reported.banned_until.isoformat() if reported and getattr(reported, 'banned_until', None) else None
         })
     
     return result
@@ -111,9 +116,26 @@ async def ban_user(report_id: str, ban_data: BanRequest, email: str):
     ban_until = datetime.utcnow() + timedelta(days=ban_data.banDurationDays)
     await reported_user.set({"banned_until": ban_until})
     
+    # Thu hồi (soft-delete) tin nhắn bị báo cáo
+    if ObjectId.is_valid(report.messageId):
+        msg = await Message.get(report.messageId)
+        if msg and not msg.isDeleted:
+            await msg.set({"isDeleted": True, "deletedByAdmin": True, "text": None, "image": None, "attachment": None})
+    
     # Mark report as resolved
     decision_text = f"Đã cấm chat {ban_data.banDurationDays} ngày" if ban_data.banDurationDays != 365 else "Đã cấm chat vĩnh viễn"
     await report.set({"status": "resolved", "decision": decision_text})
+    
+    # Notify reporter
+    reporter_sid = user_socket_map.get(report.reporterId)
+    if reporter_sid:
+        await sio.emit("reportResolved", {"reportId": report_id, "decision": decision_text}, to=reporter_sid)
+    
+    # Notify reported user's chat partner to refresh messages (so revoked msg disappears)
+    # Emit to all connected clients of the reported user
+    reported_sid = user_socket_map.get(report.reportedId)
+    if reported_sid:
+        await sio.emit("messageRevoked", {"messageId": report.messageId}, to=reported_sid)
     
     return {"message": "User banned successfully", "banned_until": ban_until.isoformat()}
 
@@ -127,6 +149,34 @@ async def cancel_report(report_id: str, email: str):
         raise HTTPException(status_code=404, detail="Report not found")
         
     # Mark report as resolved without banning
-    await report.set({"status": "resolved", "decision": "Đã hủy bỏ báo cáo"})
+    decision_text = "Đã hủy bỏ báo cáo"
+    await report.set({"status": "resolved", "decision": decision_text})
+    
+    # Notify reporter
+    reporter_sid = user_socket_map.get(report.reporterId)
+    if reporter_sid:
+        await sio.emit("reportResolved", {"reportId": report_id, "decision": decision_text}, to=reporter_sid)
     
     return {"message": "Report cancelled successfully"}
+
+@router.post("/{report_id}/unban")
+async def unban_user(report_id: str, email: str):
+    if email != ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Forbidden")
+        
+    report = await Report.get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+        
+    reported_user = await User.get(report.reportedId)
+    if not reported_user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Remove ban
+    await reported_user.set({"banned_until": None})
+    
+    # Update report decision
+    decision_text = "Đã gỡ cấm chat"
+    await report.set({"decision": decision_text})
+    
+    return {"message": "User unbanned successfully"}

@@ -6,6 +6,7 @@ import { UserMinus, UserPlus, X, Check, LogOut, Trash2, Edit2, Camera, Save, Cro
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import ConfirmModal from './ConfirmModal'
 
 const RightSidebar = () => {
 
@@ -88,6 +89,9 @@ const RightSidebar = () => {
   const [groupMembers, setGroupMembers] = useState([]);
   const fileInputRef = useRef(null);
 
+  // State chung cho ConfirmModal
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', confirmText: '', variant: 'danger', onConfirm: null });
+
   const fetchGroupMembers = async () => {
     try {
       const { data } = await axios.get(`/api/messages/groups/${selectedUser._id}/members`);
@@ -135,38 +139,53 @@ const RightSidebar = () => {
     }
   };
   const handleUnfriend = async () => {
-    if (window.confirm("Bạn có chắc chắn muốn hủy kết bạn?")) {
-      try {
-        const { data } = await axios.post('/api/auth/unfriend', { friendId: selectedUser._id });
-        if (data.success) {
-          toast.success(data.message);
-          // Cập nhật ngay lập tức vào state, không reload lại web
-          if (setSelectedUser) setSelectedUser(prev => ({ ...prev, isFriend: false }));
-          if (getUsers) getUsers();
-        } else {
-          toast.error(data.message);
+    setConfirmDialog({
+      open: true,
+      title: 'Hủy kết bạn',
+      message: `Bạn có chắc chắn muốn hủy kết bạn với ${selectedUser.fullName}? Bạn sẽ không còn thấy người này trong danh sách bạn bè.`,
+      confirmText: 'Hủy kết bạn',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+        try {
+          const { data } = await axios.post('/api/auth/unfriend', { friendId: selectedUser._id });
+          if (data.success) {
+            toast.success(data.message);
+            if (setSelectedUser) setSelectedUser(prev => ({ ...prev, isFriend: false }));
+            if (getUsers) getUsers();
+          } else {
+            toast.error(data.message);
+          }
+        } catch (err) {
+          toast.error(err.response?.data?.message || err.message);
         }
-      } catch (err) {
-        toast.error(err.response?.data?.message || err.message);
       }
-    }
+    });
   }
 
   const handleUnban = async () => {
-    if (window.confirm(`Bạn có chắc chắn muốn gỡ cấm chat cho ${selectedUser.fullName}?`)) {
-      try {
-        const { data } = await axios.post(`/api/auth/unban/${selectedUser._id}`);
-        if (data.success) {
-          toast.success(data.message);
-          setSelectedUser(prev => ({ ...prev, banned_until: null }));
-          getUsers();
-        } else {
-          toast.error(data.message);
+    setConfirmDialog({
+      open: true,
+      title: 'Gỡ cấm chat',
+      message: `Bạn có chắc chắn muốn gỡ cấm chat cho ${selectedUser.fullName}? Người này sẽ có thể gửi tin nhắn lại.`,
+      confirmText: 'Gỡ cấm',
+      variant: 'warning',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+        try {
+          const { data } = await axios.post(`/api/auth/unban/${selectedUser._id}`);
+          if (data.success) {
+            toast.success(data.message);
+            setSelectedUser(prev => ({ ...prev, banned_until: null }));
+            getUsers();
+          } else {
+            toast.error(data.message);
+          }
+        } catch (err) {
+          toast.error(err.response?.data?.message || err.message);
         }
-      } catch (err) {
-        toast.error(err.response?.data?.message || err.message);
       }
-    }
+    });
   };
 
   const handleAddFriend = async (userId) => {
@@ -183,21 +202,29 @@ const RightSidebar = () => {
   };
 
   const handleKickMember = async (userId, userName) => {
-    if (window.confirm(`Bạn có chắc muốn mời ${userName} ra khỏi nhóm?`)) {
-      try {
-        const { data } = await axios.put(`/api/messages/groups/${selectedUser._id}/kick`, { userId });
-        if (data.success) {
-          toast.success(data.message);
-          setSelectedUser({ ...selectedUser, ...data.group });
-          getUsers();
-          setGroupMembers(prev => prev.filter(m => m._id !== userId));
-        } else {
-          toast.error(data.message);
+    setConfirmDialog({
+      open: true,
+      title: 'Mời ra khỏi nhóm',
+      message: `Bạn có chắc muốn mời ${userName} ra khỏi nhóm? Người này sẽ không còn xem được tin nhắn trong nhóm nữa.`,
+      confirmText: 'Mời ra',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+        try {
+          const { data } = await axios.put(`/api/messages/groups/${selectedUser._id}/kick`, { userId });
+          if (data.success) {
+            toast.success(data.message);
+            setSelectedUser({ ...selectedUser, ...data.group });
+            getUsers();
+            setGroupMembers(prev => prev.filter(m => m._id !== userId));
+          } else {
+            toast.error(data.message);
+          }
+        } catch (error) {
+          toast.error(error.response?.data?.message || error.message);
         }
-      } catch (error) {
-        toast.error(error.response?.data?.message || error.message);
       }
-    }
+    });
   };
 
   const handleAddMember = async () => {
@@ -229,44 +256,63 @@ const RightSidebar = () => {
   };
 
   const handleLeaveGroup = async (silent) => {
-    const msg = silent ? "Bạn có chắc chắn muốn rời nhóm trong im lặng (Chỉ Admin nhận được thông báo)?" : "Bạn có chắc chắn muốn rời nhóm và thông báo cho mọi người?";
-    if (window.confirm(msg)) {
-      try {
-        const { data } = await axios.put(`/api/messages/groups/${selectedUser._id}/leave?silent=${silent}`);
-        if (data.success) {
-          toast.success(data.message);
-          setSelectedUser(null);
-          getUsers();
-        } else {
-          toast.error(data.message);
+    const msg = silent 
+      ? 'Bạn có chắc chắn muốn rời nhóm trong im lặng? Chỉ Admin sẽ nhận được thông báo.' 
+      : 'Bạn có chắc chắn muốn rời nhóm? Mọi người sẽ nhận được thông báo về việc này.';
+    setConfirmDialog({
+      open: true,
+      title: silent ? 'Rời nhóm im lặng' : 'Rời nhóm',
+      message: msg,
+      confirmText: 'Rời nhóm',
+      variant: 'warning',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+        try {
+          const { data } = await axios.put(`/api/messages/groups/${selectedUser._id}/leave?silent=${silent}`);
+          if (data.success) {
+            toast.success(data.message);
+            setSelectedUser(null);
+            getUsers();
+          } else {
+            toast.error(data.message);
+          }
+        } catch (err) {
+          toast.error(err.response?.data?.message || err.message);
         }
-      } catch (err) {
-        toast.error(err.response?.data?.message || err.message);
       }
-    }
+    });
   }
 
   const handleDisbandGroup = async () => {
-    if (window.confirm("Bạn có chắc chắn muốn giải tán nhóm này? Hành động này không thể hoàn tác.")) {
-      try {
-        const { data } = await axios.delete(`/api/messages/groups/${selectedUser._id}`);
-        if (data.success) {
-          toast.success(data.message);
-          setSelectedUser(null);
-          getUsers();
-        } else {
-          toast.error(data.message);
+    setConfirmDialog({
+      open: true,
+      title: 'Giải tán nhóm',
+      message: 'Bạn có chắc chắn muốn giải tán nhóm này? Tất cả tin nhắn và dữ liệu nhóm sẽ bị xóa vĩnh viễn và không thể khôi phục.',
+      confirmText: 'Giải tán',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, open: false }));
+        try {
+          const { data } = await axios.delete(`/api/messages/groups/${selectedUser._id}`);
+          if (data.success) {
+            toast.success(data.message);
+            setSelectedUser(null);
+            getUsers();
+          } else {
+            toast.error(data.message);
+          }
+        } catch (err) {
+          toast.error(err.response?.data?.message || err.message);
         }
-      } catch (err) {
-        toast.error(err.response?.data?.message || err.message);
       }
-    }
+    });
   }
 
   // Lọc bạn bè chưa có trong nhóm
   const friendsList = users.filter(u => u.isFriend && !u.isGroup && !(selectedUser?.members || []).includes(u._id));
 
   return selectedUser && (
+    <>
     <div className="bg-white/40 dark:bg-[#8185B2]/10 backdrop-blur-lg flex-1 text-slate-900 dark:text-white w-full flex flex-col relative">
       
       {/* Phần nội dung có thể cuộn */}
@@ -608,6 +654,17 @@ const RightSidebar = () => {
       )}
 
     </div>
+
+      <ConfirmModal
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
+      />
+    </>
   )
 }
 
