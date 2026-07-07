@@ -16,9 +16,11 @@
 - [Phần II — Công nghệ Áp dụng](#phần-ii--công-nghệ-áp-dụng)
 - [Phần III — Danh sách API & Socket Events](#phần-iii--danh-sách-api--socket-events)
 - [Phần IV — Cấu trúc Backend](#phần-iv--cấu-trúc-backend)
-- [Phần V — Giải thích từng Module](#phần-v--giải-thích-từng-module)
-- [Phần VI — Hướng dẫn Demo](#phần-vi--hướng-dẫn-demo)
-- [Phần VII — Phân chia Công việc](#phần-vii--phân-chia-công-việc)
+- [Phần V — Giải thích từng Module Backend](#phần-v--giải-thích-từng-module-backend)
+- [Phần VI — Cấu trúc Frontend](#phần-vi--cấu-trúc-frontend)
+- [Phần VII — Giải thích từng Module Frontend](#phần-vii--giải-thích-từng-module-frontend)
+- [Phần VIII — Hướng dẫn Demo](#phần-viii--hướng-dẫn-demo)
+- [Phần IX — Phân chia Công việc](#phần-ix--phân-chia-công-việc)
 
 ---
 
@@ -226,7 +228,7 @@ server/
 
 ---
 
-## Phần V — Giải thích từng Module
+## Phần V — Giải thích từng Module Backend
 
 ### 5.1 `main.py` — Trái tim Backend
 
@@ -287,7 +289,66 @@ server/
 
 ---
 
-## Phần VI — Hướng dẫn Demo
+## Phần VI — Cấu trúc Frontend
+
+```text
+client/
+├── context/
+│   ├── AuthContext.jsx       ← Quản lý trạng thái đăng nhập, người dùng và Socket.IO
+│   ├── ChatContext.jsx       ← Quản lý State cốt lõi (tin nhắn, nhóm, bạn bè, online)
+│   └── ThemeContext.jsx      ← Quản lý giao diện Sáng/Tối (Dark/Light mode)
+├── src/
+│   ├── components/
+│   │   ├── ChatContainer.jsx ← Hiển thị luồng tin nhắn, gửi/nhận file, reaction
+│   │   ├── SideBar.jsx       ← Sidebar trái: Danh sách bạn bè, tìm kiếm, nhóm chat
+│   │   ├── RightSidebar.jsx  ← Sidebar phải: Info, media, tài liệu đã chia sẻ
+│   │   ├── VideoCallModal.jsx← Logic và UI cuộc gọi Video ngang hàng (WebRTC)
+│   │   ├── AIChatBot.jsx     ← Popup Chat với AI (Google Gemini)
+│   │   └── ui/               ← Các component UI dùng chung (Button, Modal, Input...)
+│   ├── pages/
+│   │   ├── HomePage.jsx      ← Trang chính ứng dụng (gồm các Sidebar & ChatContainer)
+│   │   ├── LoginPage.jsx     ← Trang Đăng nhập/Đăng ký (OTP, Google OAuth, Quên MK)
+│   │   └── ProfilePage.jsx   ← Trang cập nhật thông tin cá nhân (Avatar, Bio)
+│   └── App.jsx               ← Điều hướng Routes bảo vệ (Protected Routes)
+```
+
+---
+
+## Phần VII — Giải thích từng Module Frontend
+
+### 7.1 `AuthContext.jsx` — Quản lý Xác thực & Socket
+- **State toàn cục**: Lưu trữ `authUser` sau khi đăng nhập thành công.
+- **Xử lý đăng nhập/đăng ký**: Các hàm `login()`, `verifyRegistration()`, `googleLogin()` gọi API Backend, lấy JWT Token và lưu vào localStorage.
+- **Quản lý Socket.IO**: Khi có `authUser`, tự động khởi tạo kết nối `io()` duy nhất đến Server. Ngắt kết nối khi đăng xuất.
+
+### 7.2 `ChatContext.jsx` — Trái tim của ứng dụng Chat
+- **Quản lý Messages**: Lưu trữ mảng `messages`, xử lý các hàm `sendMessage()`, `deleteMessage()`, `reactToMessage()`.
+- **Lắng nghe sự kiện (Listeners)**: Sử dụng `useEffect` để lắng nghe các emit từ Socket.IO như `receiveMessage`, `messageDeleted`, `messageReacted`, `messagesSeenUpdate` để cập nhật UI tức thời mà không cần load lại trang.
+- **Bạn bè & Nhóm**: Quản lý danh sách online `onlineUsers`, kết bạn, tạo nhóm, thêm thành viên.
+
+### 7.3 `ChatContainer.jsx` — Khung hiển thị Tin nhắn chính
+- **Render luồng tin nhắn**: Lặp qua mảng `messages` hiển thị giao diện bên trái (người khác) và bên phải (bản thân).
+- **Auto-scroll thông minh**: Tự động cuộn xuống tin nhắn mới nhất bằng `useRef` và `scrollIntoView()`.
+- **Đa phương tiện**: Hỗ trợ xem trước (preview) hình ảnh, tải xuống file, và hiển thị cấu trúc folder gửi đi/nhận lại.
+- **Context Menu**: Click chuột phải / Long-press (trên điện thoại) để Thu hồi, Chỉnh sửa, hoặc Thả cảm xúc.
+
+### 7.4 Các Sidebars (`SideBar.jsx` & `RightSidebar.jsx`)
+- **SideBar**: Nơi tìm kiếm người dùng (so khớp tiếng Việt không dấu). Chuyển đổi giữa chat 1-1 và Group Chat. Nhận thông báo lời mời kết bạn tức thời.
+- **RightSidebar**: Nơi tập hợp các File / Ảnh đã gửi trong nhóm. Hiển thị danh sách thành viên nhóm và tùy chọn quản lý (Kích, Rời nhóm, Giải tán).
+
+### 7.5 `VideoCallModal.jsx` — Video Call P2P
+- Sử dụng thư viện `simple-peer` thiết lập luồng WebRTC.
+- Giao tiếp qua lại các tín hiệu SDP/ICE Candidate thông qua Socket.IO.
+- Quản lý 2 luồng: `localStream` (Camera/Mic của mình) và `remoteStream` (của đối phương).
+
+### 7.6 `LoginPage.jsx` — Cửa ngõ bảo mật
+- Sử dụng **Framer Motion** để tạo hiệu ứng 3D mượt mà.
+- Các biểu mẫu Đăng ký/Đăng nhập dùng chung một trang (Single Page).
+- Gọi các Modals nhập OTP và Quên mật khẩu.
+
+---
+
+## Phần VIII — Hướng dẫn Demo
 
 > Khi giảng viên yêu cầu demo, thực hiện theo quy trình sau:
 
@@ -311,7 +372,7 @@ Mở **2 trình duyệt** (hoặc 1 cửa sổ thường + 1 ẩn danh) đại d
 
 ---
 
-## Phần VII — Phân chia Công việc
+## Phần IX — Phân chia Công việc
 
 <table>
 <tr>
