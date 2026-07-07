@@ -16,3 +16,15 @@ env/
 # Build artifacts
 dist/
 build/
+
+# Editor
+.vscode/
+.idea/
+
+# Debug output
+*.output.json
+*.output.txt
+
+# OS
+.DS_Store
+Thumbs.db

@@ -83,7 +83,7 @@
 Ứng dụng được phân tách thành hai kiến trúc độc lập Client (Frontend) và Server (Backend):
 
 ### Frontend
-* ![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB) **React 18**
+* ![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB) **React 19**
 * ![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=flat&logo=vite&logoColor=white) **Vite** (Build Tool)
 * ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white) **Tailwind CSS 4** (UI Styling)
 * ![Framer](https://img.shields.io/badge/Framer_Motion-black?style=flat&logo=framer&logoColor=blue) **Framer Motion & GSAP** (Animations)
@@ -161,7 +161,6 @@ Hãy đảm bảo bạn đã cài đặt các công cụ sau:
    Tạo file `.env` trong thư mục `client`:
    ```env
    VITE_BACKEND_URL=http://localhost:5001
-   VITE_GOOGLE_CLIENT_ID=your-google-client-id
    ```
 
 ---
@@ -175,7 +174,6 @@ Hãy đảm bảo bạn đã cài đặt các công cụ sau:
 cd server
 python run.py
 ```
-*(Bạn cũng có thể chạy `npm run dev` nếu có môi trường pnpm/npm hỗ trợ wrapper kịch bản cho py run.py)*
 
 **Khởi chạy Client:**
 ```sh

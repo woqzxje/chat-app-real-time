@@ -2,7 +2,7 @@
   <h1 align="center">ChatApp - Client (Giao Diện Người Dùng)</h1>
 
   <p align="center">
-    Mã nguồn Frontend của ChatApp, được xây dựng bằng ReactJS và Vite. Nó cung cấp một giao diện Dark Mode bóng bẩy, hiệu năng cao và cực kỳ mượt mà trên cả thiết bị di động lẫn máy tính để bàn.
+    Mã nguồn Frontend của ChatApp, được xây dựng bằng React 19 và Vite. Giao diện Dark Mode Glassmorphism bóng bẩy, hiệu năng cao và cực kỳ mượt mà trên cả thiết bị di động lẫn máy tính để bàn.
   </p>
 </div>
 
@@ -22,55 +22,92 @@
 
 ## Công Nghệ Nền Tảng
 
-* **Core:** ReactJS 19 + Vite (Build tool siêu tốc).
-* **Styling:** TailwindCSS 4, hỗ trợ responsive hoàn hảo qua các thẻ tiện ích.
-* **Animations:** Framer Motion & GSAP giúp các biểu tượng và popup xuất hiện mượt mà.
-* **State Management:** React Context API (`AuthContext`, `ChatContext`).
-* **Giao Tiếp (Real-time):** `socket.io-client` cho nhắn tin & `simple-peer` cho WebRTC Video Call.
-* **Xác thực (Auth):** `@react-oauth/google` để tích hợp đăng nhập Google an toàn.
-* **Kết nối Mạng (Video Call):** Kết nối P2P được đảm bảo bởi STUN/TURN server mạnh mẽ từ **Metered.ca** và **Cloudflare/Twilio** giúp đàm thoại không gián đoạn.
-* **UI Components:** `lucide-react` (Bộ icon tối giản), React-Hot-Toast (Thông báo nổi).
+* **Core:** React 19 + Vite (Build tool siêu tốc).
+* **Styling:** TailwindCSS 4, responsive hoàn hảo. Styled-components cho một số UI đặc biệt.
+* **Animations:** Framer Motion giúp các component và popup xuất hiện mượt mà.
+* **State Management:** React Context API (`AuthContext`, `ChatContext`, `ThemeContext`).
+* **Giao Tiếp Real-time:** `socket.io-client` cho nhắn tin thời gian thực.
+* **Video Call P2P:** WebRTC (Simple-Peer) cho cuộc gọi Video ngang hàng.
+* **Xác thực:** `@react-oauth/google` để tích hợp đăng nhập Google an toàn.
+* **UI Components:** Lucide React (Bộ icon), Radix UI (Dialog, Slot), React-Hot-Toast (Thông báo).
 
 ---
 
 ## Cấu Trúc Thư Mục Chính
 
-Toàn bộ logic cốt lõi nằm trong thư mục `/src`:
-* `assets/`: Chứa hình ảnh tĩnh, avatar mặc định, logo.
-* `components/`: Các thành phần tái sử dụng.
-  * `ChatContainer.jsx`: Khung hiển thị và điều khiển luồng chat (chứa `MessageItem`, `AttachmentBubble`, `CallBubble`).
-  * `SideBar.jsx` & `RightSidebar.jsx`: Thanh công cụ hai bên.
-  * `VideoCallModal.jsx`: Giao diện gọi điện P2P.
-  * `ui/`: Các thành phần giao diện nhỏ như Button, FlickerSpinner.
-* `context/`: Quản lý trạng thái toàn cầu.
-  * `AuthContext.jsx`: Quản lý user, token, thiết lập kết nối Socket.
-  * `ChatContext.jsx`: Quản lý danh sách tin nhắn, thao tác với tin nhắn (gửi, sửa, thu hồi, thả cảm xúc).
-* `hooks/`: 
-  * `useVideoCall.js`: Trừu tượng hóa logic phức tạp của WebRTC ra khỏi component giao diện.
-* `pages/`: Các trang chính (`HomePage`, `LoginPage`, `ProfilePage`).
-* `lib/`: Chứa file `utils.js` (hàm tiện ích format thời gian, định dạng dung lượng file).
+```
+client/
+├── index.html           # HTML entry point
+├── vite.config.js       # Cấu hình Vite
+├── package.json         # Dependencies
+├── vercel.json          # Cấu hình deploy Vercel
+├── public/              # Static assets (logo, demo screenshots)
+├── context/             # React Context (quản lý state toàn cục)
+│   ├── AuthContext.jsx      # Quản lý user, token, kết nối Socket
+│   ├── ChatContext.jsx      # Quản lý tin nhắn, thao tác chat
+│   └── ThemeContext.jsx     # Quản lý Dark/Light mode
+└── src/
+    ├── App.jsx              # Root component với routing
+    ├── main.jsx             # Entry point React
+    ├── index.css            # Global styles
+    ├── assets/              # Hình ảnh tĩnh (avatar, logo, icons)
+    ├── lib/
+    │   └── utils.js         # Hàm tiện ích (format thời gian, dung lượng)
+    ├── hooks/
+    │   └── useVideoCall.js  # Logic WebRTC trừu tượng hóa
+    ├── pages/
+    │   ├── HomePage.jsx     # Trang chính (sau đăng nhập)
+    │   ├── LoginPage.jsx    # Trang đăng nhập/đăng ký
+    │   └── ProfilePage.jsx  # Trang cá nhân
+    └── components/
+        ├── ChatContainer.jsx      # Khung hiển thị & điều khiển chat
+        ├── SideBar.jsx            # Thanh bên trái (danh sách bạn bè)
+        ├── RightSidebar.jsx       # Thanh bên phải (chi tiết user/nhóm)
+        ├── VideoCallModal.jsx     # Giao diện gọi Video P2P
+        ├── AIChatBot.jsx          # Trợ lý ảo AI (Gemini)
+        ├── ProfileEditModal.jsx   # Modal chỉnh sửa hồ sơ
+        ├── ConfirmModal.jsx       # Modal xác nhận hành động
+        ├── ReportModal.jsx        # Modal báo cáo tin nhắn
+        ├── AdminReportModal.jsx   # Modal quản lý báo cáo (Admin)
+        ├── ThemeToggle.jsx        # Nút chuyển đổi Dark/Light mode
+        ├── hooks/                 # Hooks riêng cho components
+        │   ├── use-character-limit.js
+        │   └── use-image-upload.js
+        └── ui/                    # UI Components tái sử dụng
+            ├── button.jsx
+            ├── dialog.jsx
+            ├── input.jsx
+            ├── label.jsx
+            ├── textarea.jsx
+            ├── ShinyButton.jsx
+            ├── GradientButton.jsx
+            ├── SparklesText.jsx
+            ├── ExpandableTabs.jsx
+            ├── floating-action-menu.jsx
+            ├── star-wars-toggle-switch.jsx
+            ├── static-aurora-background.jsx
+            └── wave-text.jsx
+```
 
 ---
 
 ## Tính Năng Giao Diện Nổi Bật
 
-1. **Chống Tràn Viền Mobile:** Áp dụng thuật toán tính chiều cao động `h-[100dvh]` và `absolute inset-0` để ngăn chặn lỗi trình duyệt điện thoại che mất các thành phần điều hướng.
-2. **Trải Nghiệm Thả Cảm Xúc (Long-press):** Bắt sự kiện chạm cảm ứng 500ms để hiện thanh cảm xúc giống ứng dụng gốc (Native App) trên điện thoại di động.
-3. **Cuộn Thông Minh (Smart Auto-Scroll):** Theo dõi vị trí cuộn chuột; tự động cuộn xuống khi có tin nhắn mới nếu người dùng đang ở cuối, nhưng không làm phiền nếu họ đang xem lịch sử cũ.
-4. **Xác Thực Đa Kênh:** Đăng nhập truyền thống và hỗ trợ Google OAuth thông qua `@react-oauth/google`.
+1. **Dark Mode & Light Mode:** Chuyển đổi theme qua nút gạt Star Wars, lưu trạng thái vào localStorage.
+2. **Chống Tràn Viền Mobile:** Áp dụng `h-[100dvh]` và `absolute inset-0` để ngăn lỗi trình duyệt mobile che mất navigation.
+3. **Thả Cảm Xúc (Long-press):** Bắt sự kiện chạm 500ms để hiện thanh cảm xúc giống ứng dụng Native trên điện thoại.
+4. **Cuộn Thông Minh (Smart Auto-Scroll):** Tự cuộn xuống tin mới khi ở cuối, không làm phiền khi đang xem lịch sử.
+5. **Xác Thực Đa Kênh:** Đăng nhập truyền thống + Google OAuth thông qua `@react-oauth/google`.
 
 ---
 
 ## Cấu Hình Môi Trường (Environment Variables)
 
-Tạo file `.env` ở thư mục gốc của `/client` với các biến sau:
+Tạo file `.env` ở thư mục gốc của `/client`:
 
 ```env
 # URL của Server Backend (Dùng để kết nối API và Socket.IO)
 VITE_BACKEND_URL=http://localhost:5001
-
-# Google Client ID (Dành cho tính năng đăng nhập Google)
-VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 ```
 
 ## Khởi Chạy
@@ -79,6 +116,6 @@ VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 # Cài đặt thư viện
 pnpm install
 
-# Chạy server lập trình
+# Chạy server phát triển
 pnpm run dev
 ```

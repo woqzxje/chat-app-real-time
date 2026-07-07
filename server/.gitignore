@@ -10,3 +10,8 @@ dist/
 build/
 .pytest_cache/
 .mypy_cache/
+node_modules/
+
+# Debug output
+*.output.json
+*.output.txt
