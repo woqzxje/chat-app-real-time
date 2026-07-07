@@ -525,7 +525,7 @@ const LoginPage = () => {
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="Nhập mã OTP (6 số)"
-                  className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-center text-xl font-bold tracking-[0.5em] text-white focus:border-orange-500 dark:focus:border-cyan-500 outline-none transition-colors"
+                  className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-center text-xl font-bold tracking-[0.5em] placeholder:tracking-normal placeholder:text-sm placeholder:font-normal text-white focus:border-orange-500 dark:focus:border-cyan-500 outline-none transition-colors"
                   required 
                 />
                 <GradientButton type="submit" disabled={isModalLoading} className="w-full h-11">
@@ -607,7 +607,7 @@ const LoginPage = () => {
                   value={resetOtp}
                   onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
                   placeholder="Nhập mã OTP (6 số)"
-                  className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-center text-xl font-bold tracking-[0.5em] text-white focus:border-orange-500 dark:focus:border-cyan-500 outline-none transition-colors"
+                  className="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-center text-xl font-bold tracking-[0.5em] placeholder:tracking-normal placeholder:text-sm placeholder:font-normal text-white focus:border-orange-500 dark:focus:border-cyan-500 outline-none transition-colors"
                   required 
                 />
                 

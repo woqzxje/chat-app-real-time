@@ -1,205 +1,393 @@
-# 📖 CUỐN SÁCH: GIẢI THÍCH CHI TIẾT SOURCE CODE TỪ A-Z (DỰ ÁN CHAT APP)
+<div align="center">
 
-**LỜI NÓI ĐẦU**
-Tài liệu này không phải là bản tóm tắt, mà là một cuốn cẩm nang "mổ xẻ" toàn bộ dự án từ Frontend (ReactJS) đến Backend (FastAPI). 
-Mỗi tính năng dưới đây được giải thích theo **Luồng dữ liệu (Data Flow)**: Bắt đầu từ lúc người dùng thao tác trên Giao diện (UI) -> Trạng thái lưu ở Client (State/Context) -> Gọi API (Axios/Socket) -> Xử lý logic tại Controller (Backend) -> Thao tác với Database (MongoDB).
+# 📖 GIẢI THÍCH CHI TIẾT SOURCE CODE — DỰ ÁN CHATITC
 
----
-
-## CHƯƠNG 1: CƠ SỞ DỮ LIỆU & KIẾN TRÚC LÕI (CORE ARCHITECTURE)
-
-### 1. Database Schemas (`server/app/models.py`)
-Dự án sử dụng NoSQL (MongoDB) và thư viện **Beanie ODM** để ánh xạ dữ liệu thành các Object Python.
-- **`User` Schema:**
-  - Lưu thông tin tài khoản: `email`, `fullName`, `password` (đã băm bằng bcrypt), `profilePic` (URL ảnh đại diện).
-  - Các mảng lưu quan hệ xã hội: `friends` (Danh sách ID bạn bè), `friendRequests` (Danh sách ID người gửi lời mời).
-- **`Message` Schema:**
-  - Lưu thông tin tin nhắn: `senderId` (Người gửi), `receiverId` (Người nhận hoặc ID Nhóm), `text` (Nội dung văn bản), `image` / `fileUrl` (Link đính kèm).
-  - Trạng thái tin nhắn: `isSeen` (Đã xem), `isDeleted` (Bị thu hồi - Soft delete).
-  - Mảng `reactions`: Lưu các biểu tượng cảm xúc mà user thả vào tin nhắn.
-- **`ChatGroup` Schema (Tích hợp trong Message hoặc bảng riêng):**
-  - Chứa `name`, `avatar`, `adminId` (Trưởng nhóm), và mảng `members` (Chứa danh sách ID các thành viên).
-
-### 2. Kiến trúc Socket.IO (`server/app/socket_manager.py`)
-- Backend dùng `python-socketio` chạy chung port với FastAPI thông qua `ASGIApp`.
-- **Biến `user_socket_map` (Dictionary):** Khi một user kết nối (gọi sự kiện `connect`), server lưu `userId` và `socket.id` vào từ điển này. Nhờ đó, khi User A muốn gửi real-time cho User B, server chỉ cần tra cứu `user_socket_map[UserB_ID]` để đẩy dữ liệu thẳng vào thiết bị của B (bằng lệnh `sio.emit(..., room=socket_id)`).
+**Tài liệu Data Flow: Từ Giao diện → State → API → Backend → Database**
 
 ---
 
-## CHƯƠNG 2: XÁC THỰC VÀ PHÂN QUYỀN (AUTHENTICATION)
+</div>
 
-### 2.1 Đăng ký & Đăng nhập (Traditional Auth)
-- **Frontend (`client/src/pages/LoginPage.jsx` & `AuthContext.jsx`):**
-  - Người dùng nhập Email, Mật khẩu. React quản lý bằng `useState`.
-  - Hàm `login(email, password)` trong `AuthContext` gọi Axios POST đến `/api/auth/login`.
-- **Backend (`server/app/routes/user_routes.py`):**
-  - Nhận HTTP POST request. Truy vấn MongoDB: `await User.find_one(User.email == email)`.
-  - Nếu tài khoản tồn tại, dùng thư viện `bcrypt.checkpw(password, hashed_password)` để so khớp mật khẩu.
-  - Tạo JSON Web Token (JWT) bằng thư viện `PyJWT`, lưu thông tin `userId` vào Payload, gài hạn sử dụng (Expiration). Trả token về cho Client.
-- **Bảo vệ Routes (`server/app/dependencies.py`):**
-  - Mỗi API yêu cầu đăng nhập sẽ đi qua hàm `get_current_user`. Hàm này đọc header `Authorization: Bearer <token>`, giải mã JWT. Nếu token hợp lệ, nó query ra Object User và truyền vào controller.
+## 📋 Mục lục
 
-### 2.2 Đăng nhập Google (OAuth 2.0)
-- **Frontend (`GoogleOAuthProvider` & `LoginPage`):**
-  - Sử dụng thư viện `@react-oauth/google`. Khi người dùng click nút "Login with Google", popup hiện lên. Nếu thành công, Google trả về một chuỗi `credential` (chính là `id_token`).
-  - Client gửi chuỗi này xuống API `POST /api/auth/google-login`.
-- **Backend:**
-  - Nhận `id_token`. Sử dụng thư viện `google.oauth2.id_token` để verify chữ ký trực tiếp với Google Server.
-  - Trích xuất `email`, `name`, `picture` từ token.
-  - Logic: Nếu email này chưa có trong DB -> Tự động đăng ký (`insert`). Nếu đã có -> Cấp ngay JWT Token nội bộ và cho phép đăng nhập mà không cần password.
+| Chương | Nội dung |
+|:---|:---|
+| [Chương 1](#chương-1-cơ-sở-dữ-liệu--kiến-trúc-lõi) | Cơ sở Dữ liệu & Kiến trúc Lõi |
+| [Chương 2](#chương-2-xác-thực-và-bảo-mật) | Xác thực và Bảo mật (Auth + OTP + OAuth) |
+| [Chương 3](#chương-3-hệ-thống-bạn-bè--tìm-kiếm) | Hệ thống Bạn bè & Tìm kiếm |
+| [Chương 4](#chương-4-nhắn-tin-thời-gian-thực) | Nhắn tin Thời gian thực |
+| [Chương 5](#chương-5-chat-nhóm--quản-lý-thành-viên) | Chat Nhóm & Quản lý Thành viên |
+| [Chương 6](#chương-6-gửi-file--nén-thư-mục) | Gửi File & Nén Thư mục (Zip on-the-fly) |
+| [Chương 7](#chương-7-gọi-video-ngang-hàng-webrtc) | Gọi Video ngang hàng (WebRTC P2P) |
+| [Chương 8](#chương-8-trợ-lý-ảo-ai--tóm-tắt-tin-nhắn) | Trợ lý ảo AI & Tóm tắt Tin nhắn |
+| [Chương 9](#chương-9-hệ-thống-email-otp) | Hệ thống Email OTP (Brevo API) |
+| [Chương 10](#chương-10-quản-trị-admin) | Quản trị Admin (Báo cáo & Cấm chat) |
 
 ---
 
-## CHƯƠNG 3: HỆ THỐNG BẠN BÈ & TÌM KIẾM
+## Chương 1: Cơ sở Dữ liệu & Kiến trúc Lõi
 
-### 3.1 Tìm kiếm & Gửi lời mời kết bạn
-- **Frontend (`client/src/components/SideBar.jsx`):**
-  - Thanh Search có cơ chế `debounce` (gõ xong 0.5s mới tìm) để tránh spam API.
-  - Gửi `GET /api/auth/search?query=...`
-- **Backend (`user_routes.py` - `search`):**
-  - Sử dụng Regex trong MongoDB (`{"$regex": query, "$options": "i"}`) để tìm gần đúng tên hoặc email.
-- **Luồng gửi lời mời kết bạn (`send-friend-request`):**
-  - Kích hoạt hàm `POST /api/auth/send-friend-request`.
-  - Backend cập nhật DB: Thêm ID của người gửi vào mảng `friendRequests` của đối phương (`$push`).
-  - **Real-time:** Backend ngay lập tức gọi Socket `sio.emit('newFriendRequest', data, room=receiver_socket_id)` để góc màn hình đối phương hiện popup Toast thông báo.
+### 1.1 Database Schemas — `server/app/models.py`
 
-### 3.2 Chấp nhận kết bạn
-- **API `POST /api/auth/accept-friend-request`:**
-  - Kéo ID ra khỏi mảng `friendRequests` (`$pull`).
-  - Đẩy ID của nhau vào mảng `friends` của cả 2 user (`$push`).
-  - Emit Socket báo tin: "X đã chấp nhận lời mời kết bạn của bạn".
+Dự án sử dụng **NoSQL (MongoDB)** và **Beanie ODM** để ánh xạ dữ liệu thành Object Python.
+
+#### Schema `User`
+
+| Trường | Kiểu | Mô tả |
+|:---|:---|:---|
+| `email` | `str` | Email đăng nhập (duy nhất) |
+| `fullName` | `str` | Họ và tên |
+| `password` | `str` | Mật khẩu đã băm Bcrypt (rỗng nếu Google) |
+| `profilePic` | `str` | URL ảnh đại diện (Cloudinary) |
+| `bio` | `str` | Giới thiệu bản thân |
+| `friends` | `list[str]` | Mảng ID bạn bè |
+| `friendRequests` | `list[str]` | Mảng ID người gửi lời mời |
+| `archivedChats` | `list[str]` | Mảng ID hội thoại đã lưu trữ |
+| `is_verified` | `bool` | Đã xác thực OTP chưa |
+| `otp_code` | `str` | Mã OTP 6 số (tạm thời) |
+| `otp_expiry` | `datetime` | Thời hạn OTP (5 phút) |
+| `isAdmin` | `bool` | Quyền quản trị |
+| `banned_until` | `datetime` | Thời hạn cấm chat |
+| `lastSeen` | `datetime` | Lần cuối online |
+
+#### Schema `Message`
+
+| Trường | Kiểu | Mô tả |
+|:---|:---|:---|
+| `senderId` | `str` | ID người gửi |
+| `receiverId` | `str` | ID người nhận hoặc ID nhóm |
+| `text` | `str` | Nội dung văn bản |
+| `image` | `str` | URL hình ảnh đính kèm |
+| `fileUrl`, `fileName`, `fileSize` | `str/int` | Thông tin tệp đính kèm |
+| `folderData` | `list` | Cấu trúc thư mục đính kèm |
+| `isSeen` | `bool` | Đã xem chưa |
+| `isDeleted` | `bool` | Đã thu hồi (Soft Delete) |
+| `isEdited` | `bool` | Đã chỉnh sửa |
+| `reactions` | `list[dict]` | Mảng `{userId, emoji}` |
+| `callDuration` | `int` | Thời lượng cuộc gọi (giây) |
+
+#### Schema `ChatGroup`
+
+| Trường | Kiểu | Mô tả |
+|:---|:---|:---|
+| `name` | `str` | Tên nhóm |
+| `avatar` | `str` | URL avatar nhóm |
+| `adminId` | `str` | ID trưởng nhóm |
+| `members` | `list[str]` | Danh sách ID thành viên |
+
+### 1.2 Kiến trúc Socket.IO — `socket_manager.py`
+
+```
+Kết nối:  User A ──connect──→ Server lưu {userId_A: socketId_A} vào user_socket_map
+Gửi tin:  User A ──HTTP POST──→ Server lưu DB → tra map[userId_B] → emit trực tiếp cho B
+```
+
+- **`user_socket_map`** (Dictionary): Lưu `{userId: socketId}`. Khi A gửi tin cho B, server tra map lấy socketId của B → `sio.emit(..., room=socket_id_B)`.
+- Sự kiện `connect`/`disconnect`: Cập nhật map + broadcast danh sách online.
 
 ---
 
-## CHƯƠNG 4: NHẮN TIN THỜI GIAN THỰC (REAL-TIME MESSAGING)
+## Chương 2: Xác thực và Bảo mật
 
-Đây là tính năng cốt lõi phức tạp nhất, được quản lý chủ yếu bởi `ChatContext.jsx` ở Client và `message_routes.py` ở Server.
+### 2.1 Đăng ký với OTP
 
-### 4.1 Luồng gửi tin nhắn (Send Message)
-- **Người dùng gõ tin nhắn** ở ô Input (`ChatContainer.jsx`) và nhấn Enter.
-- **API Call:** Client gọi `POST /api/messages/send/{receiverId}` kèm nội dung (`text`, `image`).
-- **Backend lưu DB:** Tạo Object `Message` mới, `insert()` vào DB. Mặc định cờ `isSeen = False`, `isDeleted = False`.
-- **Phân phối Real-time:** 
-  - Backend kiểm tra đối phương có đang Online không (check trong `user_socket_map`).
-  - Nếu Online, gọi `sio.emit("receiveMessage", message_data, room=receiver_socket_id)`.
-- **Client nhận tin:** Khối `useEffect` trong `ChatContext` lắng nghe sự kiện `receiveMessage`. Khi nhận được, nó dùng `setMessages((prev) => [...prev, newMessage])` để render tin nhắn mới lên màn hình ngay lập tức.
-- **Auto-scroll:** Khối `<div ref={messagesEndRef} />` kết hợp với `scrollIntoView()` giúp màn hình tự trượt xuống dưới cùng mỗi khi mảng `messages` thay đổi.
+```
+User nhập thông tin → POST /signup → Server tạo OTP 6 số → Lưu DB
+                                   → Gửi email OTP (Brevo API)
+User nhập OTP      → POST /verify-registration → Server kiểm tra OTP + hạn
+                                                → Thành công → Cấp JWT Token
+```
 
-### 4.2 Tính năng Thu hồi tin nhắn (Soft Delete)
-- **Hành động:** Người dùng chuột phải (hoặc nhấn giữ trên mobile) vào tin nhắn -> Chọn "Thu hồi".
-- **API Call:** Gọi `PUT /api/messages/revoke/{messageId}`.
-- **Backend (Soft Delete):** Không dùng lệnh `delete()` cứng trong DB (để tránh mất hoàn toàn lịch sử phục vụ audit). Thay vào đó, backend thực hiện:
-  - Update bản ghi: `message.isDeleted = True`, đồng thời xóa nội dung: `message.text = None`, `message.image = None`. 
-  - Gọi Socket `sio.emit("messageDeleted", messageId)` báo cho đối tác.
-- **Frontend:** Khi nhận Socket, React duyệt qua mảng state messages, tìm message có ID tương ứng và đổi nội dung thành thẻ `<i>Tin nhắn đã bị thu hồi</i>` với hiệu ứng in nghiêng, mờ (Opacity 0.5).
+- **Frontend** (`LoginPage.jsx`): Form đăng ký → gọi API → mở Modal OTP
+- **Backend** (`user_routes.py`): Tạo OTP `random.randint(100000, 999999)`, hash password bằng `bcrypt.hashpw`, gửi email qua `send_otp_email()`, lưu `otp_code` + `otp_expiry` (5 phút)
+- Xác thực: So khớp OTP → set `is_verified = True` → xóa OTP → cấp JWT Token
 
-### 4.3 Tính năng Thả cảm xúc (Reactions)
-- **API:** `POST /api/messages/react/{id}` gửi kèm ký tự Emoji (vd: ❤️, 😂).
-- **Backend Logic (Toggle):** 
-  - Duyệt mảng `reactions` của tin nhắn đó. 
-  - Nếu User hiện tại đã thả ❤️, và lại bấm ❤️ -> Nhấn lần 2 là Hủy (Xóa ❤️ khỏi mảng).
-  - Nếu đã thả ❤️, nhưng bấm 😂 -> Ghi đè (Đổi ❤️ thành 😂).
-  - Emit Socket `sio.emit("messageReacted", {messageId, reactions})`.
+### 2.2 Đăng nhập truyền thống
 
-### 4.4 Đánh dấu đã xem (Read Receipts)
-- Mỗi khi User A mở khung chat với User B.
-- Client phát sự kiện Socket `sio.emit('markMessagesSeen', { senderId: B })`.
-- Backend nhận sự kiện, Update toàn bộ bảng Message (có `senderId = B` và `receiverId = A`, `isSeen = False`) thành `isSeen = True`.
-- Phát ngược Socket `sio.emit("messagesSeenUpdate")` về cho B. Máy B sẽ đổi chữ "Đã gửi" thành "Đã xem".
+```
+User nhập email/password → POST /login → Server query DB → bcrypt.checkpw()
+                                       → Nếu chưa verify → Gửi lại OTP
+                                       → Nếu OK → Cấp JWT Token
+```
+
+### 2.3 Đăng nhập Google (OAuth 2.0)
+
+```
+User click "Login with Google" → Google popup → Trả credential (id_token)
+→ POST /google-login → Server verify token với Google → Trích email/name/picture
+                     → Chưa có tài khoản → Tự tạo mới (password="")
+                     → Đã có → Cấp JWT Token
+```
+
+- Sử dụng `google.oauth2.id_token.verify_oauth2_token()` để verify chữ ký
+
+### 2.4 Quên mật khẩu
+
+```
+User nhập email → POST /forgot-password → Server tạo OTP → Gửi email
+User nhập OTP + mật khẩu mới → POST /reset-password → Kiểm tra OTP
+                              → Hash mật khẩu mới → Cập nhật DB → Xóa OTP
+```
+
+### 2.5 Bảo vệ Routes — `dependencies.py`
+
+- Mỗi API cần đăng nhập sẽ qua hàm `get_current_user()`:
+  - Đọc header `token` → giải mã JWT bằng `PyJWT` → query DB lấy User object
+  - Nếu token hết hạn hoặc sai → trả lỗi 401
 
 ---
 
-## CHƯƠNG 5: NHÓM CHAT (GROUP CHAT) & QUẢN LÝ THÀNH VIÊN
+## Chương 3: Hệ thống Bạn bè & Tìm kiếm
 
-Quản lý luồng bằng API `message_routes.py` (Nhóm API /groups) và component `RightSidebar.jsx`.
+### 3.1 Tìm kiếm
+
+```
+User gõ tên/email → GET /search?q=... → Server normalize tiếng Việt
+                  → So khớp không dấu trong memory → Trả danh sách kết quả
+```
+
+- Hàm `remove_vietnamese_accents()`: Chuyển "Quỳnh" → "Quynh" để tìm kiếm không dấu
+
+### 3.2 Kết bạn (Real-time)
+
+```
+User A bấm "Thêm bạn" → POST /send-friend-request
+→ Server push userId_A vào friendRequests[] của B
+→ Socket emit "newFriendRequest" → B nhận popup Toast ngay lập tức
+
+User B bấm "Chấp nhận" → POST /accept-friend-request
+→ Xóa khỏi friendRequests[] → Push vào friends[] của cả 2
+→ Socket emit "friendRequestAccepted"
+```
+
+---
+
+## Chương 4: Nhắn tin Thời gian thực
+
+### 4.1 Gửi tin nhắn
+
+```
+User A gõ tin → Enter → POST /messages/send/{receiverId}
+→ Server tạo Message (isSeen=False) → insert DB
+→ Tra user_socket_map[B] → sio.emit("receiveMessage", data, room=socketId_B)
+→ Client B: useEffect lắng nghe → setMessages(prev => [...prev, newMsg])
+→ Auto-scroll: messagesEndRef.scrollIntoView()
+```
+
+### 4.2 Thu hồi tin nhắn (Soft Delete)
+
+```
+User chuột phải → "Thu hồi" → PUT /messages/revoke/{messageId}
+→ Server: isDeleted=True, text=None, image=None (KHÔNG xóa record)
+→ Socket emit "messageDeleted"
+→ Client: render <i>Tin nhắn đã bị thu hồi</i> (opacity 0.5)
+```
+
+> 💡 **Soft Delete** giữ record để phục vụ audit/báo cáo, chỉ xóa nội dung.
+
+### 4.3 Thả cảm xúc (Reaction)
+
+```
+User bấm emoji → POST /messages/react/{id} + body {emoji: "❤️"}
+→ Server duyệt mảng reactions[]:
+  - Đã thả ❤️ + bấm ❤️ lần nữa → XÓA (toggle off)
+  - Đã thả ❤️ + bấm 😂 → GHI ĐÈ thành 😂
+  - Chưa thả → THÊM vào mảng
+→ Socket emit "messageReacted" → Client cập nhật UI
+```
+
+### 4.4 Read Receipts (Đánh dấu Đã xem)
+
+```
+User A mở khung chat với B
+→ Client emit Socket "markMessagesSeen" {senderId: B}
+→ Server update tất cả Message (sender=B, receiver=A, isSeen=false) → isSeen=true
+→ Socket emit "messagesSeenUpdate" → Máy B đổi "Đã gửi" → "Đã xem" ✓✓
+```
+
+---
+
+## Chương 5: Chat Nhóm & Quản lý Thành viên
 
 ### 5.1 Tạo & Thêm thành viên
-- **Tạo nhóm (`POST /api/messages/groups/create`):**
-  - Nhận mảng `members` (ID các bạn bè được chọn).
-  - Gắn ID của người tạo vào trường `adminId`.
-  - Tạo record Group vào DB, Socket emit thông báo đến tất cả thành viên trong mảng để nhóm mới tự pop-up trên Sidebar của họ.
-- **Thêm thành viên (`POST .../add-members`):**
-  - Backend verify user gọi API có phải là `adminId` hay không. 
-  - Dùng mảng Set hoặc thao tác `$addToSet` của MongoDB để đảm bảo thêm người không bị trùng lặp.
 
-### 5.2 Kích (Kick) & Rời nhóm (Leave)
-- **Trưởng nhóm Kick người khác (`PUT .../kick`):**
-  - `members.remove(userId)`. Lọc ID khỏi mảng. 
-  - Bắn Socket cho người bị kích (để UI của họ tự đóng cửa sổ nhóm lại).
-- **Giải tán nhóm (`DELETE .../groups/{id}`):**
-  - Trưởng nhóm bấm xóa. DB xóa toàn bộ record Group, có thể xóa luôn (hoặc soft-delete) các tin nhắn liên quan đến group_id này.
+```
+User chọn bạn bè → POST /groups/create {name, members[]}
+→ Server tạo ChatGroup (adminId = người tạo) → insert DB
+→ Socket emit cho TẤT CẢ members → Nhóm mới pop-up trên Sidebar
 
----
+Thêm người: POST /groups/{id}/add-members → Verify là admin
+→ Dùng Set để tránh trùng → Update members[] → Socket emit
+```
 
-## CHƯƠNG 6: GỬI FILE VÀ NÉN THƯ MỤC (FILE SHARING & ZIP ON-THE-FLY)
+### 5.2 Kích & Rời nhóm
 
-### 6.1 Upload (Tải lên Cloudinary)
-- **Backend API (`POST /api/files/upload`):** 
-  - Sử dụng thư viện `cloudinary.uploader.upload(file.file.read())`.
-  - Cloudinary trả về một URL (vd: `https://res.cloudinary.com/.../image.jpg`). URL này được gắn vào trường `image` hoặc `fileUrl` của Message.
-- **Upload Folder (`upload-folder`):**
-  - Ở Frontend, thẻ `<input type="file" webkitdirectory />` cho phép chọn cả 1 folder.
-  - Dùng đệ quy lặp qua tất cả file trong folder, đẩy tuần tự lên Server (hoặc đẩy đồng thời qua Promise.all), giữ nguyên cấu trúc đường dẫn tương đối (relative path).
+```
+Admin kích: PUT /groups/{id}/kick → Lọc userId khỏi members[]
+→ Socket emit "removedFromGroup" cho người bị kích → UI tự đóng cửa sổ nhóm
 
-### 6.2 Download Folder (Nén ZIP trên RAM)
-Đây là một tính năng cực kì xuất sắc về mặt tối ưu hệ thống:
-- Nếu người dùng tải thư mục, Server gọi API `POST /api/files/download-folder`.
-- **Vấn đề thông thường:** Server tải file từ Cloudinary về lưu tạm trên ổ cứng (Disk), nén thành file .zip rồi gửi cho Client, sau đó phải viết logic xóa file rác.
-- **Giải pháp áp dụng (Zip on-the-fly):**
-  - Khởi tạo bộ nhớ tạm trên RAM: `memory_file = io.BytesIO()`.
-  - Mở bộ nén: `zip_obj = zipfile.ZipFile(memory_file, 'w')`.
-  - Tải từng byte của các file từ Cloudinary về qua `httpx`, ghi *trực tiếp* vào `zip_obj` mà không cần chạm vào ổ cứng.
-  - Dùng `StreamingResponse(iterfile(), media_type="application/zip")` để đẩy luồng zip về máy tính người dùng.
+User rời: PUT /groups/{id}/leave → Tự xóa mình khỏi members[]
+→ Nếu admin rời → chuyển quyền admin cho người đầu tiên trong members[]
+
+Giải tán: DELETE /groups/{id} → Xóa record Group → Socket emit "groupDissolved"
+```
 
 ---
 
-## CHƯƠNG 7: CUỘC GỌI VIDEO NGANG HÀNG (WEBRTC P2P)
+## Chương 6: Gửi File & Nén Thư mục
 
-Không sử dụng Server để trung chuyển Video (rất tốn băng thông), mà kết nối trực tiếp Camera người A đến Màn hình người B thông qua **WebRTC**.
+### 6.1 Upload lên Cloudinary
 
-### 7.1 Signaling (Thiết lập kết nối qua Socket)
-- Mặc dù dữ liệu video không qua Server, nhưng User A và B cần biết "địa chỉ mạng" (IP/Port) của nhau để kết nối. Quá trình trao đổi danh thiếp này gọi là **Signaling** (do Socket đảm nhận).
-- **Bước 1 (Offer):** User A nhấn gọi. Khởi tạo đối tượng `Peer` (thư viện `simple-peer`). Bắn Socket `video:offer` kèm gói dữ liệu SDP (Session Description Protocol) của mình cho Server. Server chuyển cho B.
-- **Bước 2 (Answer):** User B nhấn nghe máy. Trình duyệt B sinh ra gói SDP Answer, bắn Socket `video:answer` trả lại cho A.
-- **Bước 3 (ICE Candidates):** Cả A và B liên tục gửi các con đường mạng (ICE Candidate) cho nhau qua sự kiện Socket `video:ice-candidate` để tìm đường truyền ngắn nhất.
+```
+File: User chọn file → Client nén ảnh (giảm size) → POST /files/upload
+→ Server gọi cloudinary.uploader.upload(file_bytes) → Trả URL
+→ URL được gắn vào trường image/fileUrl của Message
 
-### 7.2 Truyền thông tin liên lạc ngang hàng (STUN/TURN)
-- Để xuyên thủng tường lửa mạng nội bộ (NAT/Router), hệ thống được config các `iceServers` public (STUN Server của Google). STUN Server giúp trình duyệt tìm ra địa chỉ IP Public thật sự của nó để gửi cho đối phương.
-- Khi kết nối P2P thành công, thẻ `<video>` ở Frontend sẽ nhận luồng `MediaStream` từ máy đối phương và phát trực tiếp (Real-time latency < 50ms).
+Folder: <input webkitdirectory /> → Duyệt đệ quy → POST /files/upload-folder
+→ Server upload từng file, giữ nguyên cấu trúc đường dẫn tương đối
+```
+
+### 6.2 Download Folder — Zip on-the-fly
+
+```
+User bấm "Tải thư mục" → POST /files/download-folder
+
+Server:
+  ① memory_file = io.BytesIO()              ← Tạo vùng nhớ ảo trên RAM
+  ② zip_obj = zipfile.ZipFile(memory_file)   ← Mở bộ nén
+  ③ Dùng httpx tải từng file từ Cloudinary
+  ④ zip_obj.writestr(path, file_bytes)       ← Nhồi trực tiếp vào ZIP
+  ⑤ StreamingResponse(memory_file)           ← Stream ZIP về Client
+
+→ KHÔNG lưu file tạm trên ổ cứng → Tiết kiệm tài nguyên Server
+```
+
+> 💡 *"Chức năng tải folder là phần khó nhất. Thay vì lưu tạm xuống ổ cứng rất tốn tài nguyên, em xử lý nén file ZIP trực tiếp trên RAM (Memory Stream) giúp hệ thống nhẹ gọn và an toàn hơn."*
+
+---
+
+## Chương 7: Gọi Video ngang hàng (WebRTC)
+
+> Video/Audio truyền **trực tiếp** giữa 2 trình duyệt (P2P), không qua Server.
+
+### 7.1 Signaling — Thiết lập kết nối qua Socket
+
+```
+Bước 1 (Offer):
+  User A nhấn gọi → Khởi tạo Peer (simple-peer)
+  → Socket "video:offer" + SDP gửi Server → Server chuyển cho B
+
+Bước 2 (Answer):
+  User B nhấn nghe → Trình duyệt B tạo SDP Answer
+  → Socket "video:answer" → Server chuyển cho A
+
+Bước 3 (ICE Candidates):
+  Cả A và B gửi các đường mạng (ICE Candidate) qua Socket
+  → Tìm đường truyền ngắn nhất giữa 2 máy
+```
+
+### 7.2 STUN/TURN Server
+
+- **STUN Server** (Google public): Giúp trình duyệt tìm IP Public thật sự → gửi cho đối phương
+- Khi P2P thành công → `<video>` nhận `MediaStream` từ đối phương → phát real-time (< 50ms)
 
 ### 7.3 Kết thúc cuộc gọi
-- Ấn nút "Tắt máy". Kích hoạt `peer.destroy()`. 
-- Bắn API hoặc Socket `video:end` để Server lưu 1 tin nhắn vào Database: *"Cuộc gọi video kéo dài 05:23"*.
+
+```
+User tắt máy → peer.destroy() → Socket "video:end"
+→ Server tạo Message: "Cuộc gọi video kéo dài 05:23" → Lưu DB
+→ Tin nhắn lịch sử hiện trong khung chat
+```
 
 ---
 
-## CHƯƠNG 8: TRỢ LÝ ẢO AI & TÓM TẮT TIN NHẮN (GEMINI)
+## Chương 8: Trợ lý ảo AI & Tóm tắt Tin nhắn
 
-Sự kết hợp hoàn hảo giữa Chat App và Trí tuệ nhân tạo (Google Generative AI).
+### 8.1 AI Chatbot — `POST /api/ai/chat`
 
-### 8.1 Trợ lý ảo AI (AI Chatbot)
-- **Frontend (`AIChatBot.jsx`):** 
-  - Một nút Floating (Góc phải dưới màn hình), bấm vào sẽ mở Modal Chatbot.
-  - Quản lý lịch sử nói chuyện (`request.history`) để AI có ngữ cảnh.
-- **Backend (`POST /api/ai/chat`):**
-  - Khởi tạo SDK: `genai.GenerativeModel('gemini-2.5-flash')`.
-  - Cấu hình Prompt mồi (System Prompt): *"Bạn là trợ lý ảo của ChatApp. Hãy hướng dẫn cách gửi tin, tạo nhóm... bằng tiếng Việt."*
-  - Nối chuỗi lịch sử hội thoại + Câu hỏi mới của người dùng -> Gọi `model.generate_content()`. Trả kết quả chữ (text) về cho Frontend hiển thị.
+```
+User bấm nút Floating → Mở Modal AI → Gõ câu hỏi
+→ Gửi {message, history[]} → Backend
+→ Khởi tạo genai.GenerativeModel("gemini-2.5-flash")
+→ System Prompt: "Bạn là trợ lý ảo ChatITC, hướng dẫn bằng tiếng Việt..."
+→ Nối history + câu hỏi → model.generate_content()
+→ Trả text về Frontend hiển thị
+```
 
-### 8.2 Tóm tắt hội thoại (Summarization)
-- **Tính năng:** Khi lười đọc lại hàng chục tin nhắn trong nhóm chat, bấm nút "Tóm tắt".
-- **Backend (`GET /api/ai/summarize/{target_id}`):**
-  - Dùng Query MongoDB lấy **50 tin nhắn gần nhất** giữa User hiện tại và Nhóm (hoặc Bạn bè). Sort theo thời gian `createdAt`.
-  - Lặp qua mảng, ghép nối nội dung thành một kịch bản văn bản. 
-    *(Ví dụ: "Tôi: Hello", "Người gửi: Đi ăn không?", "Tôi: Ok").*
-  - Nạp kịch bản đó vào Prompt: *"Dưới đây là đoạn hội thoại. Hãy tóm tắt ý chính và các công việc/quyết định."*
-  - Gửi cho Gemini xử lý, trả về 1 đoạn tóm tắt ngắn gọn. Tính năng này giúp người dùng nắm bắt nhịp độ trò chuyện cực nhanh.
+### 8.2 Tóm tắt Hội thoại — `GET /api/ai/summarize/{target_id}`
+
+```
+User bấm "Tóm tắt" → Backend query 50 tin nhắn gần nhất từ MongoDB
+→ Format: "Tôi: Hello", "Người gửi: Đi ăn không?", "Tôi: Ok"
+→ Prompt: "Dưới đây là đoạn hội thoại. Hãy tóm tắt ý chính và quyết định."
+→ Gemini xử lý → Trả đoạn tóm tắt ngắn gọn
+```
 
 ---
-**TỔNG KẾT:**
-Toàn bộ dự án là một sự kết hợp chặt chẽ giữa:
-1. Giao diện (React/Tailwind) mượt mà tối ưu hiển thị.
-2. Quản lý luồng sự kiện Socket.IO hoàn hảo (Không bỏ sót tin, thông báo Real-time).
-3. Backend (FastAPI) bất đồng bộ 100% giúp xử lý đồng thời lượng truy cập lớn mà không giật lag.
-4. Tối ưu bộ nhớ (Zip on-the-fly) và tiết kiệm băng thông Server (WebRTC P2P).
-5. Ứng dụng AI (Gemini) đón đầu xu hướng công nghệ tương lai.
+
+## Chương 9: Hệ thống Email OTP
+
+### Luồng gửi email — `email_service.py`
+
+```
+Server gọi send_otp_email(email, otp_code, subject, context)
+→ Đọc BREVO_API_KEY và BREVO_EMAIL từ .env
+→ Tạo template HTML đẹp mắt (Dark theme, mã OTP nổi bật)
+→ POST https://api.brevo.com/v3/smtp/email (HTTPS port 443)
+→ Brevo API gửi email → User nhận trong Inbox
+```
+
+| Đặc điểm | Giải thích |
+|:---|:---|
+| **Brevo API (HTTP)** | Dùng cổng HTTPS 443 — không bị chặn tường lửa (khác SMTP port 587) |
+| **Template HTML** | Email chuyên nghiệp với gradient header, mã OTP lớn dễ đọc |
+| **Async** | `asyncio.to_thread()` gọi hàm sync mà không block event loop |
+| **Hạn OTP** | 5 phút — hết hạn thì cần gửi lại |
+
+---
+
+## Chương 10: Quản trị Admin
+
+### 10.1 Báo cáo tin nhắn — `report_routes.py`
+
+```
+User bấm "Báo cáo" trên tin nhắn → POST /api/reports
+→ Server tạo Report {reporterId, reportedId, messageId, reason}
+→ Admin mở bảng báo cáo (GET /api/reports)
+→ Xem nội dung gốc + lý do
+```
+
+### 10.2 Cấm chat (Ban)
+
+```
+Admin bấm "Cấm chat" → POST /api/reports/{id}/ban + {duration}
+→ Server set user.banned_until = now + duration
+→ Socket emit "userBanned" → UI hiện thông báo cấm
+→ Khi banned_until hết hạn → User tự được mở cấm
+
+Gỡ cấm: POST /api/auth/unban/{user_id}
+→ Set banned_until = None → Socket emit → UI cập nhật
+```
+
+---
+
+## Tổng kết
+
+Toàn bộ dự án là sự kết hợp chặt chẽ giữa:
+
+| # | Thành phần | Điểm nổi bật |
+|:---:|:---|:---|
+| 1 | **Giao diện** (React/Tailwind) | Dark Glassmorphism, Mobile-first, Framer Motion |
+| 2 | **Real-time** (Socket.IO) | Không bỏ sót tin nhắn, thông báo tức thời |
+| 3 | **Backend** (FastAPI) | Bất đồng bộ 100%, xử lý đồng thời lượng lớn |
+| 4 | **Tối ưu** | Zip on-the-fly (RAM), WebRTC P2P (tiết kiệm băng thông) |
+| 5 | **Bảo mật** | Bcrypt, JWT, OTP email, Google OAuth 2.0 |
+| 6 | **AI** (Google Gemini) | Chatbot hướng dẫn + Tóm tắt hội thoại thông minh |
+
+---
+
+<div align="center">
+
+*Tài liệu giải thích chi tiết phục vụ báo cáo & bảo vệ đồ án.*
+
+</div>

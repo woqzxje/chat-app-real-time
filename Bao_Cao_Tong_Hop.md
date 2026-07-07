@@ -1,279 +1,355 @@
-# BÁO CÁO TỔNG HỢP DỰ ÁN CHAT APP
+<div align="center">
 
-Dự án Chat App là một ứng dụng nhắn tin thời gian thực đa nền tảng, được xây dựng với kiến trúc Client-Server hiện đại, tập trung vào giao diện người dùng cực kỳ chau chuốt (Dark/Cyan Glassmorphism) và các tính năng giao tiếp đa phương tiện mạnh mẽ.
+# 📊 BÁO CÁO TỔNG HỢP DỰ ÁN CHATITC
 
-Dưới đây là tài liệu báo cáo toàn diện các chức năng hiện có của hệ thống cũng như tài liệu kỹ thuật chuyên sâu phục vụ cho việc bảo vệ đồ án/dự án.
+**Ứng dụng Nhắn tin Thời gian thực Đa nền tảng**
 
----
-
-## PHẦN I: TỔNG QUAN DỰ ÁN & CÁC TÍNH NĂNG CHÍNH
-
-### 1. TỔNG QUAN VỀ KIẾN TRÚC HỆ THỐNG
-
-Dự án được phân tách thành hai phần độc lập:
-- **Client (Frontend):** Ứng dụng Single Page Application (SPA) xây dựng bằng React 19, Vite, TailwindCSS 4, Framer Motion. Quản lý trạng thái bằng Context API và giao tiếp với máy chủ thông qua HTTP Requests (Axios) và WebSockets (Socket.io-client).
-- **Server (Backend):** Máy chủ API mạnh mẽ xây dựng bằng Python với framework FastAPI, xử lý bất đồng bộ toàn diện. Cổng giao tiếp thời gian thực được hỗ trợ bởi `python-socketio`. Cơ sở dữ liệu NoSQL MongoDB được thao tác thông qua Beanie ODM và Motor.
-
-### 2. CÁC TÍNH NĂNG CHÍNH ĐÃ HOÀN THIỆN
-
-#### 2.1 Xác thực & Phân quyền (Authentication)
-- **Đăng ký / Đăng nhập truyền thống:** Bảo mật bằng mật khẩu được mã hóa băm (Bcrypt).
-- **Đăng nhập Google OAuth 2.0:** Cho phép người dùng đăng nhập nhanh qua tài khoản Google mà không cần nhớ mật khẩu.
-- **Bảo mật phiên đăng nhập:** Quản lý phiên bằng JSON Web Token (JWT).
-
-#### 2.2 Hệ thống Bạn bè (Friend System)
-- **Tìm kiếm người dùng:** Tìm kiếm bất kỳ ai trên hệ thống thông qua tên hoặc email.
-- **Gửi / Chấp nhận / Từ chối kết bạn:** Các lời mời kết bạn được hiển thị thông báo thời gian thực.
-- **Quản lý danh sách bạn bè:** Hủy kết bạn (Unfriend) và theo dõi trạng thái online/offline của bạn bè.
-
-#### 2.3 Hệ thống Nhắn tin Thời gian thực (Real-time Chat)
-- **Gửi tin nhắn siêu tốc:** Nhắn tin tức thời không có độ trễ qua WebSockets.
-- **Trạng thái tin nhắn (Read Receipts):** Hiển thị trạng thái "Đã gửi" và chuyển sang "Đã xem" ngay khi đối phương mở khung chat.
-- **Tương tác tin nhắn nâng cao:**
-  - **Thu hồi tin nhắn (Soft Delete):** Xóa nội dung tin nhắn nhưng vẫn giữ khung thông báo "Tin nhắn đã bị thu hồi".
-  - **Chỉnh sửa tin nhắn (Edit):** Cập nhật nội dung tin nhắn đã gửi.
-  - **Thả cảm xúc (Reaction):** Cho phép thả biểu tượng cảm xúc lên từng tin nhắn riêng biệt.
-  - **Báo cáo tin nhắn (Report):** Cho phép người dùng báo cáo các tin nhắn vi phạm, admin có thể xem lại lịch sử và thiết lập cấm chat người vi phạm (ban).
-- **Tự động cuộn (Smart Auto-Scroll):** Thông minh tự cuộn xuống tin nhắn mới nhất, tối ưu cho thao tác di động.
-
-#### 2.4 Chat Nhóm (Group Chat)
-- **Tạo nhóm mới:** Mời bạn bè vào chung một phòng chat.
-- **Quản lý thành viên:** Trưởng nhóm có quyền thêm thành viên mới hoặc kích (kick) thành viên ra khỏi nhóm.
-- **Cập nhật thông tin nhóm:** Đổi tên nhóm và cập nhật hình đại diện nhóm.
-- **Rời nhóm / Giải tán nhóm:** Cho phép tự rời đi, hoặc giải tán hoàn toàn nhóm nếu là trưởng nhóm.
-
-#### 2.5 Chia sẻ Tệp đa phương tiện (Media & File Sharing)
-- **Gửi hình ảnh/tệp tin lẻ:** Hỗ trợ tải lên ảnh hoặc tài liệu. Tích hợp nén ảnh ở phía Client để giảm băng thông trước khi đẩy lên Cloudinary.
-- **Gửi thư mục (Folder Upload/Download):**
-  - **Upload:** Tự động duyệt cây thư mục từ máy khách và tải toàn bộ lên mây.
-  - **Download:** Tính năng *Zip on-the-fly* (nén trực tiếp trên RAM máy chủ) cho phép người dùng tải toàn bộ thư mục về dưới dạng 1 file `.zip` duy nhất, không tạo rác trên ổ cứng Server.
-
-#### 2.6 Cuộc gọi Video (Video Call P2P - WebRTC)
-- **Thiết lập kết nối ngang hàng (Peer-to-Peer):** Hình ảnh và âm thanh được truyền trực tiếp giữa 2 người dùng thông qua giao thức WebRTC, đảm bảo độ trễ thấp nhất.
-- **Tích hợp STUN/TURN Server:** Đảm bảo cuộc gọi có thể vượt qua mọi tường lửa (Firewall) hoặc NAT trên các mạng 4G/Wifi công cộng.
-- **Giao diện đa nhiệm:** Có thể thu nhỏ khung gọi video để vừa gọi vừa nhắn tin.
-- **Lưu lịch sử cuộc gọi:** Tự động tạo bong bóng chat báo cáo "Cuộc gọi đã kết thúc" kèm thời lượng sau khi tắt máy.
-
-#### 2.7 Giao diện & Trải nghiệm Người dùng (UI/UX)
-- **Dark Mode & Glassmorphism:** Thiết kế sang trọng với nền tối, kính mờ và màu sắc Neon (Cyan/Orange) nổi bật. Tùy chọn chuyển đổi qua Light Mode thông qua nút gạt độc đáo.
-- **Responsive Mobile-First:** Giao diện co giãn hoàn hảo trên các thiết bị di động, không bị tràn viền (h-[100dvh]).
-- **Micro-interactions:** Hiệu ứng hover, click, thả tim được bổ sung mượt mà bằng Framer Motion. Menu ngữ cảnh (Right-click / Long-press trên mobile) giúp tương tác với tin nhắn tự nhiên như ứng dụng Native.
-
-#### 2.8 Trợ lý ảo AI & Tóm tắt tin nhắn (AI Features)
-- **Trợ lý ảo thông minh (AI Chatbot):** Tích hợp Google Gemini hoạt động như một trợ lý ảo, hướng dẫn người dùng mới cách sử dụng các tính năng của ứng dụng (nhắn tin, tạo nhóm, gọi video) một cách thân thiện.
-- **Tóm tắt hội thoại (Chat Summarization):** Tự động đọc và tóm tắt 50 tin nhắn gần nhất, giúp người dùng nhanh chóng nắm bắt các ý chính và quyết định trong nhóm chat hoặc đoạn hội thoại cá nhân mà không cần phải cuộn lên xem lại.
-
-### 3. THÔNG SỐ CÔNG NGHỆ ÁP DỤNG
-
-#### Frontend (Client)
-- **Core:** React 19, Vite.
-- **Styling/UI:** Tailwind CSS 4, Framer Motion, Radix UI.
-- **Kết nối API & Socket:** Axios, Socket.io-client.
-- **Xác thực:** `@react-oauth/google`.
-- **Đa phương tiện:** WebRTC (Simple-Peer).
-
-#### Backend (Server)
-- **Core:** Python 3, FastAPI, Uvicorn.
-- **Database:** MongoDB, Motor (Async driver), Beanie (ODM).
-- **Kết nối Socket:** `python-socketio`.
-- **Bảo mật:** Bcrypt, PyJWT.
-- **Dịch vụ bên thứ ba:** Cloudinary API (lưu trữ ảnh/file), Google Gemini API (Tích hợp AI).
+*Kiến trúc Client-Server | React 19 + FastAPI | MongoDB | WebRTC | AI Gemini*
 
 ---
 
-## PHẦN II: TÀI LIỆU KỸ THUẬT CHUYÊN SÂU & KIẾN TRÚC BACKEND
+</div>
 
-Tài liệu này được biên soạn chi tiết giúp bạn tự tin trả lời các câu hỏi phản biện của giảng viên liên quan đến cấu trúc, chức năng và công nghệ Backend của dự án Chat App.
+## 📋 Mục lục
 
-### 1. Hướng Dẫn Demo & Trình Bày Code
-Khi giảng viên yêu cầu demo, hãy thực hiện theo quy trình sau để thể hiện sự mượt mà và logic của hệ thống:
+- [Phần I — Tổng quan & Tính năng](#phần-i--tổng-quan--tính-năng)
+- [Phần II — Công nghệ Áp dụng](#phần-ii--công-nghệ-áp-dụng)
+- [Phần III — Danh sách API & Socket Events](#phần-iii--danh-sách-api--socket-events)
+- [Phần IV — Cấu trúc Backend](#phần-iv--cấu-trúc-backend)
+- [Phần V — Giải thích từng Module](#phần-v--giải-thích-từng-module)
+- [Phần VI — Hướng dẫn Demo](#phần-vi--hướng-dẫn-demo)
+- [Phần VII — Phân chia Công việc](#phần-vii--phân-chia-công-việc)
 
-1. **Chuẩn bị:** Mở 2 trình duyệt khác nhau (hoặc 1 cửa sổ thường, 1 cửa sổ ẩn danh) đại diện cho 2 người dùng (User A và User B).
-2. **Demo luồng Auth (Xác thực):** 
-   - Đăng ký 1 tài khoản mới theo cách truyền thống.
-   - Trình duyệt kia Đăng nhập bằng tài khoản Google (OAuth2).
-3. **Demo luồng Bạn bè:** 
-   - Thực hiện tìm kiếm theo tên -> Bấm "Thêm bạn bè". 
-   - *Nhấn mạnh:* Bên phía User B nhận được lời mời kết bạn **ngay lập tức** (Real-time) mà không cần tải lại trang. Bấm chấp nhận.
-4. **Demo Chat (Real-time):** 
-   - Nhắn tin văn bản, gửi Emoji. 
-   - *Nhấn mạnh:* Trạng thái tin nhắn chuyển từ "Đã gửi" sang "Đã xem" tức thời khi đối phương đang mở khung chat.
-5. **Demo tính năng File/Thư mục (Điểm cộng lớn):** 
-   - Upload 1 hình ảnh đính kèm. Upload 1 folder đính kèm. 
-   - Bấm nút Download (Tải xuống) để chứng minh chức năng Stream tải file hoạt động tốt.
-6. **Demo Call (WebRTC):** 
-   - Bấm nút gọi Video Call -> Nhấc máy -> Tắt máy. 
-   - Hiển thị thông báo "Cuộc gọi đã kết thúc..." lưu lại dưới dạng tin nhắn trong khung chat.
-7. **Demo tính năng phụ trợ:** 
-   - Thu hồi tin nhắn (Soft delete), Chỉnh sửa nội dung tin nhắn đã gửi, Thả biểu tượng cảm xúc (React) trên tin nhắn.
+---
 
-### 2. Danh sách chính xác các API & Socket Events
-Hệ thống Backend cung cấp tổng cộng **31 RESTful APIs** và **9 sự kiện WebSockets (Socket.IO)** do Client gửi lên để xử lý real-time. Dưới đây là danh sách chính xác trích xuất từ mã nguồn để bạn đưa vào báo cáo:
+## Phần I — Tổng quan & Tính năng
 
-#### 2.1. Nhóm REST API (31 Endpoints)
+### 1.1 Kiến trúc Hệ thống
 
-**Nhóm Auth & User (`/api/auth`) - Chứa trong file `app/routes/user_routes.py`:**
-- `POST /api/auth/signup`: Đăng ký tài khoản (Dòng 67)
-- `POST /api/auth/login`: Đăng nhập thường (Dòng 104)
-- `POST /api/auth/google-login`: Đăng nhập Google (Dòng 127)
-- `GET /api/auth/check`: Kiểm tra token & lấy thông tin user hiện tại (Dòng 174)
-- `GET /api/auth/search`: Tìm kiếm người dùng (Dòng 294)
-- `PUT /api/auth/update-profile`: Cập nhật thông tin/Avatar (Dòng 308)
-- `POST /api/auth/send-friend-request`: Gửi lời mời kết bạn (Dòng 185)
-- `POST /api/auth/accept-friend-request`: Chấp nhận kết bạn (Dòng 214)
-- `POST /api/auth/reject-friend-request`: Từ chối kết bạn (Dòng 245)
-- `POST /api/auth/unfriend`: Hủy kết bạn (Dòng 255)
-- `GET /api/auth/friend-requests`: Lấy danh sách lời mời kết bạn (Dòng 279)
+Dự án được phân tách thành **hai phần độc lập**:
 
-**Nhóm Messages (`/api/messages`) - Chứa trong file `app/routes/message_routes.py`:**
-- `GET /api/messages/users`: Lấy danh sách sidebar (bạn bè & người lạ đã chat) (Dòng 52)
-- `GET /api/messages/{id}`: Lấy lịch sử đoạn chat (Dòng 104)
-- `PUT /api/messages/mark/{id}`: Đánh dấu tin nhắn đã xem (Dòng 143)
-- `POST /api/messages/send/{id}`: Gửi tin nhắn mới (Dòng 161)
-- `PUT /api/messages/edit/{id}`: Chỉnh sửa tin nhắn (Dòng 199)
-- `PUT /api/messages/revoke/{id}`: Thu hồi tin nhắn (Soft delete) (Dòng 231)
-- `POST /api/messages/react/{id}`: Thả biểu tượng cảm xúc (Dòng 264)
-- `POST /api/messages/groups/create`: Tạo nhóm mới (Dòng 380)
-- `GET /api/messages/groups/{id}/members`: Lấy danh sách thành viên nhóm (Dòng 648)
-- `POST /api/messages/groups/{id}/add-members`: Thêm thành viên vào nhóm (Dòng 424)
-- `PUT /api/messages/groups/{id}/update`: Cập nhật thông tin nhóm (Tên, Avatar) (Dòng 594)
-- `PUT /api/messages/groups/{id}/kick`: Quản trị viên kích thành viên ra khỏi nhóm (Dòng 685)
-- `PUT /api/messages/groups/{id}/leave`: Tự rời khỏi nhóm (Dòng 484)
-- `DELETE /api/messages/groups/{id}`: Giải tán nhóm (Dòng 563)
+| Thành phần | Công nghệ | Vai trò |
+|:---|:---|:---|
+| **Client (Frontend)** | React 19, Vite, TailwindCSS 4, Framer Motion | SPA giao tiếp qua HTTP (Axios) & WebSocket (Socket.IO) |
+| **Server (Backend)** | Python 3, FastAPI, Uvicorn, python-socketio | API bất đồng bộ + Real-time Socket, MongoDB (Beanie ODM) |
 
-**Nhóm Files (`/api/files`) - Chứa trong file `app/routes/file_routes.py`:**
-- `POST /api/files/upload`: Upload 1 file lẻ (Dòng 38)
-- `POST /api/files/upload-folder`: Upload 1 folder đính kèm (Dòng 77)
-- `GET /api/files/download`: Download file (Proxy stream) (Dòng 142)
-- `POST /api/files/download-folder`: Download folder (Stream nén ZIP) (Dòng 189)
+### 1.2 Các tính năng đã hoàn thiện
 
-**Nhóm Reports (`/api/reports`) - Chứa trong file `app/routes/report_routes.py`:**
-- `POST /api/reports`: Báo cáo tin nhắn vi phạm.
-- `GET /api/reports`: Lấy danh sách báo cáo (Chỉ dành cho Admin).
-- `POST /api/reports/{id}/ban`: Cấm người dùng dựa trên báo cáo (Chỉ dành cho Admin).
-- `POST /api/reports/{id}/cancel`: Hủy báo cáo (Chỉ dành cho Admin).
+#### 🔐 Xác thực & Phân quyền
+- **Đăng ký / Đăng nhập truyền thống** — Mật khẩu mã hóa Bcrypt, xác thực OTP 6 số qua email (Brevo API)
+- **Đăng nhập Google OAuth 2.0** — Đăng nhập nhanh qua tài khoản Google
+- **Quên mật khẩu** — Gửi mã OTP qua email để đặt lại mật khẩu mới
+- **Bảo mật phiên** — Quản lý bằng JSON Web Token (JWT)
 
-**Nhóm AI Integration (`/api/ai`) - Chứa trong file `app/routes/ai_routes.py`:**
-- `POST /api/ai/chat`: Giao tiếp với AI Chatbot hướng dẫn người dùng (Dòng 20)
-- `GET /api/ai/summarize/{target_id}`: Tóm tắt 50 tin nhắn gần nhất bằng Gemini (Dòng 48)
+#### 👥 Hệ thống Bạn bè
+- Tìm kiếm người dùng theo tên/email (hỗ trợ tiếng Việt không dấu)
+- Gửi / Chấp nhận / Từ chối kết bạn — thông báo **real-time**
+- Hủy kết bạn, theo dõi trạng thái online/offline
 
-*(Lưu ý: Không có API HTTP nào cho Video Call vì chức năng đó chạy 100% qua Socket)*
+#### 💬 Nhắn tin Thời gian thực
+- Nhắn tin tức thời không độ trễ qua WebSocket
+- **Read Receipts** — "Đã gửi" → "Đã xem" cập nhật real-time
+- **Thu hồi tin nhắn (Soft Delete)** — Giữ khung "Tin nhắn đã bị thu hồi"
+- **Chỉnh sửa tin nhắn** — Cập nhật nội dung đã gửi
+- **Thả cảm xúc (Reaction)** — React emoji lên từng tin nhắn
+- **Báo cáo tin nhắn** — Report vi phạm, Admin xử lý & cấm chat
+- **Smart Auto-Scroll** — Tự cuộn thông minh, tối ưu cho mobile
 
-#### 2.2. Nhóm Socket.IO Events (9 Sự kiện Client gửi lên)
-**Toàn bộ sự kiện Socket được xử lý tại file `app/socket_manager.py`:**
-- `connect`: Kết nối vào hệ thống (gửi kèm userId) (Dòng 33)
-- `disconnect`: Ngắt kết nối (Dòng 50)
-- `markMessagesSeen`: Báo cáo đã xem tin nhắn khi đang mở sẵn khung chat (Dòng 63)
-- `video:initiate`: Bắt đầu gọi Video/Voice (Dòng 89)
-- `video:offer`: Gửi cấu hình SDP WebRTC (Người gọi) (Dòng 105)
-- `video:answer`: Trả lời cấu hình SDP (Người nghe) (Dòng 120)
-- `video:ice-candidate`: Gửi thông cấu hình mạng để thiết lập P2P (Dòng 134)
-- `video:end`: Kết thúc cuộc gọi (Dòng 148)
-- `video:reject`: Từ chối cuộc gọi (Dòng 194)
+#### 👥 Chat Nhóm
+- Tạo nhóm, mời bạn bè vào phòng chat chung
+- Trưởng nhóm: thêm/kích thành viên, đổi tên/avatar nhóm
+- Rời nhóm / Giải tán nhóm
 
-*(Và kèm theo rất nhiều sự kiện Server phát ngược lại Client như: `getOnlineUsers`, `receiveMessage`, `messageDeleted`... để cập nhật giao diện)*
+#### 📁 Chia sẻ Tệp đa phương tiện
+- Upload ảnh/file (nén ảnh phía Client → Cloudinary CDN)
+- Upload thư mục — giữ nguyên cấu trúc cây folder
+- Download thư mục — **Zip on-the-fly** (nén ZIP trên RAM Server, không tạo rác ổ cứng)
 
-### 3. Cấu Trúc Folder Backend (Giải thích từ ngoài vào trong)
-Backend được xây dựng theo kiến trúc FastAPI kết hợp với Real-time Socket.
+#### 📹 Gọi Video P2P (WebRTC)
+- Kết nối ngang hàng Peer-to-Peer, độ trễ thấp nhất
+- STUN/TURN Server — vượt tường lửa/NAT trên mọi mạng
+- Thu nhỏ khung gọi, vừa gọi vừa nhắn tin
+- Lưu lịch sử "Cuộc gọi đã kết thúc" kèm thời lượng
 
-- **Các file cấu hình bên ngoài:** 
-  - `main.py`: Trái tim của Backend, file khởi chạy server FastAPI, gắn các middleware và cấu hình Socket.IO.
-  - `run.py`: Script khởi chạy Uvicorn server (dev mode với hot reload).
-  - `.env`: Chứa các biến môi trường bảo mật (URL kết nối MongoDB, API Key của Cloudinary, Google Client ID...).
-  - `requirements.txt`: Chứa danh sách các gói thư viện Python cần thiết (fastapi, motor, beanie, bcrypt...).
-- **Thư mục lõi `app/` (Chứa logic xử lý chính):**
-  - `database.py`: Chịu trách nhiệm kết nối đến MongoDB (Motor + Beanie ODM).
-  - `models.py`: Chứa các Schema định nghĩa cấu trúc dữ liệu lưu trong DB (User, Message, ChatGroup, Report).
-  - `dependencies.py`: File chứa middleware xác thực (chặn API nếu chưa có hoặc sai JWT Token).
-  - `socket_manager.py`: Bộ não xử lý real-time, nắm giữ danh sách người dùng online và điều phối tín hiệu cuộc gọi (WebRTC).
-  - `cloudinary_client.py`: Cấu hình Cloudinary SDK.
-  - `email_service.py`: Dịch vụ gửi email.
-  - `utils.py`: Hàm tiện ích.
-  - **Thư mục `routes/` (Controllers):** Nơi định nghĩa các endpoint API và logic nghiệp vụ, chia làm 5 file: `user_routes.py`, `message_routes.py`, `file_routes.py`, `ai_routes.py`, `report_routes.py`.
+#### 🤖 Trí tuệ Nhân tạo (Google Gemini)
+- **AI Chatbot** — Trợ lý ảo hướng dẫn sử dụng ứng dụng
+- **Tóm tắt hội thoại** — Tóm tắt 50 tin nhắn gần nhất
 
-### 4. Giải thích sâu từng Source File 
-*(Đây là phần để bạn trả lời khi giảng viên chỉ định hỏi 1 file bất kỳ)*
+#### 🎨 Giao diện & UI/UX
+- Dark/Light Mode + Glassmorphism (kính mờ, Neon Cyan/Orange)
+- Responsive Mobile-First (`100dvh`, Smart Auto-Scroll)
+- Micro-interactions: Framer Motion, context menu, long-press
 
-#### 4.1. File `main.py`
-- **Tính năng:** Khởi tạo ứng dụng FastAPI, cấu hình luồng chạy, bảo mật CORS, và tích hợp Socket.IO chạy chung trên 1 port.
-- **Logic code:**
-  - Khởi tạo hàm `lifespan`: Gọi hàm kết nối DB ngay khi server vừa bật lên.
-  - Gắn `CORSMiddleware`: Cho phép Frontend (chạy ở domain/port khác) được phép gọi API mà không bị trình duyệt chặn lỗi CORS.
-  - Khai báo `app.include_router()`: Đăng ký các nhóm API (Users, Messages, Files) vào đường dẫn gốc.
-  - Cuối file: Bọc ứng dụng FastAPI và Socket.IO bằng `socketio.ASGIApp` thành 1 app ASGI duy nhất.
-- **Liên kết:** Là cửa ngõ (Entry point) tiếp nhận mọi request từ Frontend.
-- **Công nghệ:** Framework FastAPI (hiệu năng cao, bất đồng bộ), python-socketio.
+#### 🛡️ Quản trị (Admin)
+- Bảng điều khiển xem danh sách báo cáo vi phạm
+- Cấm chat người dùng (ban) theo thời hạn
+- Gỡ cấm chat
 
-#### 4.2. File `app/database.py` & `app/models.py`
-- **Tính năng:** Kết nối tới MongoDB và định nghĩa cấu trúc các Bảng (Collections).
-- **Logic code:**
-  - `database.py`: Sử dụng `AsyncIOMotorClient` kết nối tới chuỗi MONGODB_URL. Sau đó gọi `init_beanie` để đăng ký thao tác DB thông qua các object Python.
-  - `models.py`: Định nghĩa Class `User` (email, fullName, password, mảng friends...) và Class `Message` (senderId, receiverId, isDeleted, mảng reactions...).
-- **Công nghệ:** MongoDB (NoSQL). Dùng thư viện Motor (async driver) và Beanie (Object Document Mapper).
-- *Điểm nhấn để trả lời:* "Em dùng Beanie ODM chạy trên nền Motor async. Khác với PyMongo thường bị chặn (blocking), cách này giúp FastAPI xử lý hàng ngàn request cùng lúc mà không bị treo khi đợi DB."
+---
 
-#### 4.3. File `app/socket_manager.py` (Rất quan trọng)
-- **Tính năng:** Trạm điều phối Real-time. Biết ai đang online, trung chuyển tin nhắn đến đúng người, và làm Signaling Server cho Video Call.
-- **Logic code:**
-  - Sử dụng biến `user_socket_map` (Dictionary) để lưu cặp `{userId: socketId}`. Khi A gửi tin cho B, tra map xem B đang mang socketId nào để đẩy dữ liệu thẳng về máy B.
-  - Sự kiện `connect` / `disconnect`: Lưu userId vào map và `emit` thông báo danh sách online mới nhất.
-  - Các sự kiện `video:initiate`, `video:offer`, `video:answer`, `video:ice-candidate`: Làm trung gian luân chuyển cấu hình Media và mạng lưới (SDP/ICE) để 2 trình duyệt tự thiết lập kết nối P2P (WebRTC).
-  - Sự kiện `video:end`: Khởi tạo 1 `Message` lưu thông tin lịch sử cuộc gọi vào Database.
-- **Công nghệ:** Socket.IO, WebRTC (Web Real-Time Communication).
+## Phần II — Công nghệ Áp dụng
 
-#### 4.4. File `app/routes/user_routes.py`
-- **Tính năng:** Xử lý Đăng ký, Đăng nhập, Google Auth, Kết bạn.
-- **Logic code nổi bật:**
-  - Hàm `signup`: Nhận thông tin, kiểm tra email trùng. Mã hóa mật khẩu bằng `bcrypt.hashpw` (bảo mật dữ liệu) trước khi lưu. Tạo JWT Token trả về.
-  - Hàm `google_login`: Trích xuất token từ Google trả về, dùng `id_token.verify_oauth2_token` kiểm tra chữ ký token. Nếu hợp lệ, tạo/đăng nhập tài khoản tự động bằng email đó mà không cần password.
-  - Hàm `send_friend_request`: Đẩy ID của mình vào mảng `friendRequests` của đối phương. Kích hoạt Socket phát sự kiện `newFriendRequest` để hiện thông báo ngay.
-- **Công nghệ:** bcrypt (băm mật khẩu), JSON Web Token (JWT), Google OAuth2.
+### Frontend (Client)
 
-#### 4.5. File `app/routes/message_routes.py`
-- **Tính năng:** Lấy lịch sử nhắn tin, gửi tin mới, sửa/thu hồi, thả cảm xúc.
-- **Logic code nổi bật:**
-  - Hàm `get_users_for_sidebar`: Tìm danh sách bạn bè, sau đó dùng query `distinct` trên bảng Message tìm ID người lạ đã từng nhắn tin. Ghép 2 danh sách lại và đếm tin "chưa đọc".
-  - Hàm `revoke_message` (Thu hồi): Áp dụng kỹ thuật **Soft Delete** (Xóa mềm). Tức là không xóa cứng record, mà đổi cờ `isDeleted = True`, xóa nội dung văn bản `text = None`. Socket sẽ báo Client cập nhật giao diện thành "Tin nhắn đã thu hồi".
-  - Hàm `react_message`: Toggle logic. Nếu user đã thả tim rồi mà bấm tiếp thì xóa biểu tượng đó đi. Nếu thả biểu tượng khác thì ghi đè biểu tượng mới vào mảng `reactions`.
-  - **Quản lý Nhóm Chat (Group Management):** Xử lý mảng `members` trong schema `ChatGroup`. Logic kích thành viên (`kick_group_member`) đảm bảo tính toàn vẹn trạng thái thông qua việc cập nhật DB, trả về thông tin nhóm mới (`updated_group_data`) để đồng bộ ngay trên Client, đồng thời phát tín hiệu cập nhật qua Socket tới các thành viên.
-- **Công nghệ:** Beanie MongoDB Queries (truy vấn nâng cao).
+| Loại | Công nghệ |
+|:---|:---|
+| Core | React 19, Vite |
+| Styling/UI | Tailwind CSS 4, Framer Motion, Radix UI |
+| API & Socket | Axios, Socket.IO-client |
+| Xác thực | `@react-oauth/google` |
+| Đa phương tiện | WebRTC (`simple-peer`) |
 
-#### 4.6. File `app/routes/file_routes.py`
-- **Tính năng:** Luồng Upload/Download File và Folder.
-- **Logic code nổi bật:**
-  - Hàm `upload` / `upload_folder`: Gọi SDK `cloudinary.uploader.upload` để đẩy byte lên mây Cloudinary lấy URL. Với folder, bóc tách cấu trúc cây thư mục ở Frontend và đẩy từng file lên.
-  - Hàm `download_file` (Proxy Download): Do khác domain nên HTML `download` bị chặn (CORS). Backend đứng ra dùng thư viện `httpx` tải nội dung file từ mây về, sau đó đặt header `Content-Disposition: attachment` và dùng `StreamingResponse` xả thẳng về máy tính client.
-  - Hàm `download_folder` (Zip on-the-fly): Backend tạo 1 vùng nhớ ảo `io.BytesIO()`. Tải từng file lẻ về, nhồi trực tiếp vào nén `.zip` ngay trong RAM (không ghi ra ổ cứng server tránh rác), sau đó trả Stream `.zip` đó xuống.
-- **Công nghệ:** FastAPI StreamingResponse, httpx, zipfile, Cloudinary API.
-- *Điểm nhấn để trả lời:* "Chức năng tải folder là phần khó. Thay vì lưu tạm xuống ổ cứng server rất tốn tài nguyên, em xử lý nén file zip trực tiếp trên RAM (Memory Stream) giúp hệ thống nhẹ gọn và an toàn hơn."
+### Backend (Server)
 
-#### 4.7. File `app/routes/ai_routes.py`
-- **Tính năng:** Tích hợp AI Google Gemini để làm trợ lý ảo và tóm tắt tin nhắn.
-- **Logic code nổi bật:**
-  - Hàm `chat_with_ai`: Nhận lịch sử chat và câu hỏi, tạo prompt truyền cho model `gemini-2.5-flash` để sinh câu trả lời hướng dẫn người dùng.
-  - Hàm `summarize_chat`: Query 50 tin nhắn gần nhất trong MongoDB dựa vào `target_id`, xử lý định dạng hội thoại, sau đó yêu cầu AI tóm tắt nội dung chính và các quyết định.
-- **Công nghệ:** Google Generative AI (Gemini).
+| Loại | Công nghệ |
+|:---|:---|
+| Core | Python 3, FastAPI, Uvicorn |
+| Database | MongoDB Atlas, Motor (Async driver), Beanie (ODM) |
+| Real-time | `python-socketio` |
+| Bảo mật | Bcrypt, PyJWT |
+| Dịch vụ bên thứ 3 | Cloudinary API, Google Gemini API, Brevo Email API |
 
-### 5. Phân Chia Công Việc (Task Division)
+---
 
-Dưới đây là bảng phân chia công việc chi tiết giữa 2 thành viên trong nhóm, được trình bày theo cấu trúc chuẩn xác của dự án:
+## Phần III — Danh sách API & Socket Events
 
-#### MẠNH QUỲNH
-**Nhiệm vụ:** Quản lý vòng đời dữ liệu, kiến trúc hệ thống Backend và xử lý logic thời gian thực (Real-time).
+> Hệ thống cung cấp **35 RESTful APIs** và **9 sự kiện WebSocket** chính.
 
-| Module đảm nhận | Chức năng |
-| :--- | :--- |
-| **`main.py` & `socket_manager.py`** | Thiết lập kiến trúc Server bất đồng bộ (FastAPI), cấu hình WebSockets và điều phối tín hiệu WebRTC (P2P). |
-| **`database.py` & `models.py`** | Thiết kế cơ sở dữ liệu NoSQL (MongoDB), tích hợp Beanie ODM, tối ưu hóa truy vấn dữ liệu bất đồng bộ. |
-| **`message_routes.py` & `user_routes.py`** | Xây dựng RESTful API bảo mật với JWT, xử lý logic chat nhóm, quản lý thành viên, và luồng kết bạn. |
-| **`file_routes.py` & `ai_routes.py`** | Tích hợp Cloudinary API, xử lý nén ZIP trên RAM, tích hợp Google Gemini API xử lý luồng AI Chatbot & Tóm tắt. |
+### 3.1 REST API Endpoints
 
-#### DUY KHÁNH
-**Nhiệm vụ:** Quản lý luồng tương tác của người dùng, dịch vụ đầu cuối và phát triển giao diện Client (Frontend).
+#### 🔐 Auth & User — `/api/auth` (`user_routes.py`)
 
-| Module đảm nhận | Chức năng |
-| :--- | :--- |
-| **`ChatContainer.jsx` & `RightSidebar.jsx`** | Phát triển giao diện nhắn tin thời gian thực, hiển thị tin nhắn đa phương tiện, xử lý giao diện nhóm chat. |
-| **`SideBar.jsx` & `AuthContext.jsx`** | Quản lý trạng thái toàn cục (Context API), tính năng tìm kiếm bạn bè, tích hợp luồng đăng nhập Google OAuth 2.0. |
-| **Logic WebRTC & `VideoCall`** | Xây dựng logic gọi Video ngang hàng (Peer-to-Peer), cấu hình STUN/TURN Server để vượt màn lọc tường lửa. |
-| **UI/UX Design & Tailwind CSS** | Thiết kế giao diện Dark Mode Glassmorphism, tối ưu hóa trải nghiệm thao tác cảm ứng (Mobile-first). |
+| # | Method | Endpoint | Chức năng |
+|:---:|:---:|:---|:---|
+| 1 | `POST` | `/signup` | Đăng ký tài khoản (gửi OTP) |
+| 2 | `POST` | `/verify-registration` | Xác thực mã OTP đăng ký |
+| 3 | `POST` | `/login` | Đăng nhập thường |
+| 4 | `POST` | `/google-login` | Đăng nhập Google OAuth |
+| 5 | `POST` | `/forgot-password` | Gửi OTP khôi phục mật khẩu |
+| 6 | `POST` | `/reset-password` | Đặt lại mật khẩu mới |
+| 7 | `GET` | `/check` | Kiểm tra token & lấy user hiện tại |
+| 8 | `GET` | `/search?q=...` | Tìm kiếm người dùng |
+| 9 | `PUT` | `/update-profile` | Cập nhật thông tin/avatar |
+| 10 | `POST` | `/send-friend-request` | Gửi lời mời kết bạn |
+| 11 | `POST` | `/accept-friend-request` | Chấp nhận kết bạn |
+| 12 | `POST` | `/reject-friend-request` | Từ chối kết bạn |
+| 13 | `POST` | `/unfriend` | Hủy kết bạn |
+| 14 | `GET` | `/friend-requests` | Danh sách lời mời kết bạn |
+| 15 | `POST` | `/toggle-archive` | Lưu trữ / bỏ lưu trữ hội thoại |
+| 16 | `POST` | `/unban/{user_id}` | Gỡ cấm chat (Admin) |
+
+#### 💬 Messages — `/api/messages` (`message_routes.py`)
+
+| # | Method | Endpoint | Chức năng |
+|:---:|:---:|:---|:---|
+| 17 | `GET` | `/users` | Danh sách sidebar (bạn bè + người lạ đã chat) |
+| 18 | `GET` | `/{id}` | Lịch sử đoạn chat |
+| 19 | `PUT` | `/mark/{id}` | Đánh dấu đã xem |
+| 20 | `POST` | `/send/{id}` | Gửi tin nhắn mới |
+| 21 | `PUT` | `/edit/{id}` | Chỉnh sửa tin nhắn |
+| 22 | `PUT` | `/revoke/{id}` | Thu hồi tin nhắn (Soft Delete) |
+| 23 | `POST` | `/react/{id}` | Thả biểu tượng cảm xúc |
+| 24 | `POST` | `/groups/create` | Tạo nhóm mới |
+| 25 | `POST` | `/groups/{id}/add-members` | Thêm thành viên vào nhóm |
+| 26 | `PUT` | `/groups/{id}/update` | Cập nhật thông tin nhóm |
+| 27 | `PUT` | `/groups/{id}/kick` | Kích thành viên ra khỏi nhóm |
+| 28 | `PUT` | `/groups/{id}/leave` | Rời khỏi nhóm |
+| 29 | `DELETE` | `/groups/{id}` | Giải tán nhóm |
+| 30 | `GET` | `/groups/{id}/members` | Danh sách thành viên nhóm |
+
+#### 📁 Files — `/api/files` (`file_routes.py`)
+
+| # | Method | Endpoint | Chức năng |
+|:---:|:---:|:---|:---|
+| 31 | `POST` | `/upload` | Upload file lẻ |
+| 32 | `POST` | `/upload-folder` | Upload thư mục |
+| 33 | `GET` | `/download` | Download file (Proxy stream) |
+| 34 | `POST` | `/download-folder` | Download folder (ZIP on-the-fly) |
+
+#### 🛡️ Reports — `/api/reports` (`report_routes.py`)
+
+| # | Method | Endpoint | Chức năng |
+|:---:|:---:|:---|:---|
+| 35 | `POST` | `/` | Báo cáo tin nhắn vi phạm |
+| 36 | `GET` | `/` | Danh sách báo cáo (Admin) |
+| 37 | `POST` | `/{id}/ban` | Cấm chat theo báo cáo (Admin) |
+| 38 | `POST` | `/{id}/cancel` | Hủy báo cáo (Admin) |
+
+#### 🤖 AI — `/api/ai` (`ai_routes.py`)
+
+| # | Method | Endpoint | Chức năng |
+|:---:|:---:|:---|:---|
+| 39 | `POST` | `/chat` | Chat với AI Chatbot |
+| 40 | `GET` | `/summarize/{target_id}` | Tóm tắt 50 tin nhắn gần nhất |
+
+### 3.2 Socket.IO Events — `socket_manager.py`
+
+| # | Event (Client → Server) | Chức năng |
+|:---:|:---|:---|
+| 1 | `connect` | Kết nối vào hệ thống (gửi kèm userId) |
+| 2 | `disconnect` | Ngắt kết nối |
+| 3 | `markMessagesSeen` | Báo đã xem tin nhắn khi mở khung chat |
+| 4 | `video:initiate` | Bắt đầu gọi Video/Voice |
+| 5 | `video:offer` | Gửi SDP WebRTC (Người gọi) |
+| 6 | `video:answer` | Trả lời SDP (Người nghe) |
+| 7 | `video:ice-candidate` | Gửi ICE candidate (thiết lập P2P) |
+| 8 | `video:end` | Kết thúc cuộc gọi |
+| 9 | `video:reject` | Từ chối cuộc gọi |
+
+> **Server → Client Events:** `getOnlineUsers`, `receiveMessage`, `messageDeleted`, `messageEdited`, `messageReacted`, `messagesSeenUpdate`, `newFriendRequest`, `friendRequestAccepted`, `userUpdated`, `newUserRegistered`, `groupCreated`, `groupUpdated`, `removedFromGroup`, `groupDissolved`, `video:incoming`, `video:offer`, `video:answer`, `video:ice-candidate`, `video:ended`, `video:rejected`, `userBanned`...
+
+---
+
+## Phần IV — Cấu trúc Backend
+
+```
+server/
+├── main.py                    ← Entry point: FastAPI + Socket.IO ASGI
+├── run.py                     ← Script khởi chạy Uvicorn (dev mode)
+├── .env                       ← Biến môi trường bảo mật
+├── requirements.txt           ← Danh sách thư viện Python
+└── app/
+    ├── database.py            ← Kết nối MongoDB (Motor + Beanie)
+    ├── models.py              ← Schema: User, Message, ChatGroup, Report
+    ├── dependencies.py        ← JWT Middleware (bảo vệ API)
+    ├── socket_manager.py      ← Real-time & WebRTC Signaling
+    ├── cloudinary_client.py   ← Cấu hình Cloudinary SDK
+    ├── email_service.py       ← Gửi email OTP (Brevo HTTP API)
+    ├── utils.py               ← Hàm tiện ích (generate_token)
+    └── routes/                ← Controllers (5 file)
+        ├── user_routes.py     ← Auth, bạn bè, profile
+        ├── message_routes.py  ← Chat, nhóm, reaction, thu hồi
+        ├── file_routes.py     ← Upload/Download file & folder
+        ├── ai_routes.py       ← AI Chatbot & tóm tắt
+        └── report_routes.py   ← Báo cáo & cấm chat
+```
+
+---
+
+## Phần V — Giải thích từng Module
+
+### 5.1 `main.py` — Trái tim Backend
+
+| Thành phần | Giải thích |
+|:---|:---|
+| `lifespan` | Gọi hàm kết nối DB ngay khi server khởi động |
+| `CORSMiddleware` | Cho phép Frontend (domain khác) gọi API không bị lỗi CORS |
+| `app.include_router()` | Đăng ký các nhóm API (Users, Messages, Files, AI, Reports) |
+| `socketio.ASGIApp` | Bọc FastAPI + Socket.IO thành 1 app ASGI duy nhất chạy chung port |
+
+### 5.2 `database.py` & `models.py` — Database Layer
+
+- **`database.py`**: Dùng `AsyncIOMotorClient` kết nối MongoDB Atlas, gọi `init_beanie` đăng ký ODM
+- **`models.py`**: Định nghĩa Schema — `User` (email, password, friends...), `Message` (senderId, receiverId, isSeen, isDeleted, reactions...), `ChatGroup` (name, adminId, members...), `Report` (reportedId, reason, status...)
+
+> 💡 *"Dùng Beanie ODM trên nền Motor async — khác PyMongo blocking, giúp FastAPI xử lý hàng ngàn request đồng thời mà không bị treo khi đợi DB."*
+
+### 5.3 `socket_manager.py` — Trạm điều phối Real-time
+
+- **`user_socket_map`** (Dict): Lưu cặp `{userId: socketId}` → khi A gửi tin cho B, tra map lấy socketId của B để đẩy dữ liệu thẳng
+- `connect` / `disconnect`: Quản lý danh sách online, emit `getOnlineUsers`
+- `video:*` events: Trung gian luân chuyển SDP/ICE để 2 trình duyệt tự thiết lập P2P (WebRTC)
+- `video:end`: Lưu tin nhắn lịch sử cuộc gọi vào Database
+
+### 5.4 `user_routes.py` — Auth & Bạn bè
+
+- **`signup`**: Tạo OTP → gửi email (Brevo) → chờ xác thực
+- **`verify-registration`**: Kiểm tra OTP → xác thực → cấp JWT Token
+- **`google_login`**: Verify `id_token` với Google → tạo/đăng nhập tự động
+- **`forgot-password`**: Tạo OTP mới → gửi email khôi phục
+- **`send_friend_request`**: Đẩy ID vào mảng `friendRequests` + Socket emit real-time
+
+### 5.5 `message_routes.py` — Chat & Nhóm
+
+- **`get_users_for_sidebar`**: Ghép danh sách bạn bè + người lạ đã chat, đếm tin chưa đọc
+- **`revoke_message`** (Soft Delete): `isDeleted = True`, xóa nội dung nhưng giữ record
+- **`react_message`** (Toggle): Bấm lần 2 = hủy, bấm emoji khác = ghi đè
+- **Group Management**: CRUD nhóm, quản lý mảng `members`, đồng bộ real-time qua Socket
+
+### 5.6 `file_routes.py` — Upload/Download
+
+- **Upload**: Gọi `cloudinary.uploader.upload()` → lấy URL gắn vào Message
+- **Download** (Proxy): Backend dùng `httpx` tải file từ Cloudinary → `StreamingResponse` + header `Content-Disposition: attachment`
+- **Download Folder** (Zip on-the-fly): Tạo `io.BytesIO()` → nén ZIP trên RAM → stream về Client
+
+> 💡 *"Thay vì lưu tạm xuống ổ cứng server, xử lý nén ZIP trực tiếp trên RAM (Memory Stream) giúp hệ thống nhẹ gọn và an toàn hơn."*
+
+### 5.7 `ai_routes.py` — Tích hợp AI
+
+- **`chat_with_ai`**: Gửi prompt + lịch sử hội thoại → `gemini-2.5-flash` → trả câu trả lời
+- **`summarize_chat`**: Query 50 tin nhắn gần nhất → format hội thoại → Gemini tóm tắt ý chính
+
+### 5.8 `email_service.py` — Gửi Email OTP
+
+- Sử dụng **Brevo API** (HTTP/HTTPS port 443) — không bị chặn bởi tường lửa
+- Template HTML email đẹp mắt với mã OTP 6 số
+- Free plan: 300 email/ngày
+
+---
+
+## Phần VI — Hướng dẫn Demo
+
+> Khi giảng viên yêu cầu demo, thực hiện theo quy trình sau:
+
+### Chuẩn bị
+Mở **2 trình duyệt** (hoặc 1 cửa sổ thường + 1 ẩn danh) đại diện cho **User A** và **User B**.
+
+### Quy trình Demo
+
+| Bước | Thao tác | Điểm nhấn |
+|:---:|:---|:---|
+| 1 | **Đăng ký** tài khoản mới → Nhập mã OTP từ email | Xác thực OTP 6 số, email gửi qua Brevo API |
+| 2 | Trình duyệt kia **Đăng nhập Google** | OAuth 2.0 — không cần password |
+| 3 | Tìm kiếm → **Gửi lời mời kết bạn** | User B nhận thông báo **ngay lập tức** (Real-time) |
+| 4 | **Nhắn tin** văn bản + emoji | Trạng thái "Đã gửi" → "Đã xem" tức thời |
+| 5 | **Upload file/folder** → Bấm Download | Chứng minh Zip on-the-fly hoạt động |
+| 6 | **Gọi Video Call** → Nhấc máy → Tắt máy | Tin nhắn lịch sử cuộc gọi tự lưu |
+| 7 | **Thu hồi / Chỉnh sửa / Thả cảm xúc** | Context menu (chuột phải / long-press) |
+| 8 | **Tạo nhóm chat** → Thêm thành viên | Quản lý nhóm đầy đủ |
+| 9 | Bấm nút **AI Tóm tắt** hội thoại | Gemini xử lý 50 tin nhắn gần nhất |
+| 10 | **Quên mật khẩu** → Nhập OTP → Đặt lại | Luồng khôi phục mật khẩu hoàn chỉnh |
+
+---
+
+## Phần VII — Phân chia Công việc
+
+<table>
+<tr>
+<td width="50%">
+
+### 👨‍💻 Mạnh Quỳnh
+**Backend Developer & System Architect**
+
+| Module | Chức năng |
+|:---|:---|
+| `main.py` & `socket_manager.py` | Kiến trúc Server, WebSocket, WebRTC Signaling |
+| `database.py` & `models.py` | Thiết kế DB NoSQL, Beanie ODM, tối ưu truy vấn async |
+| `message_routes.py` & `user_routes.py` | RESTful API, JWT, chat nhóm, kết bạn, auth OTP |
+| `file_routes.py` & `ai_routes.py` | Cloudinary, ZIP on-the-fly, Gemini AI |
+| `report_routes.py` & `email_service.py` | Hệ thống Admin, báo cáo, cấm chat, email OTP |
+
+</td>
+<td width="50%">
+
+### 👨‍💻 Duy Khánh
+**Frontend Developer & UI/UX Designer**
+
+| Module | Chức năng |
+|:---|:---|
+| `ChatContainer.jsx` & `RightSidebar.jsx` | Giao diện nhắn tin, hiển thị đa phương tiện, nhóm chat |
+| `SideBar.jsx` & `AuthContext.jsx` | Context API, tìm kiếm, Google OAuth login |
+| `VideoCallModal.jsx` & WebRTC Logic | Gọi Video P2P, STUN/TURN Server |
+| `LoginPage.jsx` & Modal Components | Giao diện đăng nhập, OTP, quên mật khẩu |
+| UI/UX Design & Tailwind CSS | Dark Mode Glassmorphism, Mobile-first, animations |
+
+</td>
+</tr>
+</table>
+
+---
+
+<div align="center">
+
+*Tài liệu được biên soạn phục vụ báo cáo & bảo vệ đồ án.*
+
+</div>
