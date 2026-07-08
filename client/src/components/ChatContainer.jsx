@@ -1273,7 +1273,7 @@ const ChatContainer = ({ startCall }) => {
                   </button>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center bg-slate-200/50 dark:bg-gray-100/12 px-4 rounded-3xl gap-2 min-w-0">
+                <div className="flex-1 flex items-center bg-slate-300 dark:bg-slate-700 px-4 rounded-3xl gap-2 min-w-0">
                   <textarea
                     ref={textareaRef}
                     rows={1}
