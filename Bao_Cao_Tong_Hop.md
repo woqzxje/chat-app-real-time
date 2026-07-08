@@ -21,6 +21,7 @@
 - [Phần VII — Giải thích từng Module Frontend](#phần-vii--giải-thích-từng-module-frontend)
 - [Phần VIII — Hướng dẫn Demo](#phần-viii--hướng-dẫn-demo)
 - [Phần IX — Phân chia Công việc](#phần-ix--phân-chia-công-việc)
+- [Phần X — Bài học & Kinh nghiệm rút ra](#phần-x--bài-học--kinh-nghiệm-rút-ra)
 
 ---
 
@@ -406,6 +407,23 @@ Mở **2 trình duyệt** (hoặc 1 cửa sổ thường + 1 ẩn danh) đại d
 </td>
 </tr>
 </table>
+
+## Phần X — Bài học & Kinh nghiệm rút ra
+
+Sau quá trình thiết kế, phát triển và hoàn thiện dự án ChatITC, nhóm đã đúc kết được nhiều bài học và kinh nghiệm quý báu:
+
+### 1. Kiến thức Chuyên môn (Technical Skills)
+- **Hiểu sâu về Real-time Communication**: Nắm vững cơ chế hoạt động của WebSocket (`Socket.IO`), cách xử lý đồng bộ trạng thái (state) giữa Server và nhiều Client cùng lúc, khắc phục tình trạng mất kết nối hoặc xử lý hàng đợi sự kiện.
+- **Làm chủ WebRTC**: Hiểu rõ luồng trao đổi SDP (Session Description Protocol) và ICE Candidates để thiết lập kết nối ngang hàng (P2P) cho tính năng Video Call, cũng như vai trò của STUN/TURN server trong việc vượt NAT/Firewall.
+- **Tối ưu hóa Backend & Cơ sở dữ liệu**: Áp dụng kiến trúc xử lý bất đồng bộ (Asynchronous) toàn diện với `FastAPI` và `Motor` giúp xử lý số lượng lớn kết nối đồng thời. Làm quen với tư duy thiết kế schema NoSQL (`MongoDB`) tối ưu cho ứng dụng nhắn tin.
+- **Xử lý luồng File phức tạp**: Trải nghiệm thực tế với việc stream file trực tiếp, nén thư mục "on-the-fly" ngay trên RAM server (Memory Stream) thay vì ghi rác xuống ổ cứng, giúp tối ưu hiệu năng và tài nguyên.
+- **Tích hợp Service bên thứ ba**: Kinh nghiệm làm việc thực chiến với các hệ sinh thái bên ngoài như Cloudinary (lưu trữ CDN), Google OAuth (xác thực đa nền tảng), Brevo (gửi email OTP) và Google Gemini API (tích hợp AI Agent).
+
+### 2. Kỹ năng Mềm (Soft Skills) & Quản lý Dự án
+- **Kỹ năng làm việc nhóm (Teamwork)**: Áp dụng việc phân tách module rõ ràng (Frontend - Backend), rèn luyện giao tiếp để thống nhất chuẩn API (API Contracts) và cấu trúc payload gửi qua Socket trước khi code.
+- **Giải quyết vấn đề (Problem Solving)**: Đối mặt và giải quyết các lỗi khó như xử lý bất đồng bộ trong real-time (race conditions), quản lý luồng media khi gọi video (tránh memory leak), tối ưu responsive và độ tương thích giao diện trên các thiết bị di động.
+- **Tư duy hướng người dùng (UX/UI)**: Rèn luyện thói quen đặt mình vào vị trí người dùng để tinh chỉnh các vi tương tác (micro-interactions), xử lý các edge-case như tự động cuộn (auto-scroll) thông minh, giữ trạng thái tin nhắn chưa đọc, phản hồi thao tác nhanh.
+- **Quản lý Source code**: Làm quen với quy trình sử dụng Git/GitHub để quản lý version (Version Control), hợp nhất code (merge) và kiểm soát xung đột (conflict) giữa các thành viên.
 
 ---
 
