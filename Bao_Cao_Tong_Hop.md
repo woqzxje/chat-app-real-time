@@ -279,7 +279,7 @@ server/
 
 ### 5.7 `ai_routes.py` — Tích hợp AI
 
-- **`chat_with_ai`**: Gửi prompt + lịch sử hội thoại → `gemini-1.5-flash` → trả câu trả lời
+- **`chat_with_ai`**: Gửi prompt + lịch sử hội thoại → `gemini-2.5-flash` → trả câu trả lời
 - **`summarize_chat`**: Query 50 tin nhắn gần nhất → format hội thoại → Gemini tóm tắt ý chính
 
 ### 5.8 `email_service.py` — Gửi Email OTP
